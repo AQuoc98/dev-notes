@@ -31,6 +31,12 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 * [**Data Structures & Algorithms**](./dsa.md) - Big O, Arrays, Linked Lists, Trees, Sorting...
 * [**System Design**](./system-design.md) - Load Balancing, Caching, Microservices...
 
+### 🎓 Interview Preparation
+* [Interview Company-wise Problems](https://github.com/liquidslr/interview-company-wise-problems) - Lists of company wise questions. Every csv file in the companies directory corresponds to a list of questions on leetcode for a specific company based on the leetcode company tags
+
+### AI Knowledge
+* [**Using AI effectively**](./AI.md) - MCP Server, AI Agents, Prompt Engineering...
+
 ---
 
 ## 🚀 How to Use This Repo Effectively

@@ -54,6 +54,19 @@
     - [✅ **3. Arrow Function**](#-3-arrow-function)
     - [✅ **4. Local and Global Variables**](#-4-local-and-global-variables)
     - [✅ **5. Callback Functions**](#-5-callback-functions)
+  - [Objects](#objects)
+    - [✅ **1. The basics**](#-1-the-basics)
+    - [✅ **2. Object References and Copies**](#-2-object-references-and-copies)
+    - [✅ **3. Comparing Objects**](#-3-comparing-objects)
+    - [✅ **4. Cloning and Merging Objects**](#-4-cloning-and-merging-objects)
+    - [✅ **5. Nested Cloning**](#-5-nested-cloning)
+    - [✅ **6. Object Methods**](#-6-object-methods)
+    - [✅ **7. Constructor functions**](#-7-constructor-functions)
+    - [✅ **8. Optional Chaining**](#-8-optional-chaining)
+  - [`this` Keyword](#this-keyword)
+    - [✅ **1. The `this` keyword in a method**](#-1-the-this-keyword-in-a-method)
+    - [✅ **2. The `this` keyword outside of a method**](#-2-the-this-keyword-outside-of-a-method)
+    - [✅ **3. Arrow Functions and `this`**](#-3-arrow-functions-and-this)
 
 
 
@@ -88,6 +101,8 @@ Without strict mode, `x` would silently become a global variable — which is da
 
 📌 **Why it matters (senior-level insight):**
 Strict mode helps engines optimize code better and avoids legacy JS pitfalls, making it essential for large-scale applications.
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ---
 
@@ -125,6 +140,8 @@ test(); // ✅ ✅ window (in browser)
 - Prevents accidental access to the global object
 - Makes function behavior more predictable
 - Avoids bugs in large codebases
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ## Variables
 
@@ -185,6 +202,8 @@ for (let i = 0; i < 3; i++) {
 // ✅ 0 1 2
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ## Data Types
 
 ### ✅ **1. How many data types in JS?**
@@ -235,6 +254,8 @@ console.log(3 * NaN); // NaN
   - Double quotes: "Hello".
   - Single quotes: 'Hello'.
   - Backticks: `Hello`.
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ## Type Conversions
 
@@ -338,6 +359,8 @@ let oranges = "3";
 console.log( +apples + +oranges ); // 5
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ## Operators
 
 ### ✅ **1. What is the `unary`, `binary`, and `operand` operator?**
@@ -428,6 +451,8 @@ console.log( counter++ ); // 2, returns the old value, then increments
 console.log( counter ); // 3, the final value after both increments
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ## Comparison
 
 ### ✅ **1. Comparison operators**
@@ -490,6 +515,8 @@ console.log( undefined >= 0 ); // false
 console.log( 5 == '5' ); // true, string '5' is converted to number 5
 console.log( 5 === '5' ); // false, different types
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ## Conditional Statements
 
@@ -577,6 +604,8 @@ let message = (age >= 18) ? "You are an adult." : "You are a minor.";
 console.log(message); // Output: "You are an adult."
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ## Logical Operators
 
 ### ✅ **1. Logical AND (&&)**
@@ -652,6 +681,8 @@ console.log( undefined ?? null ); // null
 console.log( 0 ?? "default" ); // 0 (not null or undefined)
 console.log( "" ?? "default" ); // "" (not null or undefined)
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ## Loop
 
@@ -737,6 +768,8 @@ for (let i = 0; i < 5; i++) {
 
 // Output: 0, 1, 3 (2 is skipped, and loop exits before 4)
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ## Functions
 
@@ -824,3 +857,229 @@ fetchData((result) => {
   console.log(result); // Output: "Data fetched" after 1 second
 });
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+## Objects
+
+### ✅ **1. The basics**
+
+- An object literal is a comma-separated list of name-value pairs wrapped in curly braces.
+
+```js
+const person = {
+  name: "Alice",
+  age: 30,
+  city: "New York"
+};
+```
+
+- An Object can be created using the `new Object()` syntax, but object literals are more common and concise.
+
+```js
+let user = new Object(); // "object constructor" syntax
+let user = {};  // "object literal" syntax
+```
+
+- Object properties can be accessed using dot notation or bracket notation.
+
+```js
+console.log(person.name); // Output: "Alice"
+console.log(person["age"]); // Output: 30
+```
+
+- Properties can be `added`, `modified`, or `deleted` from an object.
+
+```js
+person.job = "Developer"; // Adding a new property
+person.age = 31; // Modifying an existing property
+delete person.city; // Deleting a property
+console.log(person); // Output: { name: "Alice", age: 31, job: "Developer" }
+```
+
+- `Property value shorthand` allows you to create objects more concisely when the property name is the same as the variable name.
+
+```js
+let name = "Bob";
+let age = 25;
+let user = { name, age }; // Shorthand for { name: name, age: age }
+console.log(user); // Output: { name: "Bob", age: 25 }
+```
+
+### ✅ **2. Object References and Copies**
+
+- A variable assigned to an object stores not the object itself, but its “address in memory” – in other words “a reference” to it.
+
+```js
+let user = { name: "Alice" };
+let admin = user; // admin references the same object as user
+admin.name = "Bob"; // Modifying the object through admin
+console.log(user.name); // Output: "Bob" (user sees the change)
+```
+
+### ✅ **3. Comparing Objects**
+
+- Two variables that reference the same object are equal.
+
+```js
+let user = { name: "Alice" };
+let admin = user;
+console.log(user === admin); // Output: true
+```
+
+- Two objects with the same properties and values are not equal, as they are different instances.
+
+```js
+let user = { name: "Alice" };
+let admin = { name: "Alice" };
+console.log(user === admin); // Output: false
+```
+
+### ✅ **4. Cloning and Merging Objects**
+
+- To clone an object, you can use `Object.assign()` or the spread operator.
+
+```js
+let user = { name: "Alice", age: 30 };
+let clone = Object.assign({}, user); // Cloning using Object.assign
+let clone2 = { ...user }; // Cloning using spread operator
+console.log(clone); // Output: { name: "Alice", age: 30 }
+console.log(clone2); // Output: { name: "Alice", age: 30 }
+```
+
+### ✅ **5. Nested Cloning**
+
+- When an object contains nested objects, cloning it requires a deep clone to ensure all levels are copied.
+
+```js
+let user = { name: "Alice", address: { city: "New York", country: "USA" } };
+let clone = JSON.parse(JSON.stringify(user)); // Deep cloning using JSON methods
+console.log(clone); // Output: { name: "Alice", address: { city: "New York", country: "USA" } }
+```
+
+- Other methods for deep cloning include using libraries like `lodash` `_.cloneDeep` or implementing a custom recursive function to handle nested objects.
+
+```js
+function deepClone(obj) {
+  if (obj === null || typeof obj !== "object") {
+    return obj; // Return the value if obj is not an object
+  }
+  let clone = Array.isArray(obj) ? [] : {};
+  for (let key in obj) {
+    clone[key] = deepClone(obj[key]); // Recursively clone nested objects
+  }
+  return clone;
+}
+let user = { name: "Alice", address: { city: "New York", country: "USA" } };
+let clone = deepClone(user);
+console.log(clone); // Output: { name: "Alice", address: { city: "New York", country: "USA" } }
+```
+
+### ✅ **6. Object Methods**
+
+- Objects can have methods, which are functions that operate on the object’s properties.
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  }
+};
+user.greet(); // Output: "Hello, Alice!"
+```
+
+### ✅ **7. Constructor functions**
+
+- Constructor functions are used to create multiple objects with the same structure.
+
+```js
+function User(name, age) {
+  this.name = name;
+  this.age = age;
+  this.greet = function() {
+    console.log("Hello, " + this.name + "!");
+  };
+}
+let user1 = new User("Alice", 30);
+let user2 = new User("Bob", 25);
+user1.greet(); // Output: "Hello, Alice!"
+user2.greet(); // Output: "Hello, Bob!"
+```
+
+### ✅ **8. Optional Chaining**
+
+- Optional chaining allows you to safely access nested properties of an object without having to check if each level exists.
+
+```js
+let user = { name: "Alice", address: { city: "New York" } };
+console.log(user.address?.city); // Output: "New York"
+console.log(user.address?.country); // Output: undefined (instead of throwing an error)
+console.log(user.contact?.email); // Output: undefined (instead of throwing an error)
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+## `this` Keyword
+
+### ✅ **1. The `this` keyword in a method**
+
+- The `this` keyword in a method refers to the object it belongs to, allowing access to its properties and other methods.
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  },
+  haveBirthday() {
+    this.age++;
+    console.log(this.name + " is now " + this.age + " years old.");
+  }
+};
+user.greet(); // Output: "Hello, Alice!"
+user.haveBirthday(); // Output: "Alice is now 31 years old."
+```
+
+### ✅ **2. The `this` keyword outside of a method**
+
+- If a function is called without an object, `this` will refer to the global object (or be `undefined` in strict mode).
+
+```js
+function showThis() {
+  console.log(this);
+}
+showThis(); // In non-strict mode: Window (global object), in strict mode: undefined
+```
+
+- It can be used in any function, but its value depends on how the function is called.
+
+```js
+let user = {
+  name: "Alice",
+  showThis: function() {
+    console.log(this);
+  }
+};
+user.showThis(); // Output: user object (this refers to the user object)
+let show = user.showThis;
+show(); // In non-strict mode: Window (global object), in strict mode: undefined
+```
+
+### ✅ **3. Arrow Functions and `this`**
+
+- Arrow functions do not have their own `this` context; they inherit `this` from the surrounding scope.
+
+```js
+let user = {
+  name: "Alice",
+  showThis: () => {
+    console.log(this); // In this case, `this` refers to the global object (or undefined in strict mode) because arrow functions do not have their own `this`.
+  }
+};
+user.showThis(); // Output: Window (global object) or undefined (in strict mode)
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
