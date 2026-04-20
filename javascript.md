@@ -222,12 +222,16 @@ There are 8 basic data types in JavaScript.
 **one non-primitive data type:**
 - `object` for more complex data structures.
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. How to see which type is stored in variable?**
 
 The `typeof` operator allows us to see which type is stored in a variable.
 
 - Returns a string with the name of the type, like "string".
 - For null returns "object" – this is an error in the language, it’s not actually an object.
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **3. Number**
 
@@ -245,6 +249,10 @@ console.log("not a number" / 2); // NaN, such division is erroneous
 console.log(NaN + 1); // NaN
 console.log(3 * NaN); // NaN
 ```
+
+- The common methods for numbers: [number methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number), [math methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math)
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **4. String**
 
@@ -268,6 +276,8 @@ console.log(typeof value); // 'boolean'
 value = String(value); // now value is a string "true"
 console.log(typeof value); // 'string'
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **2. Numberic Conversion**
 
@@ -323,6 +333,8 @@ console.log( Number("123") ); // 123
 console.log( Number("123abc") ); // NaN
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **3. Boolean Conversion**
 
 Use `Boolean()` function to explicitly convert a value to a boolean:
@@ -337,6 +349,8 @@ console.log( Boolean("") ); // false
 The conversion rules:
 - `0`, `null`, `undefined`, `NaN`, and `""` (empty string) become `false`.
 - All other values become `true`.
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **4. Numeric conversion, unary +**
 - If the operand is not a number, the unary plus converts it into a number
@@ -383,6 +397,8 @@ let x = 1, y = 3;
 alert( y - x ); // 2, binary minus subtracts values
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. Maths**
 
 - `+` Addition
@@ -404,6 +420,8 @@ console.log( 2 ** 3 ); // 2³ = 8
 console.log( 2 ** 4 ); // 2⁴ = 16
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **3. String concatenation with binary +**
 
 - If the binary + is applied to strings, it merges (concatenates) them
@@ -423,6 +441,8 @@ console.log('1' + 2 + 2); // "122" and not "14"
 console.log( 6 - '2' ); // 4, converts '2' to a number
 console.log( '6' / '2' ); // 3, converts both operands to numbers
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **4. Increment/Decrement**
 
@@ -474,6 +494,8 @@ console.log( 'Glow' > 'Glee' ); // true
 console.log( 'Bee' > 'Be' ); // true
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. Comparison of different types**
 
 - When comparing values of different types, JavaScript converts the values to numbers (except for strict equality `===` and strict inequality `!==` which do not perform type conversion).
@@ -487,6 +509,8 @@ console.log( null == undefined ); // true, null and undefined are considered equ
 console.log( null === undefined ); // false, different types
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **3. null vs 0**
 
 - `null` is not equal to `0` or any other value except `undefined`.
@@ -497,6 +521,8 @@ console.log( null == 0 ); // false
 console.log( null >= 0 ); // true
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **4. undefined vs 0**
 - `undefined` is not equal to `0` or any other value except `null`.
 
@@ -505,6 +531,8 @@ console.log( undefined > 0 ); // false
 console.log( undefined == 0 ); // false
 console.log( undefined >= 0 ); // false
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **5. == vs ===**
 
@@ -535,6 +563,8 @@ if (age >= 18) {
 // Output: "You are an adult."
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ###  ✅ **2. `else if` statement**
 
 The `else if` statement allows you to check multiple conditions.
@@ -552,6 +582,8 @@ if (score >= 90) {
 }
 // Output: "Grade: B"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ###  ✅ **3. `switch` statement**
 
@@ -594,6 +626,8 @@ switch (day) {
 // Output: "Weekday"
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ###  ✅ **4. Ternary operator**
 
 The `?:` (ternary operator) is a shorthand for an `if-else` statement.
@@ -628,6 +662,8 @@ console.log( null && "Hello" ); // null (falsy)
 console.log( "Hello" && "World" ); // "World" (both truthy, returns last value)
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. Logical OR (||)**
 
 - The logical OR operator returns true if at least one operand is true.
@@ -648,6 +684,8 @@ console.log( "" || 0 || null ); // null (all falsy, returns last value)
 console.log( "Hello" || "World" ); // "Hello" (first truthy)
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **3. Logical NOT (!)**
 
 - The logical NOT operator returns true if the operand is false, and false if the operand is true.
@@ -659,6 +697,8 @@ console.log( !0 ); // true (0 is falsy)
 console.log( !"Hello" ); // false ("Hello" is truthy)
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **4. Double NOT (!!)**
 
 - The double NOT operator converts a value to its boolean equivalent.
@@ -669,6 +709,8 @@ console.log( !!false ); // false
 console.log( !!0 ); // false (0 is falsy)
 console.log( !!"Hello" ); // true ("Hello" is truthy)
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **5. Nullish Coalescing (??)**
 
@@ -698,6 +740,8 @@ for (let i = 0; i < 5; i++) {
 // Output: 0 1 2 3 4
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. `while` loop**
 
 - The `while` loop executes a block of code as long as a specified condition is true.
@@ -711,6 +755,8 @@ while (i < 5) {
 
 // Output: 0 1 2 3 4
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **3. `do...while` loop**
 
@@ -726,6 +772,8 @@ do {
 // Output: 0 1 2 3 4
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **4. `for...in` loop**
 
 - The `for...in` loop iterates over the enumerable properties of an object.
@@ -738,6 +786,8 @@ for (let key in person) {
 // Output: "name: Alice", "age: 30", "city: New York"
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **5. `for...of` loop**
 
 - The `for...of` loop iterates over iterable objects (like arrays, strings, etc.) and returns the values of the elements.
@@ -749,6 +799,8 @@ for (let value of arr) {
 }
 // Output: 10, 20, 30
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **6. `break` and `continue`**
 
@@ -788,6 +840,8 @@ function name(parameters, delimited, by, comma) {
 - Function declarations must have a name, and they are not expressions.
 - Default values for parameters can be set in the function declaration.
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. Function Expression**
 
 - A function expression defines a function as part of a larger expression, and can be anonymous.
@@ -798,6 +852,8 @@ const greet = function(name) {
 };
 console.log(greet("Bob")); // Output: "Hello, Bob!"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **3. Arrow Function**
 
@@ -816,6 +872,8 @@ console.log(greet("Charlie")); // Output: "Hello, Charlie!"
 const greet = name => "Hello, " + name + "!";
 console.log(greet("Dave")); // Output: "Hello, Dave!"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **4. Local and Global Variables**
 
@@ -840,6 +898,8 @@ function myFunction() {
 myFunction();
 console.log(globalVar); // Output: "I am global"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **5. Callback Functions**
 
@@ -906,6 +966,8 @@ let user = { name, age }; // Shorthand for { name: name, age: age }
 console.log(user); // Output: { name: "Bob", age: 25 }
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. Object References and Copies**
 
 - A variable assigned to an object stores not the object itself, but its “address in memory” – in other words “a reference” to it.
@@ -916,6 +978,8 @@ let admin = user; // admin references the same object as user
 admin.name = "Bob"; // Modifying the object through admin
 console.log(user.name); // Output: "Bob" (user sees the change)
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **3. Comparing Objects**
 
@@ -935,6 +999,8 @@ let admin = { name: "Alice" };
 console.log(user === admin); // Output: false
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **4. Cloning and Merging Objects**
 
 - To clone an object, you can use `Object.assign()` or the spread operator.
@@ -946,6 +1012,8 @@ let clone2 = { ...user }; // Cloning using spread operator
 console.log(clone); // Output: { name: "Alice", age: 30 }
 console.log(clone2); // Output: { name: "Alice", age: 30 }
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **5. Nested Cloning**
 
@@ -975,6 +1043,8 @@ let clone = deepClone(user);
 console.log(clone); // Output: { name: "Alice", address: { city: "New York", country: "USA" } }
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **6. Object Methods**
 
 - Objects can have methods, which are functions that operate on the object’s properties.
@@ -989,6 +1059,8 @@ let user = {
 };
 user.greet(); // Output: "Hello, Alice!"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **7. Constructor functions**
 
@@ -1007,6 +1079,8 @@ let user2 = new User("Bob", 25);
 user1.greet(); // Output: "Hello, Alice!"
 user2.greet(); // Output: "Hello, Bob!"
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **8. Optional Chaining**
 
@@ -1043,6 +1117,8 @@ user.greet(); // Output: "Hello, Alice!"
 user.haveBirthday(); // Output: "Alice is now 31 years old."
 ```
 
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ### ✅ **2. The `this` keyword outside of a method**
 
 - If a function is called without an object, `this` will refer to the global object (or be `undefined` in strict mode).
@@ -1067,6 +1143,8 @@ user.showThis(); // Output: user object (this refers to the user object)
 let show = user.showThis;
 show(); // In non-strict mode: Window (global object), in strict mode: undefined
 ```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **3. Arrow Functions and `this`**
 
