@@ -33,10 +33,12 @@
 
 - [Skills.sh](https://skills.sh/): A platform that provides a comprehensive list of skills across various domains, including AI, programming, data science, and more. It helps users identify and learn the necessary skills for their desired career paths.
 
+
 [↑ Back to top](#using-ai-effectively)
 
 ### ✅ **Agent Team**
 
 - [BMAD](https://docs.bmad-method.org/): A framework for building and managing AI agents, providing tools and best practices for creating effective and efficient AI systems.
+- obra/superpowers: An agentic skills framework & software development methodology that works. `npx skills add obra/superpowers`
 
 [↑ Back to top](#using-ai-effectively)
