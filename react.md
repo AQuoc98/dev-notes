@@ -1,28 +1,53 @@
 # ⚛️ ReactJS Advanced Patterns & Interview Questions
 
-**Status:** 🚧 - **Last Updated:** 23th March 2026
+**Status:** 🚧 - **Last Updated:** 27th March 2026
+
+- [⚛️ ReactJS Advanced Patterns \& Interview Questions](#️-reactjs-advanced-patterns--interview-questions)
+  - [Resources](#resources)
+  - [✅ **1. What is the Virtual DOM and how does it improve performance?**](#-1-what-is-the-virtual-dom-and-how-does-it-improve-performance)
+
+## Resources
+* [React Official Docs](https://react.dev/)
+
+## ✅ **1. What is the Virtual DOM and how does it improve performance?**
+
+The **Virtual DOM (VDOM)** is a lightweight, in-memory JavaScript representation of the actual DOM. Each node is a plain object (a *React Element*) describing `type`, `props`, and `children` — no browser API calls, no layout, no paint. It allows React to efficiently update the UI by minimizing direct manipulations of the real DOM, which trigger expensive reflow and repaint.
+
+**How it works:**
+1. When a component's state or props change, React builds a new Virtual DOM tree.
+2. React compares it with the previous tree using a **reconciliation** algorithm (O(n) heuristic) to find what changed.
+3. It computes the minimal set of mutations needed to bring the real DOM in sync.
+4. Those mutations are applied in a single synchronous **commit phase**, after multiple state updates have been batched together within the same tick.
+
+**Why it improves performance:**
+
+* **Batched state updates** — multiple `setState` calls in an event handler / `Promise` / `setTimeout` (since React 18) coalesce into one render + one commit, avoiding intermediate layout thrash.
+* **Heuristic diffing — O(n) instead of O(n³)** — React assumes:
+  * Different element `type` ⇒ replace the whole subtree (no deep compare).
+  * Sibling lists are reconciled by **`key`** for stable identity across reorders.
+* **Render / commit separation (Fiber, React 16+)** — each VDOM node is backed by a **Fiber** unit of work. The render phase is **pure and interruptible**; the scheduler yields to the browser so a long render never blocks input > 5 ms. Only the commit phase touches the DOM.
+* **Concurrent rendering (React 18+)** — lanes + `startTransition` let high-priority updates (typing, hover) preempt low-priority ones (filtering a large list). Suspense and selective hydration build on the same model.
+* **Bailouts** — when `React.memo` / `useState` see `Object.is`-equal props or state, React skips the subtree entirely. **Re-render ≠ re-paint**: an empty diff produces zero DOM work.
+
+**Reconciliation by `key` — concrete example:**
+
+```jsx
+// Before
+<ul>
+  <li key="a">A</li>
+  <li key="b">B</li>
+</ul>
+
+// After
+<ul>
+  <li key="b">B</li>
+  <li key="a">A</li>
+</ul>
+```
+
+* With stable `key`s React performs **2 moves**, preserving DOM nodes, focus, and local state.
+* With **index-based** keys React mutates the text of every `<li>`, losing focus/selection and component state.
+
+[↑ Back to top](#️-reactjs-advanced-patterns--interview-questions)
 
 ---
-
-### Q1: How does the Virtual DOM work and what is "Reconciliation"?
-**Answer:**
-The **Virtual DOM (VDOM)** is a lightweight copy of the real DOM.
-1. When state changes, React creates a new VDOM tree.
-2. **Diffing Algorithm:** React compares the new VDOM with the previous one.
-3. **Reconciliation:** Instead of re-rendering the entire UI, React only updates the specific nodes that changed in the real DOM. This minimizes expensive DOM operations.
-
-### Q2: Explain the difference between `useMemo`, `useCallback`, and `React.memo`.
-**Answer:**
-- **`React.memo`:** A Higher-Order Component that prevents a functional component from re-rendering if its *props* haven't changed.
-- **`useMemo`:** Memoizes a **computed value** to avoid expensive recalculations on every render.
-- **`useCallback`:** Memoizes a **function instance** to prevent child components from re-rendering when a function is passed as a prop.
-
-### Q3: What are the main differences between `useEffect` and `useLayoutEffect`?
-**Answer:**
-- **`useEffect`:** Runs **asynchronously** after the render is committed to the screen and the browser has painted. This is the standard choice for data fetching or event listeners.
-- **`useLayoutEffect`:** Runs **synchronously** immediately after React performs all DOM mutations but *before* the browser paints. Use this only when you need to measure DOM elements (like tooltip positioning) to prevent visual flickering.
-
----
-
-### 🔥 Senior Tip:
-When answering these, always mention **Real-world Performance**. For example, explain how you used `useCallback` to optimize a heavy list or how the Event Loop knowledge helped you debug a race condition in an API call.

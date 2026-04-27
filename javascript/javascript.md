@@ -1,6 +1,6 @@
 # 🟡 JavaScript Deep Dive & Interview Questions
 
-**Status:** 🚧 - **Last Updated:** 23rd Apr 2026
+**Status:** 🚧 - **Last Updated:** 27th Apr 2026
 
 
 - [🟡 JavaScript Deep Dive \& Interview Questions](#-javascript-deep-dive--interview-questions)
@@ -17,6 +17,8 @@
     - [✅ **5. Array**](#-5-array)
     - [✅ **6. Map**](#-6-map)
     - [✅ **7. Set**](#-7-set)
+    - [✅ **8. Date \& Time**](#-8-date--time)
+    - [✅ **9. JSON**](#-9-json)
   - [Type Conversions](#type-conversions)
     - [✅ **1. String Conversion**](#-1-string-conversion)
     - [✅ **2. Numberic Conversion**](#-2-numberic-conversion)
@@ -55,8 +57,11 @@
     - [✅ **1. Function Declaration**](#-1-function-declaration)
     - [✅ **2. Function Expression**](#-2-function-expression)
     - [✅ **3. Arrow Function**](#-3-arrow-function)
-    - [✅ **4. Local and Global Variables**](#-4-local-and-global-variables)
+    - [✅ **4. Variable scope, Closures**](#-4-variable-scope-closures)
     - [✅ **5. Callback Functions**](#-5-callback-functions)
+    - [✅ **6. Recursive Functions**](#-6-recursive-functions)
+    - [✅ **7. Rest parameters and spread syntax**](#-7-rest-parameters-and-spread-syntax)
+    - [✅ **8. setInterval and setTimeout**](#-8-setinterval-and-settimeout)
   - [Objects](#objects)
     - [✅ **1. The basics**](#-1-the-basics)
     - [✅ **2. Object References and Copies**](#-2-object-references-and-copies)
@@ -70,35 +75,39 @@
     - [✅ **1. The `this` keyword in a method**](#-1-the-this-keyword-in-a-method)
     - [✅ **2. The `this` keyword outside of a method**](#-2-the-this-keyword-outside-of-a-method)
     - [✅ **3. Arrow Functions and `this`**](#-3-arrow-functions-and-this)
-  - [Pagination Flow](#pagination-flow)
-    - [✅ **1. Common pagination strategies**](#-1-common-pagination-strategies)
-    - [✅ **2. Pagination flow (step-by-step)**](#-2-pagination-flow-step-by-step)
-    - [✅ **3. Example 1 — Frontend-only pagination (data already in memory)**](#-3-example-1--frontend-only-pagination-data-already-in-memory)
-    - [✅ **4. Example 2 — Fetching paginated data from the backend (offset)**](#-4-example-2--fetching-paginated-data-from-the-backend-offset)
-    - [✅ **5. Example 3 — Cursor-based pagination (infinite scroll)**](#-5-example-3--cursor-based-pagination-infinite-scroll)
-    - [✅ **6. Example 4 — Backend pagination logic (Node/Express)**](#-6-example-4--backend-pagination-logic-nodeexpress)
-    - [✅ **7. Best practices \& gotchas**](#-7-best-practices--gotchas)
+    - [✅ **4. Function `this` binding**](#-4-function-this-binding)
+  - [Class](#class)
+    - [✅ **1. Syntax**](#-1-syntax)
+    - [✅ **2. Class Inheritance**](#-2-class-inheritance)
+    - [✅ **3. Static properties and methods**](#-3-static-properties-and-methods)
+    - [✅ **4. Private and protected properties and methods**](#-4-private-and-protected-properties-and-methods)
+  - [Error Handling](#error-handling)
+    - [✅ **1. Try...catch...finally**](#-1-trycatchfinally)
+    - [✅ **2. Custom Error Classes**](#-2-custom-error-classes)
+  - [Asynchronous Programming](#asynchronous-programming)
+    - [✅ **1. JS FLow**](#-1-js-flow)
+    - [✅ **2. Callbacks**](#-2-callbacks)
+    - [✅ **3. Promises**](#-3-promises)
+    - [✅ **4. Promise API**](#-4-promise-api)
+    - [✅ **5. Async/Await**](#-5-asyncawait)
+  - [Export and Import](#export-and-import)
+    - [✅ **1. Named Export**](#-1-named-export)
+    - [✅ \*\*2. Import `*` \*\*](#-2-import--)
+    - [✅ **3. Default Export**](#-3-default-export)
+  - [Interview Questions](#interview-questions)
 
 ## The Modern Mode: "use strict"
 
 ### ✅ **1. What is Strict Mode in JavaScript and why should we use it?**
 
-Strict Mode is a way to opt into a restricted version of JavaScript by adding:
+* Strict Mode is a way to opt into a restricted version of JavaScript by adding `"use strict";` at the top of a file or function.
 
-```js
-"use strict";
-```
-at the top of a file or function.
-
-It helps developers write safer, cleaner, and more predictable code by:
-
-* Preventing accidental global variables
-* Throwing errors for silent bugs (e.g., assigning to non-writable properties)
-* Disallowing duplicate parameter names
-* Making `this` behavior more predictable
-* Restricting some unsafe or deprecated features
-
-👉 **Example:**
+* It helps developers write safer, cleaner, and more predictable code by:
+  * Preventing accidental global variables
+  * Throwing errors for silent bugs (e.g., assigning to non-writable properties)
+  * Disallowing duplicate parameter names
+  * Making `this` behavior more predictable
+  * Restricting some unsafe or deprecated features
 
 ```js
 "use strict";
@@ -106,20 +115,23 @@ It helps developers write safer, cleaner, and more predictable code by:
 x = 10; // ❌ ReferenceError (instead of creating global variable)
 ```
 
-Without strict mode, `x` would silently become a global variable — which is dangerous.
-
-📌 **Why it matters (senior-level insight):**
-Strict mode helps engines optimize code better and avoids legacy JS pitfalls, making it essential for large-scale applications.
-
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ---
 
 ### ✅ **2. How does `this` behave differently in Strict Mode?**
 
-In Strict Mode, the value of `this` is not automatically bound to the global object.
+* Non-strict mode: `this` defaults to `window` (or global object)
 
-👉 **Example:**
+```js
+function test() {
+  console.log(this);
+}
+
+test(); // window (in browser)
+```
+
+* Strict mode: `this` is `undefined` unless explicitly set**
 
 ```js
 "use strict";
@@ -128,27 +140,8 @@ function test() {
   console.log(this);
 }
 
-test(); // ✅ ❌ undefined
+test(); // undefined
 ```
-
-Without strict mode:
-
-```js
-function test() {
-  console.log(this);
-}
-
-test(); // ✅ ✅ window (in browser)
-```
-
-📝 **Key difference:**
-- Non-strict mode: `this` defaults to `window` (or global object)
-- Strict mode: `this` is `undefined` unless explicitly set
-
-📌 **Why this is important:**
-- Prevents accidental access to the global object
-- Makes function behavior more predictable
-- Avoids bugs in large codebases
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
@@ -170,9 +163,8 @@ test(); // ✅ ✅ window (in browser)
 
 ---
 
-📝 **Key explanations (what makes you stand out)**
-
 **1. Scope difference**
+
 ```js
 {
   var a = 1;
@@ -183,20 +175,25 @@ console.log(b); // ❌ ReferenceError
 ```
 
 **2. Temporal Dead Zone (TDZ)**
+
 ```js
 console.log(x); // ❌ ReferenceError
 let x = 10;
 ```
-`let` and `const` exist in a TDZ from the start of the block until declaration.
 
-**3. `const` is NOT immutable (important trick question)**
+* `let` and `const` exist in a TDZ from the start of the block until declaration.
+
+**3. `const` is NOT immutable**
+
 ```js
 const obj = { name: "A" };
 obj.name = "B"; // ✅ allowed
 ```
+
 👉 `const` prevents reassignment, not mutation of objects.
 
 **4. Classic `var` bug (closure issue)**
+
 ```js
 for (var i = 0; i < 3; i++) {
   setTimeout(() => console.log(i), 100);
@@ -217,28 +214,28 @@ for (let i = 0; i < 3; i++) {
 
 ### ✅ **1. How many data types in JS?**
 
-There are 8 basic data types in JavaScript.
+**There are 8 basic data types in JavaScript.**
 
-**Seven primitive data types:**
-- `number` for numbers of any kind: integer or floating-point, integers are limited by ±(253-1).
-- `bigint` for integer numbers of arbitrary length.
-- `string` for strings. A string may have zero or more characters, there’s no separate single-character type.
-- `boolean` for true/false.
-- `null` for unknown values – a standalone type that has a single value null.
-- `undefined` for unassigned values – a standalone type that has a single value undefined.
-- `symbol` for unique identifiers.
+* Seven primitive data types:
+  * `number` for numbers of any kind: integer or floating-point, integers are limited by ±(253-1).
+  * `bigint` for integer numbers of arbitrary length.
+  * `string` for strings. A string may have zero or more characters, there’s no separate single-character type.
+  * `boolean` for true/false.
+  * `null` for unknown values – a standalone type that has a single value null.
+  * `undefined` for unassigned values – a standalone type that has a single value undefined.
+  * `symbol` for unique identifiers.
 
-**one non-primitive data type:**
-- `object` for more complex data structures.
+* one non-primitive data type:
+  * `object` for more complex data structures.
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **2. How to see which type is stored in variable?**
 
-The `typeof` operator allows us to see which type is stored in a variable.
+**The `typeof` operator allows us to see which type is stored in a variable.**
 
-- Returns a string with the name of the type, like "string".
-- For null returns "object" – this is an error in the language, it’s not actually an object.
+* Returns a string with the name of the type, like "string".
+* For null returns "object" – this is an error in the language, it’s not actually an object.
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
@@ -247,6 +244,7 @@ The `typeof` operator allows us to see which type is stored in a variable.
 * The `number` type represents both integer and floating point numbers.
 
 * `NaN` represents a computational error
+
 ```js
 console.log("not a number" / 2); // NaN, such division is erroneous
 console.log(NaN + 1); // NaN
@@ -255,7 +253,8 @@ console.log(3 * NaN); // NaN
 
 * The common methods for numbers: [number methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number), [math methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math)
 
-* Why `0.1 + 0.2 != 0.3` --> Due to the way numbers are represented in binary (IEEE 754), some decimal fractions cannot be represented exactly, leading to precision issues.
+* Why `0.1 + 0.2 != 0.3` --> Due to the way numbers are represented in binary
+
 ```js
 console.log(0.1 + 0.2); // 0.30000000000000004
 ```
@@ -266,7 +265,7 @@ console.log(0.1 + 0.2); // 0.30000000000000004
 
 * In JavaScript, there are 3 types of quotes.
 ```js
-// Dobule quotes
+// Double quotes
 let str1 = "Hello";
 
 // Single quotes
@@ -286,7 +285,7 @@ let str = "Hello\nWorld"; // Newline character
 console.log(str);
 ```
 
-* Other sepcial characters include: `\n` (newline), `\t` (tab), `\\` (backslash), `\'` (single quote), `\"` (double quote).
+* Other special characters include: `\n` (newline), `\t` (tab), `\\` (backslash), `\'` (single quote), `\"` (double quote).
 
 * Common string methods: [string methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#methods)
 
@@ -435,6 +434,43 @@ mySet.clear();
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
+### ✅ **8. Date & Time**
+
+* Common Date methods: [date methods](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#methods)
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **9. JSON**
+
+* JSON.stringify() converts a JavaScript object or value to a JSON string.
+```js
+let obj = { name: "Alice", age: 30 };
+let jsonString = JSON.stringify(obj);
+console.log(jsonString); // '{"name":"Alice","age":30}'
+```
+
+* JSON.parse() parses a JSON string, constructing the JavaScript value or object described by the string.
+```js
+let jsonString = '{"name":"Alice","age":30}';
+let obj = JSON.parse(jsonString);
+console.log(obj); // { name: "Alice", age: 30 }
+```
+
+* toJSON() method of an object is called by JSON.stringify() when converting the object to a JSON string. It allows you to customize the JSON representation of an object.
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  toJSON() {
+    return { name: this.name }; // Only include the name in the JSON output
+  }
+};
+let jsonString = JSON.stringify(user);
+console.log(jsonString); // '{"name":"Alice"}'
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
 ## Type Conversions
 
 ### ✅ **1. String Conversion**
@@ -517,8 +553,8 @@ console.log( Boolean("") ); // false
 ```
 
 The conversion rules:
-- `0`, `null`, `undefined`, `NaN`, and `""` (empty string) become `false`.
-- All other values become `true`.
+* `0`, `null`, `undefined`, `NaN`, and `""` (empty string) become `false`.
+* All other values become `true`.
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
@@ -549,11 +585,11 @@ console.log( +apples + +oranges ); // 5
 
 ### ✅ **1. What is the `unary`, `binary`, and `operand` operator?**
 
-- **Operand:** An operand is a value or variable on which an operator acts.
-  - In the expression `5 + 3`, the numbers `5` and `3` are operands, and `+` is the operator.
-  - In `x++`, `x` is the operand, `++` is the operator.
+* **Operand:** An operand is a value or variable on which an operator acts.
+  * In the expression `5 + 3`, the numbers `5` and `3` are operands, and `+` is the operator.
+  * In `x++`, `x` is the operand, `++` is the operator.
 
-- **Unary operator:** Operates on a single operand.
+* **Unary operator:** Operates on a single operand.
 ```js
 let x = 1;
 
@@ -561,7 +597,7 @@ x = -x;
 alert( x ); // -1, unary negation was applied
 ```
 
-- **Binary operator:** Operates on two operands.
+* **Binary operator:** Operates on two operands.
 ```js
 let x = 1, y = 3;
 alert( y - x ); // 2, binary minus subtracts values
@@ -571,18 +607,18 @@ alert( y - x ); // 2, binary minus subtracts values
 
 ### ✅ **2. Maths**
 
-- `+` Addition
-- `-` Subtraction
-- `*` Multiplication
-- `/` Division
-- `%` Remainder: The result of a % b is the remainder of the integer division of a by b.
+ * `+` Addition
+ * `-` Subtraction
+ * `*` Multiplication
+ * `/` Division
+ * `%` Remainder: The result of a % b is the remainder of the integer division of a by b.
 
 ```js
 console.log( 5 % 2 ); // 1, the remainder of 5 divided by 2
 console.log( 8 % 3 ); // 2, the remainder of 8 divided by 3
 console.log( 8 % 4 ); // 0, the remainder of 8 divided by 4
 ```
-- `**` Exponentiation: a ** b is a to the power of b, i.e., a multiplied by itself b times.
+ * `**` Exponentiation: a ** b is a to the power of b, i.e., a multiplied by itself b times.
 
 ```js
 console.log( 2 ** 2 ); // 2² = 4
@@ -1027,7 +1063,7 @@ console.log(greet("Bob")); // Output: "Hello, Bob!"
 
 ### ✅ **3. Arrow Function**
 
-- An arrow function is a shorter syntax for writing function expressions, and it does not have its own `this` context.
+* Do not have their own `this`, `arguments`, `super`, or `new.target` bindings. They are best suited for non-method functions, and they cannot be used as constructors.
 
 ```js
 const greet = (name) => {
@@ -1036,8 +1072,6 @@ const greet = (name) => {
 console.log(greet("Charlie")); // Output: "Hello, Charlie!"
 ```
 
-- If the function body contains only a single expression, you can omit the braces and the `return` keyword.
-
 ```js
 const greet = name => "Hello, " + name + "!";
 console.log(greet("Dave")); // Output: "Hello, Dave!"
@@ -1045,9 +1079,9 @@ console.log(greet("Dave")); // Output: "Hello, Dave!"
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-### ✅ **4. Local and Global Variables**
+### ✅ **4. Variable scope, Closures**
 
-- Variables declared inside a function are local to that function and cannot be accessed outside of it.
+* Variables declared inside a function are local to that function and cannot be accessed outside of it.
 
 ```js
 function myFunction() {
@@ -1058,7 +1092,7 @@ myFunction();
 console.log(localVar); // ❌ ReferenceError: localVar is not defined
 ```
 
-- Variables declared outside of any function are global and can be accessed from anywhere in the code.
+* Variables declared outside of any function are global and can be accessed from anywhere in the code.
 
 ```js
 let globalVar = "I am global";
@@ -1069,11 +1103,25 @@ myFunction();
 console.log(globalVar); // Output: "I am global"
 ```
 
+* Closures are created when a function is defined inside another function and has access to the outer function's variables.
+
+```js
+function outerFunction() {
+  let outerVar = "I am from the outer function";
+  function innerFunction() {
+    console.log(outerVar); // Output: "I am from the outer function"
+  }
+  return innerFunction;
+}
+const closure = outerFunction();
+closure(); // Output: "I am from the outer function"
+```
+
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
 ### ✅ **5. Callback Functions**
 
-- A callback function is a function that is passed as an argument to another function and is executed after some operation has been completed.
+* A callback function is a function that is passed as an argument to another function and is executed after some operation has been completed.
 
 ```js
 function fetchData(callback) {
@@ -1086,6 +1134,113 @@ function fetchData(callback) {
 fetchData((result) => {
   console.log(result); // Output: "Data fetched" after 1 second
 });
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **6. Recursive Functions**
+
+* A recursive function is a function that calls itself in order to solve a problem.
+
+```js
+function factorial(n) {
+  if (n === 0) {
+    return 1; // Base case: factorial of 0 is 1
+  }
+  return n * factorial(n - 1); // Recursive case: n! = n * (n - 1)!
+}
+console.log(factorial(5)); // Output: 120
+```
+
+* Recursive functions must have a base case to prevent infinite recursion.
+
+```js
+function countDown(n) {
+  if (n <= 0) {
+    console.log("Done!"); // Base case: when n is 0 or negative
+    return;
+  }
+  console.log(n); // Recursive case: print n and call countDown with n - 1
+  countDown(n - 1);
+}
+countDown(5); // Output: 5, 4, 3, 2, 1, "Done!"
+```
+
+* Tail recursion is a special case of recursion where the recursive call is the last operation in the function. Tail recursion can be optimized by the JavaScript engine to prevent stack overflow.
+
+```js
+function tailRecursiveFactorial(n, acc = 1) {
+  if (n === 0) {
+    return acc; // Base case: return the accumulated result
+  }
+  return tailRecursiveFactorial(n - 1, n * acc); // Recursive case: pass the accumulated result
+}
+console.log(tailRecursiveFactorial(5)); // Output: 120
+```
+
+* Iterative solutions can often be used as an alternative to recursion, especially when dealing with large inputs that may cause stack overflow.
+
+```js
+function iterativeFactorial(n) {
+  let result = 1;
+  for (let i = 1; i <= n; i++) {
+    result *= i; // Multiply result by i for each number from 1 to n
+  }
+  return result;
+}
+console.log(iterativeFactorial(5)); // Output: 120
+```
+
+* Recursive functions can be more elegant and easier to understand for certain problems, such as tree traversal or combinatorial problems, while iterative solutions may be more efficient for simple loops or when performance is a concern.
+
+* When using recursion, it's important to consider the maximum call stack size and potential performance issues, especially for deep recursion. Tail recursion optimization can help mitigate these issues in some cases.
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **7. Rest parameters and spread syntax**
+
+* Rest parameters allow a function to accept an indefinite number of arguments as an array.
+
+```js
+function sum(...numbers) {
+  return numbers.reduce((total, num) => total + num, 0); // Sum all numbers in the array
+}
+console.log(sum(1, 2, 3)); // Output: 6
+console.log(sum(4, 5)); // Output: 9
+```
+
+* Spread syntax allows an iterable (like an array) to be expanded in places where zero or more arguments are expected.
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, 6];
+const combined = [...arr1, ...arr2]; // Combine two arrays using spread syntax
+console.log(combined); // Output: [1, 2, 3, 4, 5, 6]
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **8. setInterval and setTimeout**
+
+* `setTimeout` is used to execute a function after a specified delay.
+
+```js
+setTimeout(() => {
+  console.log("This message is displayed after 2 seconds");
+}, 2000);
+```
+
+* `setInterval` is used to execute a function repeatedly at specified intervals.
+
+```js
+const intervalId = setInterval(() => {
+  console.log("This message is displayed every 3 seconds");
+}, 3000);
+// To stop the interval after some time
+setTimeout(() => {
+  clearInterval(intervalId);
+  console.log("Interval stopped");
+}, 10000); // Stop after 10 seconds
 ```
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
@@ -1279,7 +1434,7 @@ console.log(user.contact?.email); // Output: undefined (instead of throwing an e
 
 ### ✅ **1. The `this` keyword in a method**
 
-- The `this` keyword in a method refers to the object it belongs to, allowing access to its properties and other methods.
+* The `this` keyword in a method refers to the object it belongs to, allowing access to its properties and other methods.
 
 ```js
 let user = {
@@ -1301,7 +1456,7 @@ user.haveBirthday(); // Output: "Alice is now 31 years old."
 
 ### ✅ **2. The `this` keyword outside of a method**
 
-- If a function is called without an object, `this` will refer to the global object (or be `undefined` in strict mode).
+* If a function is called without an object, `this` will refer to the global object (or be `undefined` in strict mode).
 
 ```js
 function showThis() {
@@ -1310,7 +1465,7 @@ function showThis() {
 showThis(); // In non-strict mode: Window (global object), in strict mode: undefined
 ```
 
-- It can be used in any function, but its value depends on how the function is called.
+* It can be used in any function, but its value depends on how the function is called.
 
 ```js
 let user = {
@@ -1328,7 +1483,7 @@ show(); // In non-strict mode: Window (global object), in strict mode: undefined
 
 ### ✅ **3. Arrow Functions and `this`**
 
-- Arrow functions do not have their own `this` context; they inherit `this` from the surrounding scope.
+* Arrow functions do not have their own `this` context; they inherit `this` from the surrounding scope.
 
 ```js
 let user = {
@@ -1342,407 +1497,693 @@ user.showThis(); // Output: Window (global object) or undefined (in strict mode)
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
+### ✅ **4. Function `this` binding**
 
-## Pagination Flow
+* Solution 1: a wrapper
 
-Pagination splits a large dataset into smaller, manageable "pages" so the client fetches and renders only a slice at a time. This improves performance, reduces memory/bandwidth usage, and gives users a better experience.
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  }
+};
+setTimeout(function() {
+  user.greet(); // Output: "Hello, Alice!" (using the wrapper to maintain the correct `this`)
+}, 1000);
+```
 
-### ✅ **1. Common pagination strategies**
+* Solution 2: `bind`
 
-| Strategy           | How it works                                                           | Pros                                        | Cons                                             | Best for                      |
-| ------------------ | ---------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------ | ----------------------------- |
-| Offset / Page      | `?page=2&limit=20` — `OFFSET = (page-1)*limit`                         | Simple, can jump to any page, shows totals  | Slow on large tables, duplicates if data changes | Admin tables, small datasets  |
-| Cursor / Keyset    | `?cursor=<id_or_timestamp>&limit=20` — `WHERE id > cursor ORDER BY id` | Fast at scale, stable under inserts         | No random page jump, needs a stable sort key     | Feeds, chat, infinite scroll  |
-| Infinite Scroll    | UI on top of cursor/offset — fetch next page on scroll                 | Smooth UX, mobile-friendly                  | Hard to deep-link, accessibility concerns        | Social feeds, image galleries |
-| Load More Button   | UI on top of cursor/offset — user clicks to fetch next page            | Explicit, accessible                        | More clicks                                      | News, search results          |
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  }
+};
+setTimeout(user.greet.bind(user), 1000); // Output: "Hello, Alice!" (binding `this` to the user object)
+```
+
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-### ✅ **2. Pagination flow (step-by-step)**
 
-1. **Client initializes state** — `page = 1` (or `cursor = null`), `limit = 20`, `items = []`, `hasMore = true`, `loading = false`.
-2. **Request data** — call `GET /api/items?page=1&limit=20` (or `?cursor=...`).
-3. **Server responds** — returns `{ data, total, nextCursor, hasMore }`.
-4. **Client updates state** — append (infinite) or replace (numbered pages) `items`; store `nextCursor`/`page`; toggle `hasMore`.
-5. **Render** — show the list + pagination controls or a sentinel for intersection observer.
-6. **Next page trigger** — user clicks "Next", clicks a page number, or scrolls near the bottom.
-7. **Guard** — skip if `loading` or `!hasMore`; show spinner; handle errors and retry.
-8. **Repeat** from step 2 with the new `page`/`cursor`.
+## Class
 
+### ✅ **1. Syntax**
+
+* Basic class syntax:
+
+```js
+class User {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  }
+}
+
+// Usage
+const user1 = new User("Alice", 30);
+user1.greet(); // Output: "Hello, Alice!"
 ```
-┌────────┐  request(page/cursor)   ┌──────────┐
-│ Client ├────────────────────────►│  Server  │
-│ state  │◄────────────────────────┤  DB      │
-└────────┘   { data, nextCursor }  └──────────┘
-     │
-     ├─ append/replace items
-     ├─ update cursor / page
-     ├─ render list + controls
-     └─ on "next" or scroll → repeat
+
+* Class expressions
+
+```js
+const User = class {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+  greet() {
+    console.log("Hello, " + this.name + "!");
+  }
+};
+const user2 = new User("Bob", 25);
+user2.greet(); // Output: "Hello, Bob!"
 ```
 
-**Worked example — tracing the flow for a "Users" table**
+* Getters and setters
 
-Scenario: a dataset of **137 users**, `limit = 10`, `totalPages = Math.ceil(137 / 10) = 14`. The user opens the page, clicks **Next**, then clicks page **5**.
+```js
+class User {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+  get info() {
+    return `${this.name} is ${this.age} years old.`;
+  }
+  set info(value) {
+    const [name, age] = value.split(" is ");
+    this.name = name;
+    this.age = parseInt(age);
+  }
+}
 
-**What happens, step by step**
+const user3 = new User("Charlie", 35);
+console.log(user3.info); // Output: "Charlie is 35 years old."
+user3.info = "Dave is 40 years old.";
+console.log(user3.info); // Output: "Dave is 40 years old."
+```
 
-| Step | User action                | State transition                                        | Network                              | DOM                                  |
-| ---- | -------------------------- | ------------------------------------------------------- | ------------------------------------ | ------------------------------------ |
-| 1    | Page opens (no `?page`)    | `page=1, loading=true, reqId=1`                         | `GET /api/users?page=1&limit=10`     | "Loading…"                           |
-| 2    | Response arrives           | `items=[u1..u10], totalPages=14, loading=false`         | —                                    | Rows 1–10 + `[1] 2 3 … 14`           |
-| 3    | User clicks **Next**       | `goTo(2)` → pushes `?page=2`, `reqId=2`, `loading=true` | `GET /api/users?page=2&limit=10`     | "Loading…"                           |
-| 4    | Response arrives           | `items=[u11..u20], page=2`                              | —                                    | Rows 11–20 + `1 [2] 3 … 14`          |
-| 5    | User quickly clicks **5**  | `goTo(5)` → aborts req #2, `reqId=3`                    | Abort old, `GET ...?page=5&limit=10` | "Loading…"                           |
-| 6    | Stale res #2 resolves late | `myReqId (2) !== state.reqId (3)` → dropped             | —                                    | No change                            |
-| 7    | Res #3 arrives             | `items=[u41..u50], page=5`                              | —                                    | Rows 41–50 + `1 … 4 [5] 6 … 14`      |
-| 8    | User hits browser **Back** | `popstate` → reads `page=2` from URL → `loadPage(2)`    | `GET /api/users?page=2&limit=10`     | Rows 11–20 + `1 [2] 3 … 14`          |
+* Computed names [...]
+
+```js
+class User {
+  ['say' + 'Hi']() {
+    alert("Hello");
+  }
+}
+
+new User().sayHi(); // Output: "Hello"
+```
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-### ✅ **3. Example 1 — Frontend-only pagination (data already in memory)**
+### ✅ **2. Class Inheritance**
 
-Use when the dataset is small (≤ a few hundred rows) and already loaded on the client. All pagination logic runs locally — no network on page change.
+* Basic inheritance using `extends` and `super`
 
-```html
-<ul id="list"></ul>
-<nav id="pagination" aria-label="Pagination"></nav>
+```js
+class Animal {
+
+  constructor(name) {
+    this.speed = 0;
+    this.name = name;
+  }
+
+  run(speed) {
+    this.speed = speed;
+    alert(`${this.name} runs with speed ${this.speed}.`);
+  }
+
+  stop() {
+    this.speed = 0;
+    alert(`${this.name} stands still.`);
+  }
+
+}
+
+class Rabbit extends Animal {
+  constructor(name, earLength) {
+    super(name);
+    this.earLength = earLength;
+  }
+
+  hide() {
+    alert(`${this.name} hides!`);
+  }
+
+  stop() {
+    super.stop(); // call parent stop
+    this.hide(); // and then hide
+  }
+}
+
+let rabbit = new Rabbit("White Rabbit", 10);
+
+console.log(rabbit.name); // Output: "White Rabbit"
+console.log(rabbit.earLength); // Output: 10
+
+rabbit.run(5); // White Rabbit runs with speed 5.
+rabbit.stop(); // White Rabbit stands still. White Rabbit hides!
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **3. Static properties and methods**
+
+* Static methods are called on the class itself, not on instances of the class.
+
+```js
+class User {
+  static compare(userA, userB) {
+    return userA.age - userB.age; // Compare ages of two users
+  }
+}
+
+const user1 = { name: "Alice", age: 30 };
+const user2 = { name: "Bob", age: 25 };
+console.log(User.compare(user1, user2)); // Output: 5 (user1 is older than user2)
+```
+
+* Static properties are properties that belong to the class itself, rather than to instances of the class.
+
+```js
+class User {
+  static count = 0; // Static property to keep track of the number of users
+
+  constructor(name) {
+    this.name = name;
+    User.count++; // Increment the count whenever a new user is created
+  }
+}
+
+const user1 = new User("Alice");
+const user2 = new User("Bob");
+console.log(User.count); // Output: 2 (two users have been created)
+```
+
+* Inheritance of static methods and properties
+
+```js
+class Animal {
+  static kingdom = "Animalia"; // Static property
+  static classify() {
+    return "This is an animal."; // Static method
+  }
+}
+
+class Dog extends Animal {}
+
+console.log(Dog.kingdom); // Output: "Animalia" (inherited static property)
+console.log(Dog.classify()); // Output: "This is an animal." (inherited static method)
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **4. Private and protected properties and methods**
+
+* In javascript, there are two types of object properties: public and private. Public properties can be accessed from outside the class, while private properties can only be accessed from within the class.
+
+* Protected properties are usually prefixed with an underscore _
+
+```js
+class CoffeeMachine {
+  _waterAmount = 0;
+
+  set waterAmount(value) {
+    if (value < 0) {
+      value = 0;
+    }
+    this._waterAmount = value;
+  }
+
+  get waterAmount() {
+    return this._waterAmount;
+  }
+
+  constructor(power) {
+    this._power = power;
+  }
+
+}
+
+// create the coffee machine
+let coffeeMachine = new CoffeeMachine(100);
+
+// add water
+coffeeMachine.waterAmount = -10; // _waterAmount will become 0, not -10
 ```
 
 ```js
-// ── Source data (pretend this came from one initial fetch) ───────
-const data = Array.from({ length: 53 }, (_, i) => ({ id: i + 1, name: `Item ${i + 1}` }));
+class CoffeeMachine {
+  // ...
 
-const ITEMS_PER_PAGE = 5;
-let currentPage = 1;
-
-// ── Pure helpers ─────────────────────────────────────────────────
-function getPageData(data, page, size) {
-  const start = (page - 1) * size;
-  return data.slice(start, start + size); // endIndex = start + size
-}
-
-function getPageNumbers(totalPages, currentPage, delta = 2) {
-  const pages = [];
-  const left = currentPage - delta;
-  const right = currentPage + delta;
-
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= left && i <= right)) pages.push(i);
+  constructor(power) {
+    this._power = power;
   }
 
-  // Insert "..." in gaps
-  const result = [];
-  let prev = null;
-  for (const p of pages) {
-    if (prev && p - prev > 1) result.push("...");
-    result.push(p);
-    prev = p;
+  get power() {
+    return this._power;
   }
-  return result;
-  // Example: getPageNumbers(20, 10) → [1, "...", 8, 9, 10, 11, 12, "...", 20]
+
 }
 
-// ── Render ───────────────────────────────────────────────────────
-function render() {
-  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
-  const pageData = getPageData(data, currentPage, ITEMS_PER_PAGE);
+// create the coffee machine
+let coffeeMachine = new CoffeeMachine(100);
 
-  document.getElementById("list").innerHTML =
-    pageData.map(item => `<li>${item.name}</li>`).join("");
+alert(`Power is: ${coffeeMachine.power}W`); // Power is: 100W
 
-  const pages = getPageNumbers(totalPages, currentPage);
-  document.getElementById("pagination").innerHTML = [
-    `<button data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>← Prev</button>`,
-    ...pages.map(p =>
-      p === "..."
-        ? `<span>…</span>`
-        : `<button data-page="${p}" ${p === currentPage ? 'aria-current="page"' : ""}>${p}</button>`
-    ),
-    `<button data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Next →</button>`,
-  ].join(" ");
+coffeeMachine.power = 25; // Error (no setter)
+```
+
+* Private properties and methods can be defined using the `#` syntax, which makes them truly private and inaccessible from outside the class.
+
+```js
+class CoffeeMachine {
+
+  #waterAmount = 0;
+
+  get waterAmount() {
+    return this.#waterAmount;
+  }
+
+  set waterAmount(value) {
+    if (value < 0) value = 0;
+    this.#waterAmount = value;
+  }
 }
 
-// ── Controller ───────────────────────────────────────────────────
-function goTo(page) {
-  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
-  if (page < 1 || page > totalPages) return; // guard
-  currentPage = page;
-  render();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+let machine = new CoffeeMachine();
+
+machine.waterAmount = 100;
+alert(machine.#waterAmount); // Error
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+## Error Handling
+
+### ✅ **1. Try...catch...finally**
+
+* The `try...catch...finally` statement allows you to handle errors gracefully in your code.
+
+```js
+try {
+   // run this code
+  let result = riskyOperation();
+  console.log(result);
+} catch (error) {
+  // if an error happened, then jump here
+  // err is the error object
+  console.error("An error occurred:", error);
+} finally {
+  // do in any case after try/catch
+  console.log("This will always be executed.");
+}
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **2. Custom Error Classes**
+
+* Extending the built-in `Error` class allows you to create custom error types with specific properties and methods.
+* Custom error classes can also include additional properties or methods to provide more context about the error.
+
+```js
+class ValidationError extends Error {
+  constructor(message, field) {
+    super(message); // Call the parent constructor with the message
+    this.name = "ValidationError"; // Set the error name to the class name
+    this.field = field; // Additional property to indicate which field caused the error
+  }
 }
 
-document.getElementById("pagination").addEventListener("click", e => {
-  const p = Number(e.target.dataset.page);
-  if (p) goTo(p);
+function validateUser(user) {
+  if (!user.name) {
+    throw new ValidationError("Name is required", "name"); // Throw a custom error if validation fails
+  }
+  return true; // Return true if validation passes
+}
+
+try {
+  validateUser({}); // This will throw a ValidationError
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error("Validation error:", error.message); // Handle validation errors specifically
+    console.error("Field causing error:", error.field); // Log the field that caused the error
+  } else {
+    console.error("Unknown error:", error); // Handle other types of errors
+  }
+}
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+## Asynchronous Programming
+
+### ✅ **1. JS FLow**
+
+* https://jsflow.info/
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **2. Callbacks**
+
+* A callback is a function passed as an argument to another function, which is then invoked inside the outer function to complete some kind of routine or action.
+
+```js
+function fetchData(callback) {
+  setTimeout(() => {
+    const data = "Data fetched";
+    callback(data); // Call the callback function with the fetched data
+  }, 1000);
+}
+
+fetchData((result) => {
+  console.log(result); // Output: "Data fetched" after 1 second
+});
+```
+
+* Callbacks can lead to "**callback hell**" when there are multiple nested callbacks, making the code difficult to read and maintain.
+
+```js
+doSomething(function(result) {
+  doSomethingElse(result, function(newResult) {
+    doThirdThing(newResult, function(finalResult) {
+      console.log("Got the final result: " + finalResult);
+    });
+  });
+});
+```
+
+* **Handling errors** in callbacks can be tricky, as you need to check for errors at each level of the callback chain.
+
+```js
+function fetchData(callback) {
+  setTimeout(() => {
+    const error = null; // Simulate an error
+    const data = "Data fetched";
+    callback(error, data); // Pass error as the first argument
+  }, 1000);
+}
+
+fetchData((error, result) => {
+  if (error) {
+    console.error("Error fetching data:", error); // Handle the error
+  } else {
+    console.log(result); // Output: "Data fetched" after 1 second
+  }
+});
+```
+
+### ✅ **3. Promises**
+
+* A Promise is an object that represents the eventual completion (or failure) of an asynchronous operation and its resulting value.
+
+```js
+function fetchData() {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const data = "Data fetched";
+      resolve(data); // Resolve the promise with the fetched data
+    }, 1000);
+  });
+}
+
+fetchData()
+  .then(result => {
+    console.log(result); // Output: "Data fetched" after 1 second
+  })
+  .catch(error => {
+    console.error("Error fetching data:", error); // Handle any errors that occur
+  })
+  .finally(() => {
+    console.log("Fetch attempt completed."); // This will always be executed
+  })
+```
+
+* **Promise chaining** allows you to perform a sequence of asynchronous operations in a more readable and maintainable way.
+
+```js
+function fetchData() {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const data = "Data fetched";
+      resolve(data); // Resolve the promise with the fetched data
+    }, 1000);
+  });
+}
+
+function processData(data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const processedData = "Processed data";
+      resolve(processedData); // Resolve the promise with the processed data
+    }, 1000);
+  });
+}
+
+fetchData()
+  .then(result => {
+    console.log(result); // Output: "Data fetched"
+    return processData(result); // Return a new promise for the next operation
+  })
+  .then(processedResult => {
+    console.log(processedResult); // Output: "Processed data"
+  })
+  .catch(error => {
+    console.error("Error:", error); // Handle any errors that occur in the chain
+  });
+```
+
+* **Error handling** in promises is more straightforward, as you can use a single `.catch()` at the end of the chain to handle any errors that occur in any of the promises.
+
+```js
+fetchData()
+  .then(result => {
+    console.log(result); // Output: "Data fetched"
+    return processData(result); // Return a new promise for the next operation
+  })
+  .then(processedResult => {
+    console.log(processedResult); // Output: "Processed data"
+  })
+  .catch(error => {
+    console.error("Error:", error); // Handle any errors that occur in the chain
+  })
+  .finally(() => {
+    console.log("Fetch attempt completed."); // This will always be executed
+  });
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **4. Promise API**
+
+* **Promise.all()** waits for all promises to resolve and returns an array of their results. If any of the given promises rejects, it becomes the error of Promise.all, and all other results are ignored.
+
+```js
+const promise1 = Promise.resolve("First promise");
+const promise2 = new Promise((resolve) => setTimeout(() => resolve("Second promise"), 1000));
+const promise3 = Promise.resolve("Third promise");
+
+Promise.all([promise1, promise2, promise3])
+  .then(results => {
+    console.log(results); // Output: ["First promise", "Second promise", "Third promise"]
+  })
+  .catch(error => {
+    console.error("Error:", error); // Handle any errors that occur in any of the promises
+  });
+```
+
+* **Promise.allSettled()** waits for all promises to settle (either fulfilled or rejected) and returns an array of their results.
+
+```js
+const promise1 = Promise.resolve("First promise");
+const promise2 = new Promise((_, reject) => setTimeout(() => reject("Second promise failed"), 1000));
+const promise3 = Promise.resolve("Third promise");
+
+Promise.allSettled([promise1, promise2, promise3])
+  .then(results => {
+    console.log(results);
+    // Output: [
+    //   { status: "fulfilled", value: "First promise" },
+    //   { status: "rejected", reason: "Second promise failed" },
+    //   { status: "fulfilled", value: "Third promise" }
+    // ]
+  });
+```
+
+* **Promise.race()** returns a promise that resolves or rejects as soon as one of the promises in the iterable resolves or rejects.
+
+```js
+const promise1 = new Promise((resolve) => setTimeout(() => resolve("First promise"), 1000));
+const promise2 = new Promise((resolve) => setTimeout(() => resolve("Second promise"), 500));
+const promise3 = new Promise((resolve) => setTimeout(() => resolve("Third promise"), 1500));
+
+Promise.race([promise1, promise2, promise3])
+  .then(result => {
+    console.log(result); // Output: "Second promise" (the fastest one to resolve)
+  })
+  .catch(error => {
+    console.error("Error:", error); // Handle any errors that occur in the promises
+  });
+```
+
+* **Promise.any()** returns a promise that resolves as soon as any of the promises in the iterable resolves, or rejects if all of the promises reject.
+
+```js
+const promise1 = new Promise((_, reject) => setTimeout(() => reject("First promise failed"), 1000));
+const promise2 = new Promise((resolve) => setTimeout(() => resolve("Second promise"), 500));
+const promise3 = new Promise((_, reject) => setTimeout(() => reject("Third promise failed"), 1500));
+
+Promise.any([promise1, promise2, promise3])
+  .then(result => {
+    console.log(result); // Output: "Second promise" (the first one to resolve)
+  })
+  .catch(error => {
+    console.error("All promises failed:", error); // Handle the case where all promises reject
+  });
+```
+
+* **Promise.resolve() and Promise.reject()** are used to create promises that are already resolved or rejected.
+
+```js
+Promise.resolve("Resolved value").then(result => {
+  console.log(result); // Output: "Resolved value"
 });
 
-render(); // boot
+Promise.reject("Rejected reason").catch(error => {
+  console.error(error); // Output: "Rejected reason"
+});
 ```
 
-### ✅ **4. Example 2 — Fetching paginated data from the backend (offset)**
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-Use when data is too large to load at once. The client asks for one page at a time via a REST endpoint.
+### ✅ **5. Async/Await**
 
-**API contract**
-
-```http
-GET /api/users?page=2&limit=10
-→ 200 OK
-{
-  "data": [ { "id": 11, "name": "..." }, ... ],
-  "page": 2,
-  "limit": 10,
-  "total": 137,
-  "totalPages": 14
-}
-```
-
-**Client**
+* `async` functions allow you to write asynchronous code that looks synchronous, making it easier to read and maintain.
+*  The `await` keyword can only be used inside an `async` function and is used to wait for a promise to resolve before proceeding with the execution of the code.
+*  When using `async/await`, it's important to remember that the function will always return a promise, even if you return a non-promise value. This allows you to use `await` with any function, regardless of whether it is asynchronous or not.
+*  Error handling in `async/await` can be done using `try...catch` blocks, allowing you to handle errors in a more straightforward way compared to promises.
+*  The `finally` block can be used in `async/await` to execute code that should run regardless of whether an error occurred or not.
 
 ```js
-const state = {
-  page: 1,
-  limit: 10,
-  totalPages: 0,
-  items: [],
-  loading: false,
-  error: null,
-  reqId: 0,          // guards against race conditions
-  controller: null,  // cancels stale in-flight fetch
-};
+async function fetchData() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve("Data fetched");
+    }, 1000);
+  });
+}
 
-async function loadPage(page) {
-  // Cancel previous request if still running
-  if (state.controller) state.controller.abort();
-  const controller = new AbortController();
-  const myReqId = ++state.reqId;
-
-  state.loading = true;
-  state.error = null;
-  state.controller = controller;
-  render();
-
+async function main() {
   try {
-    const res = await fetch(
-      `/api/users?page=${page}&limit=${state.limit}`,
-      { signal: controller.signal }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { data, totalPages } = await res.json();
-
-    if (myReqId !== state.reqId) return; // ignore stale response
-
-    state.items = data;
-    state.page = page;
-    state.totalPages = totalPages;
-  } catch (err) {
-    if (err.name === "AbortError") return;
-    state.error = err.message;
+    const result = await fetchData(); // Wait for the promise to resolve
+    console.log(result); // Output: "Data fetched"
+  } catch (error) {
+    console.error("Error fetching data:", error); // Handle any errors that occur
   } finally {
-    if (myReqId === state.reqId) state.loading = false;
-    render();
+    console.log("Fetch attempt completed."); // This will always be executed
   }
 }
 
-function render() {
-  const list = document.getElementById("list");
-  if (state.loading)           list.innerHTML = `<p>Loading…</p>`;
-  else if (state.error)        list.innerHTML = `<p class="err">${state.error}</p>`;
-  else if (!state.items.length) list.innerHTML = `<p>No results.</p>`;
-  else list.innerHTML = state.items.map(u => `<li>${u.name}</li>`).join("");
-
-  document.getElementById("pagination").innerHTML = `
-    <button data-page="${state.page - 1}" ${state.page <= 1 ? "disabled" : ""}>Prev</button>
-    <span>Page ${state.page} / ${state.totalPages}</span>
-    <button data-page="${state.page + 1}" ${state.page >= state.totalPages ? "disabled" : ""}>Next</button>
-  `;
-}
-
-// URL sync — deep-linkable
-function goTo(page) {
-  const url = new URL(location);
-  url.searchParams.set("page", page);
-  history.pushState({ page }, "", url);
-  loadPage(page);
-}
-
-document.getElementById("pagination").addEventListener("click", e => {
-  const p = Number(e.target.dataset.page);
-  if (p) goTo(p);
-});
-
-window.addEventListener("popstate", () => {
-  const p = Number(new URLSearchParams(location.search).get("page")) || 1;
-  loadPage(p);
-});
-
-// Boot from URL
-loadPage(Number(new URLSearchParams(location.search).get("page")) || 1);
+main();
 ```
 
-### ✅ **5. Example 3 — Cursor-based pagination (infinite scroll)**
+## Export and Import
 
-Use for large, frequently changing feeds (social posts, chat). Instead of page numbers, the server returns a `nextCursor` pointing to the next slice. This is **stable under inserts** and **fast at scale** because the DB can use an index seek instead of `OFFSET`.
+### ✅ **1. Named Export**
 
-**API contract**
-
-```http
-GET /api/posts?cursor=eyJpZCI6MTIzfQ&limit=20
-→ 200 OK
-{
-  "data": [ ... 20 posts ... ],
-  "nextCursor": "eyJpZCI6MTQzfQ",  // null when no more
-  "hasMore": true
-}
-```
-
-**Client**
+* Named exports allow you to export multiple values from a module, and they can be imported using their specific names.
 
 ```js
-const state = {
-  items: [],
-  cursor: null,
-  hasMore: true,
-  loading: false,
-};
-
-async function loadMore() {
-  if (state.loading || !state.hasMore) return; // guard
-  state.loading = true;
-
-  const url = new URL("/api/posts", location.origin);
-  url.searchParams.set("limit", "20");
-  if (state.cursor) url.searchParams.set("cursor", state.cursor);
-
-  try {
-    const res = await fetch(url);
-    const { data, nextCursor, hasMore } = await res.json();
-    state.items.push(...data);
-    state.cursor = nextCursor;
-    state.hasMore = hasMore;
-    appendToDOM(data);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    state.loading = false;
+// math.js
+export const pi = 3.14159;
+export function add(a, b) {
+  return a + b;
+}
+export class Calculator {
+  static multiply(a, b) {
+    return a * b;
   }
 }
 
-function appendToDOM(items) {
-  const frag = document.createDocumentFragment();
-  items.forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = p.title;
-    frag.appendChild(li);
-  });
-  document.getElementById("feed").appendChild(frag);
+// math2.js
+const e = 2.71828;
+function subtract(a, b) {
+  return a - b;
+}
+export { e, subtract }; // Named export of existing variables and functions
+
+// main.js
+import { pi, add, Calculator } from './math.js';
+import { e, subtract } from './math2.js';
+
+console.log(pi); // Output: 3.14159
+console.log(add(2, 3)); // Output: 5
+console.log(Calculator.multiply(4, 5)); // Output: 20
+console.log(e); // Output: 2.71828
+console.log(subtract(5, 3)); // Output: 2
+```
+
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
+
+### ✅ **2. Import `*` **
+
+* The `import * as` syntax allows you to import all exported values from a module as a single object.
+
+```js
+// math.js
+export const pi = 3.14159;
+export function add(a, b) {
+  return a + b;
+}
+export class Calculator {
+  static multiply(a, b) {
+    return a * b;
+  }
 }
 
-// Trigger next page when the sentinel enters the viewport
-const sentinel = document.getElementById("sentinel");
-const io = new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting) loadMore();
-}, { rootMargin: "200px" });
-io.observe(sentinel);
+// main.js
+import * as math from './math.js';
 
-loadMore(); // initial load
+console.log(math.pi); // Output: 3.14159
+console.log(math.add(2, 3)); // Output: 5
+console.log(math.Calculator.multiply(4, 5)); // Output: 20
 ```
 
-```html
-<ul id="feed"></ul>
-<div id="sentinel" style="height:1px"></div>
-```
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-### ✅ **6. Example 4 — Backend pagination logic (Node/Express)**
+### ✅ **3. Default Export**
 
-**6.1. Offset pagination** — simple, supports jumping to any page.
+* A default export allows you to export a single value from a module, and it can be imported without using curly braces.
 
 ```js
-// GET /api/users?page=2&limit=10
-app.get("/api/users", async (req, res) => {
-  const page  = Math.max(1, parseInt(req.query.page)  || 1);
-  const limit = Math.min(100, parseInt(req.query.limit) || 20); // cap to prevent abuse
-  const offset = (page - 1) * limit;
+// math.js
+export default function square(x) {
+  return x * x;
+}
 
-  const [data, total] = await Promise.all([
-    db.user.findMany({
-      skip: offset,
-      take: limit,
-      orderBy: { id: "asc" }, // stable sort key
-    }),
-    db.user.count(),
-  ]);
+// math2.js
+const cube = (x) => x * x * x;
+export default cube; // Default export of an existing variable
 
-  res.json({
-    data,
-    page,
-    limit,
-    total,
-    totalPages: Math.ceil(total / limit),
-  });
-});
+// main.js
+import square from './math.js';
+import cube from './math2.js';
+console.log(square(5)); // Output: 25
+console.log(cube(3)); // Output: 27
 ```
 
-Equivalent raw SQL:
+[↑ Back to top](#-javascript-deep-dive--interview-questions)
 
-```sql
-SELECT * FROM users ORDER BY id ASC LIMIT 10 OFFSET 10;
-SELECT COUNT(*) FROM users;
-```
+## Interview Questions
 
-**6.2. Cursor pagination** — fast at scale, stable under inserts.
-
-```js
-// GET /api/posts?cursor=<id>&limit=20
-app.get("/api/posts", async (req, res) => {
-  const limit  = Math.min(100, parseInt(req.query.limit) || 20);
-  const cursor = req.query.cursor ? Number(decodeCursor(req.query.cursor)) : null;
-
-  // Fetch limit + 1 to detect if there's a next page
-  const rows = await db.post.findMany({
-    where: cursor ? { id: { lt: cursor } } : {}, // descending feed
-    orderBy: { id: "desc" },
-    take: limit + 1,
-  });
-
-  const hasMore = rows.length > limit;
-  const data = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? encodeCursor(String(data[data.length - 1].id)) : null;
-
-  res.json({ data, nextCursor, hasMore });
-});
-
-// Opaque base64 cursor so clients don't depend on the format
-const encodeCursor = v => Buffer.from(v).toString("base64url");
-const decodeCursor = v => Buffer.from(v, "base64url").toString();
-```
-
-Equivalent raw SQL (descending by id):
-
-```sql
-SELECT * FROM posts
-WHERE id < :cursor      -- omit on first page
-ORDER BY id DESC
-LIMIT 21;               -- limit + 1 to detect hasMore
-```
-
-**Why cursor beats offset at scale**
-
-| Query type          | Work the DB must do                                             | Behavior under inserts/deletes              |
-| ------------------- | --------------------------------------------------------------- | ------------------------------------------- |
-| `OFFSET 10000`      | Scans and discards 10 000 rows before returning `LIMIT` rows    | Can duplicate or skip rows if data changes  |
-| `WHERE id < cursor` | Index seek directly to the cursor, then reads `LIMIT` rows      | Stable — new rows don't shift existing ones |
-
-### ✅ **7. Best practices & gotchas**
-
-- **Validate & cap `limit`** on the server (e.g., max 100) to prevent abuse.
-- **Prefer cursor pagination at scale** — `OFFSET` gets slower as pages grow because the DB must scan and discard rows.
-- **Ensure a stable sort** — always `ORDER BY` a unique column (e.g., `id` or `created_at, id`) to avoid duplicates/skips.
-- **Debounce / guard** the "next page" trigger so a fast scroll doesn't fire multiple requests.
-- **Use `AbortController`** to cancel stale requests when the user navigates away or changes filters.
-- **Cache pages** client-side (e.g., TanStack Query, SWR) keyed by `page`/`cursor` for instant back-navigation.
-- **Handle empty / error / end states** explicitly in the UI.
-- **Deep linking** — sync `page`/`cursor` to the URL (`history.pushState`) so refresh and share work.
-- **Accessibility** — announce page changes with `aria-live`; keep focus management correct after loading more.
-- **SEO** — for public content prefer numbered pages with `rel="prev/next"` or server-rendered pages over infinite scroll.
+[↑ Back to top](#-javascript-deep-dive--interview-questions)

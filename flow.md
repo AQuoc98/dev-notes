@@ -1,0 +1,1 @@
+fundamental --> design patter + performance optimization

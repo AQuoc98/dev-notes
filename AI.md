@@ -15,30 +15,34 @@
 
 ### ✅ **Figma MCP Server**
 
-- How to set up the remote server: [Figma MCP Server Setup Guide](https://developers.figma.com/docs/figma-mcp-server/)
+* How to set up the remote server: [Figma MCP Server Setup Guide](https://developers.figma.com/docs/figma-mcp-server/)
 
 [↑ Back to top](#using-ai-effectively)
-
 
 ## Skills, Tools and Resources to use AI effectively
 
 ### ✅ **Tools**
-- Chatbots: [ChatGPT](https://chat.openai.com/), [Claude](https://www.anthropic.com/), [Gemini](https://gemini.com/), [Google AI Studio](https://ai.google/studio/), [Grok](https://grok.com/)
-- CLI: [Opencode](https://opencode.ai/), [Ollama](https://ollama.com/)
-- Generate UI for frontend development: [Stitch](https://stitch.withgoogle.com/)
+* Chatbots: [ChatGPT](https://chat.openai.com/), [Claude](https://www.anthropic.com/), [Gemini](https://gemini.com/), [Google AI Studio](https://ai.google/studio/), [Grok](https://grok.com/)
+
+* CLI: [Opencode](https://opencode.ai/), [Ollama](https://ollama.com/)
+
+* Generate UI for frontend development: [Stitch](https://stitch.withgoogle.com/)
 
 [↑ Back to top](#using-ai-effectively)
 
 ### ✅ **Skills**
 
-- [Skills.sh](https://skills.sh/): A platform that provides a comprehensive list of skills across various domains, including AI, programming, data science, and more. It helps users identify and learn the necessary skills for their desired career paths.
+* [Skills.sh](https://skills.sh/): A platform that provides a comprehensive list of skills across various domains, including AI, programming, data science, and more. It helps users identify and learn the necessary skills for their desired career paths.
 
 
 [↑ Back to top](#using-ai-effectively)
 
 ### ✅ **Agent Team**
 
-- [BMAD](https://docs.bmad-method.org/): A framework for building and managing AI agents, providing tools and best practices for creating effective and efficient AI systems.
-- obra/superpowers: An agentic skills framework & software development methodology that works. `npx skills add obra/superpowers`
+* [BMAD](https://docs.bmad-method.org/): A framework for building and managing AI agents, providing tools and best practices for creating effective and efficient AI systems.
+
+* [obra/superpowers](https://github.com/obra/superpowers): An agentic skills framework & software development methodology that works. `npx skills add obra/superpowers`
+
+* [paperclip](https://github.com/paperclipai/paperclip): Open-source orchestration for zero-human companies
 
 [↑ Back to top](#using-ai-effectively)
