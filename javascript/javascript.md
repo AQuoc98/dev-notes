@@ -1,9 +1,7 @@
-# 🟡 JavaScript Deep Dive & Interview Questions
+**Status:** 🚧 - **Last Updated:** 1st May 2026
 
-**Status:** 🚧 - **Last Updated:** 27th Apr 2026
-
-
-- [🟡 JavaScript Deep Dive \& Interview Questions](#-javascript-deep-dive--interview-questions)
+# 🟡 Table of Contents
+- [🟡 Table of Contents](#-table-of-contents)
   - [The Modern Mode: "use strict"](#the-modern-mode-use-strict)
     - [✅ **1. What is Strict Mode in JavaScript and why should we use it?**](#-1-what-is-strict-mode-in-javascript-and-why-should-we-use-it)
     - [✅ **2. How does `this` behave differently in Strict Mode?**](#-2-how-does-this-behave-differently-in-strict-mode)
@@ -94,20 +92,19 @@
     - [✅ **1. Named Export**](#-1-named-export)
     - [✅ \*\*2. Import `*` \*\*](#-2-import--)
     - [✅ **3. Default Export**](#-3-default-export)
-  - [Interview Questions](#interview-questions)
 
 ## The Modern Mode: "use strict"
 
 ### ✅ **1. What is Strict Mode in JavaScript and why should we use it?**
 
-* Strict Mode is a way to opt into a restricted version of JavaScript by adding `"use strict";` at the top of a file or function.
+- Strict Mode is a way to opt into a restricted version of JavaScript by adding `"use strict";` at the top of a file or function.
 
-* It helps developers write safer, cleaner, and more predictable code by:
-  * Preventing accidental global variables
-  * Throwing errors for silent bugs (e.g., assigning to non-writable properties)
-  * Disallowing duplicate parameter names
-  * Making `this` behavior more predictable
-  * Restricting some unsafe or deprecated features
+- It helps developers write safer, cleaner, and more predictable code by:
+  - Preventing accidental global variables
+  - Throwing errors for silent bugs (e.g., assigning to non-writable properties)
+  - Disallowing duplicate parameter names
+  - Making `this` behavior more predictable
+  - Restricting some unsafe or deprecated features
 
 ```js
 "use strict";
@@ -121,7 +118,7 @@ x = 10; // ❌ ReferenceError (instead of creating global variable)
 
 ### ✅ **2. How does `this` behave differently in Strict Mode?**
 
-* Non-strict mode: `this` defaults to `window` (or global object)
+- Non-strict mode: `this` defaults to `window` (or global object)
 
 ```js
 function test() {
@@ -131,7 +128,7 @@ function test() {
 test(); // window (in browser)
 ```
 
-* Strict mode: `this` is `undefined` unless explicitly set**
+- Strict mode: `this` is `undefined` unless explicitly set**
 
 ```js
 "use strict";
@@ -181,7 +178,7 @@ console.log(x); // ❌ ReferenceError
 let x = 10;
 ```
 
-* `let` and `const` exist in a TDZ from the start of the block until declaration.
+- `let` and `const` exist in a TDZ from the start of the block until declaration.
 
 **3. `const` is NOT immutable**
 
@@ -216,17 +213,17 @@ for (let i = 0; i < 3; i++) {
 
 **There are 8 basic data types in JavaScript.**
 
-* Seven primitive data types:
-  * `number` for numbers of any kind: integer or floating-point, integers are limited by ±(253-1).
-  * `bigint` for integer numbers of arbitrary length.
-  * `string` for strings. A string may have zero or more characters, there’s no separate single-character type.
-  * `boolean` for true/false.
-  * `null` for unknown values – a standalone type that has a single value null.
-  * `undefined` for unassigned values – a standalone type that has a single value undefined.
-  * `symbol` for unique identifiers.
+- Seven primitive data types:
+  - `number` for numbers of any kind: integer or floating-point, integers are limited by ±(253-1).
+  - `bigint` for integer numbers of arbitrary length.
+  - `string` for strings. A string may have zero or more characters, there’s no separate single-character type.
+  - `boolean` for true/false.
+  - `null` for unknown values – a standalone type that has a single value null.
+  - `undefined` for unassigned values – a standalone type that has a single value undefined.
+  - `symbol` for unique identifiers.
 
-* one non-primitive data type:
-  * `object` for more complex data structures.
+- One non-primitive data type:
+  - `object` for more complex data structures.
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
@@ -234,8 +231,8 @@ for (let i = 0; i < 3; i++) {
 
 **The `typeof` operator allows us to see which type is stored in a variable.**
 
-* Returns a string with the name of the type, like "string".
-* For null returns "object" – this is an error in the language, it’s not actually an object.
+- Returns a string with the name of the type, like "string".
+- For null returns "object" – this is an error in the language, it’s not actually an object.
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
 
@@ -2181,9 +2178,5 @@ import cube from './math2.js';
 console.log(square(5)); // Output: 25
 console.log(cube(3)); // Output: 27
 ```
-
-[↑ Back to top](#-javascript-deep-dive--interview-questions)
-
-## Interview Questions
 
 [↑ Back to top](#-javascript-deep-dive--interview-questions)
