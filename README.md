@@ -20,6 +20,7 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 - [**JavaScript Interview Questions**](./javascript/interview-questions.md) - Common JS questions, ReactJS patterns, Authentication concepts...
 - [**ReactJS**](./react.md) - Virtual DOM, Hooks, Context API, Performance Optimization...
 - [**Typescript**](./typescript.md) - Type System, Generics, Utility Types, Type Guards...
+- [**Next.js**](./nextjs.md) - Routing, API Routes, SSR, SSG, ISR...
 
 ### Backend & Database
 - [**Authentication & Authorization**](./authentication.md) - JWT, OAuth, SSO, Refresh vs Access Tokens...
@@ -27,9 +28,10 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 - [**CI/CD**](https://www.redhat.com/en/topics/devops/what-is-ci-cd) - Continuous Integration, Continuous Deployment, Pipelines...
 
 ### Data Structures and Algorithms
-- [**Data Structures and Algorithms Mega Course**](https://www.youtube.com/watch?v=xwI5OBEnsZU)
 - [**LeetCode**](https://leetcode.com/) - Practice coding problems, algorithms, and data structures.
   - [**LeetCode Patterns**](https://seanprashad.com/leetcode-patterns/) - Common problem-solving patterns on LeetCode.
+- Books:
+  - Grokking Algorithms
 
 ## Design Patterns & System Design
 - [**Design Patterns**](./design-patterns.md) - Singleton, Factory, Observer, Strategy...
@@ -41,6 +43,9 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 
 ### AI Knowledge
 - [**Using AI effectively**](./AI.md) - MCP Server, AI Agents, Prompt Engineering...
+
+### My Self-Helping Bookshelf
+- Success Through A Positive Mental Attitude - Napoleon Hill
 
 ---
 

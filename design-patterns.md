@@ -27,6 +27,8 @@
 
 - [Design Patterns - Viblo](https://viblo.asia/p/design-patterns-la-gi-tai-sao-no-lai-la-tro-thu-dac-luc-cua-developers-tong-hop-23-mau-design-pattern-GrLZDBQV5k0)
 - [SOLID Principles - Toi Di Code Dao](https://toidicodedao.com/2015/03/24/solid-la-gi-ap-dung-cac-nguyen-ly-solid-de-tro-thanh-lap-trinh-vien-code-cung/)
+- Books
+  - React Design Patterns and Best Practices - Packt Publishing
 
 ## MVC
 
