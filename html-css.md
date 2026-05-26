@@ -1,14 +1,15 @@
 **Status:** 🚧 - **Last Updated:** 1st May 2026
 
-# Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [Resources](#resources)
+#### Table of Contents
+- [Resources](#resources)
+- [Interview Questions](#interview-questions)
   - [How to use line clamps in CSS](#how-to-use-line-clamps-in-css)
   - [How to set gradient color for text](#how-to-set-gradient-color-for-text)
   - [What is the difference between `px`, `em`, and `rem` in CSS?](#what-is-the-difference-between-px-em-and-rem-in-css)
   - [What is the difference between `content-box` and `border-box` in CSS?](#what-is-the-difference-between-content-box-and-border-box-in-css)
 
 ## Resources
+
 - [**CSS Portal**](https://www.cssportal.com/) - A comprehensive resource for CSS tools, tutorials, and references.
 - [**Neumorphism.io**](https://neumorphism.io/) - A tool for generating neumorphic design elements with customizable colors and shadows.
 - Colors
@@ -22,7 +23,18 @@
 
 [Back to top](#table-of-contents)
 
-## How to use line clamps in CSS
+## Interview Questions
+
+| No. | Questions |
+| --- | --------- |
+| 1 | [How to use line clamps in CSS](#how-to-use-line-clamps-in-css) |
+| 2 | [How to set gradient color for text](#how-to-set-gradient-color-for-text) |
+| 3 | [What is the difference between `px`, `em`, and `rem` in CSS?](#what-is-the-difference-between-px-em-and-rem-in-css) |
+| 4 | [What is the difference between `content-box` and `border-box` in CSS?](#what-is-the-difference-between-content-box-and-border-box-in-css) |
+
+
+### How to use line clamps in CSS
+
 ```css
 p {
     -webkit-line-clamp: 3;
@@ -38,9 +50,9 @@ input, button or inline component {
 }
 ```
 
-[Back to top](#table-of-contents)
+[↑ Back to Interview Questions](#interview-questions)
 
-## How to set gradient color for text
+### How to set gradient color for text
 ```css
 .gradient-text {
     background: linear-gradient(to right, #ff7e5f, #feb47b);
@@ -49,9 +61,9 @@ input, button or inline component {
 }
 ```
 
-[Back to top](#table-of-contents)
+[↑ Back to Interview Questions](#interview-questions)
 
-## What is the difference between `px`, `em`, and `rem` in CSS?
+### What is the difference between `px`, `em`, and `rem` in CSS?
 
 `px`, `em`, and `rem` are all length units, but they differ in what they are relative to and how they scale.
 
@@ -82,7 +94,9 @@ input, button or inline component {
 - `%` is another relative unit that scales based on the parent element's size, often used for widths and heights in responsive design.
 - `vw` and `vh` are viewport-relative units that scale based on the size of the browser window, useful for full-screen layouts and responsive typography.
 
-## What is the difference between `content-box` and `border-box` in CSS?
+[↑ Back to Interview Questions](#interview-questions)
+
+### What is the difference between `content-box` and `border-box` in CSS?
 
 `box-sizing` controls how the `width` and `height` you set are interpreted relative to padding and border.
 
@@ -115,4 +129,6 @@ input, button or inline component {
 **Rule of thumb**
 - Default to `border-box` project-wide — sizes match what you see and grids/flex layouts stay consistent when padding changes.
 - Use `content-box` only for niche cases where you specifically need the content area itself to be a fixed size.
+
+[↑ Back to Interview Questions](#interview-questions)
 

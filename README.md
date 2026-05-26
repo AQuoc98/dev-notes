@@ -7,47 +7,32 @@
 
 This repository serves as my personal knowledge base, housing self-learning roadmaps, technical notes, and solutions for interview questions ranging from foundational to advanced. The goal of this repo is to build a "Personal Wiki" for quick reference and ultimate technical interview preparation.
 
----
 
 ## 📑 Table of Contents
 
 Here are the main categorized topics. Click on each link to navigate to the detailed notes:
 
 ### Frontend Development
-- [**HTML & CSS**](./html-css.md) - Flexbox, Grid, Responsive Design, Animations...
-- [**JavaScript**](./javascript/javascript.md) - ES6+, Event Loop, Hoisting, Closures, Promises...
-- [**JavaScript Mini Logic**](./javascript/javascript-mini-logic.md) - Pagination flow, Infinite scroll, Debouncing, Throttling...
-- [**JavaScript Interview Questions**](./javascript/interview-questions.md) - Common JS questions, ReactJS patterns, Authentication concepts...
-- [**ReactJS**](./react.md) - Virtual DOM, Hooks, Context API, Performance Optimization...
-- [**Typescript**](./typescript.md) - Type System, Generics, Utility Types, Type Guards...
-- [**Next.js**](./nextjs.md) - Routing, API Routes, SSR, SSG, ISR...
 
-### Backend & Database
-- [**Authentication & Authorization**](./authentication.md) - JWT, OAuth, SSO, Refresh vs Access Tokens...
-- [**NestJS**](./nestjs.md) - Modules, Controllers, Services, Middleware, Guards...
-- [**CI/CD**](https://www.redhat.com/en/topics/devops/what-is-ci-cd) - Continuous Integration, Continuous Deployment, Pipelines...
+- [**JavaScript Interview Questions**](./javascript.md)
+- [**HTML & CSS**](./html-css.md)
 
 ### Data Structures and Algorithms
+
 - [**LeetCode**](https://leetcode.com/) - Practice coding problems, algorithms, and data structures.
-  - [**LeetCode Patterns**](https://seanprashad.com/leetcode-patterns/) - Common problem-solving patterns on LeetCode.
-- Books:
-  - Grokking Algorithms
-
-## Design Patterns & System Design
-- [**Design Patterns**](./design-patterns.md) - Singleton, Factory, Observer, Strategy...
-- [**System Design**](./system-design.md) - Scalability, Load Balancing, Caching...
-
-### 🎓 Interview Preparation
-- [Interview Company-wise Problems](https://github.com/liquidslr/interview-company-wise-problems) - Lists of company wise questions. Every csv file in the companies directory corresponds to a list of questions on leetcode for a specific company based on the leetcode company tags
-- [A curated awesome list of lists of interview questions. Feel free to contribute](https://github.com/DopplerHQ/awesome-interview-questions) - A curated awesome list of lists of interview questions. Feel free to contribute
+- [**LeetCode Patterns**](https://seanprashad.com/leetcode-patterns/) - Common problem-solving patterns on LeetCode.
 
 ### AI Knowledge
-- [**Using AI effectively**](./AI.md) - MCP Server, AI Agents, Prompt Engineering...
 
-### My Self-Helping Bookshelf
-- Success Through A Positive Mental Attitude - Napoleon Hill
+- [**Using AI effectively**](./AI.md)
 
----
+### Others
+
+- [**My Bookshelf**](./bookshelf.md) - A collection of books I plan to read.
+
+<!-- ### 🎓 Interview Preparation
+- [Interview Company-wise Problems](https://github.com/liquidslr/interview-company-wise-problems) - Lists of company wise questions. Every csv file in the companies directory corresponds to a list of questions on leetcode for a specific company based on the leetcode company tags
+- [A curated awesome list of lists of interview questions. Feel free to contribute](https://github.com/DopplerHQ/awesome-interview-questions) - A curated awesome list of lists of interview questions. Feel free to contribute -->
 
 ## 🚀 How to Use This Repo Effectively
 
