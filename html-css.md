@@ -1,27 +1,11 @@
 **Status:** 🚧 - **Last Updated:** 1st May 2026
 
 #### Table of Contents
-- [Resources](#resources)
 - [Interview Questions](#interview-questions)
   - [How to use line clamps in CSS](#how-to-use-line-clamps-in-css)
   - [How to set gradient color for text](#how-to-set-gradient-color-for-text)
   - [What is the difference between `px`, `em`, and `rem` in CSS?](#what-is-the-difference-between-px-em-and-rem-in-css)
   - [What is the difference between `content-box` and `border-box` in CSS?](#what-is-the-difference-between-content-box-and-border-box-in-css)
-
-## Resources
-
-- [**CSS Portal**](https://www.cssportal.com/) - A comprehensive resource for CSS tools, tutorials, and references.
-- [**Neumorphism.io**](https://neumorphism.io/) - A tool for generating neumorphic design elements with customizable colors and shadows.
-- Colors
-  - [**Tailwind Colors**](https://uicolors.app/tailwind-colors)
-  - [**Hover Colors**](https://www.hover.dev/css-color-palette-generator) - Generate a color palette based on a single color input, with hover state variations.
-  - [**Coolors**](https://coolors.co/palettes/trending) - Explore trending color palettes and create your own combinations for design projects.
-  - [**HTML Color Codes**](https://htmlcolorcodes.com/color-names/) - A comprehensive list of color names and their corresponding hex codes for easy reference in web design.
-- Fonts
-  - [**Type Scale**](https://typescale.com/) - A tool for creating and visualizing font scales for your web projects.
-  - [**Google Fonts**](https://fonts.google.com/) - A vast library of free and open-source fonts for your web projects.
-
-[Back to top](#table-of-contents)
 
 ## Interview Questions
 

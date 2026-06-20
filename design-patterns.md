@@ -1,18 +1,15 @@
 **Status:** 🚧 - **Last Updated:** 1st May 2026
 
-# Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [Resources](#resources)
-  - [MVC](#mvc)
-    - [Core Components](#core-components)
-      - [Model](#model)
-      - [View](#view)
-      - [Controller](#controller)
-    - [Why Use MVC](#why-use-mvc)
+#### Table of Contents
+- [Interview Questions](#interview-questions)
+  - [What is MVC?](#what-is-mvc)
+    - [Model](#model)
+    - [View](#view)
+    - [Controller](#controller)
     - [Workflow](#workflow)
     - [Example](#example)
-      - [Execution Flow](#execution-flow)
-  - [OOP](#oop)
+    - [Execution Flow](#execution-flow)
+  - [What is OOP?](#what-is-oop)
     - [Class and Object](#class-and-object)
     - [Encapsulation](#encapsulation)
     - [Inheritance](#inheritance)
@@ -20,19 +17,18 @@
     - [Abstraction](#abstraction)
     - [Access Modifiers](#access-modifiers)
     - [Creating Objects](#creating-objects)
-      - [1. Define a Class](#1-define-a-class)
-      - [2. Create Objects](#2-create-objects)
 
-## Resources
+## Interview Questions
 
-- [Design Patterns - Viblo](https://viblo.asia/p/design-patterns-la-gi-tai-sao-no-lai-la-tro-thu-dac-luc-cua-developers-tong-hop-23-mau-design-pattern-GrLZDBQV5k0)
-- [SOLID Principles - Toi Di Code Dao](https://toidicodedao.com/2015/03/24/solid-la-gi-ap-dung-cac-nguyen-ly-solid-de-tro-thanh-lap-trinh-vien-code-cung/)
+| No. | Questions |
+| --- | --------- |
+| 1 | [What is MVC?](#what-is-mvc) |
+| 2 | [What is OOP?](#what-is-oop) |
 
-## MVC
+
+### What is MVC?
 
 MVC (Model - View - Controller) is a software design pattern that separates an application into three core components, making the code easier to maintain and scale.
-
-### Core Components
 
 #### Model
 Responsible for data and business logic.
@@ -53,13 +49,7 @@ Acts as the "coordinator" — the middleman between Model and View.
 - Sends that data back to the View to be rendered.
 - Example: When you click the "Login" button, the Controller takes the username/password you entered, asks the Model to verify them, then tells the View to display "Success" or "Failure".
 
-### Why Use MVC
-
-- **Easy to maintain:** Want to change the UI (View) from blue to red? Go ahead — you don't need to touch the data-handling logic (Model).
-- **Parallel development:** Front-end developers can design the View while back-end developers build the Model without stepping on each other's toes.
-- **Code reusability:** A single Model can be rendered by multiple Views (e.g. revenue data shown as a table or as a chart).
-
-### Workflow
+#### Workflow
 
 1. The user interacts with the View (sends a request).
 2. The Controller receives the request and performs the initial logic.
@@ -68,7 +58,7 @@ Acts as the "coordinator" — the middleman between Model and View.
 5. The Controller passes the new data to the View.
 6. The View updates the UI so the user can see the result.
 
-### Example
+#### Example
 
 **Model** — Its only job is to talk to the database to retrieve data. It doesn't care what the UI looks like.
 
@@ -135,17 +125,17 @@ class UserController {
 
 [Back to top](#table-of-contents)
 
-## OOP
+### What is OOP?
 
 - If MVC is the "framework" used to build a house, then OOP (Object-Oriented Programming) is the "brick" and the "design philosophy" for each piece of furniture inside that house.
 - OOP is not a language but a programming mindset that puts the **Object** at the center, instead of functions or sequential steps.
 
-### Class and Object
+#### Class and Object
 
 - **Class:** A blueprint. For example, the technical drawing of a car. It defines what a car has (color, engine) and what it can do (drive, brake).
 - **Object:** A concrete entity created from that blueprint. For example, the red Toyota with plate 29A, or the black BMW with plate 51H.
 
-### Encapsulation
+#### Encapsulation
 
 - **Purpose:** Protect data from being arbitrarily modified from the outside.
 - **Example:** We want to protect the salary data and prevent anyone from setting it to a negative value. We use `private` together with Getter/Setter methods.
@@ -169,7 +159,7 @@ class BankAccount {
 }
 ```
 
-### Inheritance
+#### Inheritance
 
 Allows one class (child class) to reuse the properties and methods of another class (parent class).
 
@@ -207,7 +197,7 @@ class PartTimeEmployee extends Employee {
 }
 ```
 
-### Polymorphism
+#### Polymorphism
 
 A single action can be performed in multiple ways depending on the object performing it.
 
@@ -232,7 +222,7 @@ public class Main {
 }
 ```
 
-### Abstraction
+#### Abstraction
 
 Show only the necessary information and hide the complex implementation details.
 
@@ -254,7 +244,7 @@ abstract class Employee {
 }
 ```
 
-### Access Modifiers
+#### Access Modifiers
 
 - **Public:** Use when you want to expose methods to outside callers.
 - **Private:** Use when you want to protect important data (Encapsulation).
@@ -268,9 +258,9 @@ abstract class Employee {
 | `default` (no modifier) |  ✅     |      ✅      |           ❌           |     ❌     |
 | `private`            |     ✅     |      ❌      |           ❌           |     ❌     |
 
-### Creating Objects
+#### Creating Objects
 
-#### 1. Define a Class
+1. Define a Class
 
 ```java
 class SuperHero {
@@ -292,7 +282,7 @@ class SuperHero {
 }
 ```
 
-#### 2. Create Objects
+2. Create Objects
 
 ```java
 public class Game {

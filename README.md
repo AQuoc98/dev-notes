@@ -16,15 +16,7 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 
 - [**JavaScript Interview Questions**](./javascript.md)
 - [**HTML & CSS**](./html-css.md)
-
-### Data Structures and Algorithms
-
-- [**LeetCode**](https://leetcode.com/) - Practice coding problems, algorithms, and data structures.
-- [**LeetCode Patterns**](https://seanprashad.com/leetcode-patterns/) - Common problem-solving patterns on LeetCode.
-
-### AI Knowledge
-
-- [**Using AI effectively**](./AI.md)
+- [**React**](./react.md)
 
 ### Others
 

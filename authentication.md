@@ -1,24 +1,16 @@
-# Authentication & Authorization
-
 **Status:** 🚧 - **Last Updated:** 23rd Apr 2026
 
-- [Authentication \& Authorization](#authentication--authorization)
-  - [Authentication methods](#authentication-methods)
-  - [Questions](#questions)
-    - [✅ **1. What the difference between Refresh Token and Access Token?**](#-1-what-the-difference-between-refresh-token-and-access-token)
+#### Table of Contents
+- [Interview Questions](#interview-questions)
+  - [What the difference between Refresh Token and Access Token?](#what-the-difference-between-refresh-token-and-access-token)
 
-## Authentication methods
-- [Basic](https://roadmap.sh/guides/basic-authentication)
-- [Session Based Authentication](https://roadmap.sh/guides/session-based-authentication)
-- [Token Based Authentication](https://roadmap.sh/guides/token-authentication)
-- [Jwt Authentication](https://roadmap.sh/guides/jwt-authentication)
-- [OAuth](https://roadmap.sh/guides/oauth)
-- [SSO](https://roadmap.sh/guides/sso)
-- [Deomo Flow](https://github.com/AQuoc98/authentication-flow)
+## Interview Questions
 
-## Questions
+| No. | Questions |
+| --- | --------- |
+| 1 | [What the difference between Refresh Token and Access Token?](#what-the-difference-between-refresh-token-and-access-token) |
 
-### ✅ **1. What the difference between Refresh Token and Access Token?**
+### What the difference between Refresh Token and Access Token?
 
 | Aspect              | Access Token                                   | Refresh Token                                         |
 |---------------------|------------------------------------------------|-------------------------------------------------------|
@@ -52,4 +44,6 @@
 - Store refresh tokens in **HTTP-only, Secure, SameSite=Strict/Lax cookies**, never in `localStorage`.
 - Bind tokens to a device/client fingerprint where possible.
 - Always serve over HTTPS.
+
+[↑ Back to top](#table-of-contents)
 

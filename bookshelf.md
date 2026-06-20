@@ -4,9 +4,8 @@
 
 #### Table of Contents
 - [Self-help](#self-help)
-- [Programming](#programming)
 
-### Self-help
+## Self-help
 
 | # | Book | Author | Progress |
 |---|---|---|---|
@@ -86,7 +85,7 @@
 
 [↑ Back to top](#table-of-contents)
 
-### Programming
+<!-- ## Programming
 
 | # | Book | Author | Progress |
 |---|---|---|---|
@@ -96,6 +95,6 @@
 | 4 | Clean Code: A Handbook of Agile Software Craftsmanship | Robert C. Martin | ⏳ |
 | 5 | Design System: A Practical Guide to creating design languages for digital products | Alla Kholmatova | ⏳ |
 | 6 | Laying the Foundations: How to design websites and products systematically | Andrew Twigg | ⏳ |
-| 7 | The modern JavaScript tutorial | [javascript.info](https://javascript.info/) | ✅ |
+| 8 | Python tutorial | [python.org](https://www.python.org/) | 📖 |
 
-[↑ Back to top](#table-of-contents)
+[↑ Back to top](#table-of-contents) -->

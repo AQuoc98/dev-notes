@@ -1,13 +1,8 @@
 **Status:** 🚧 - **Last Updated:** 1st May 2026
 
-# Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [Resources](#resources)
-  - [Keywords](#keywords)
+#### Table of Contents
+- [Keywords](#keywords)
 
-
-## Resources
-- [Google Analytics YouTube Channel](https://www.youtube.com/@GoogleAnalytics/playlists) - Official Google Analytics YouTube channel with playlists covering GA4 tutorials, updates, and best practices.
 
 ## Keywords
 
