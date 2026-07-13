@@ -14,9 +14,13 @@ Here are the main categorized topics. Click on each link to navigate to the deta
 
 ### Frontend Development
 
-- [**JavaScript Interview Questions**](./javascript.md)
+- [**JavaScript Interview Questions - Sudheer Jonna**](./javascript/README.md)
+- [**React Interview Questions - Sudheer Jonna**](./react/README.md)
 - [**HTML & CSS**](./html-css.md)
 - [**React**](./react.md)
+
+### Server & Backend Development
+- [**Deploy Next.js on VPS**](./server/nextjs-deploy-in-vps.md)
 
 ### Others
 
