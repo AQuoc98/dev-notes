@@ -1,11 +1,25 @@
-**Status:** 🚧 - **Last Updated:** 26th May 2026
+# Typescript Interview Questions
 
 ## Interview Questions
 
-| No. | Questions |
-| --- | --------- |
-| 1 | [What is the difference between undefined and not defined in JavaScript?](#what-is-the-difference-between-undefined-and-not-defined-in-javascript) |
-| 2 | [What is the difference between var, let, and const in JavaScript?](#what-is-the-difference-between-var-let-and-const-in-javascript) |
+<table>
+  <thead>
+    <tr>
+      <th>No.</th>
+      <th>Questions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><a href="#what-is-the-difference-between-undefined-and-not-defined-in-javascript">What is the difference between undefined and not defined in JavaScript?</a></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><a href="#what-is-the-difference-between-var-let-and-const-in-javascript">What is the difference between var, let, and const in JavaScript?</a></td>
+    </tr>
+  </tbody>
+</table>
 
 ### What is the difference between undefined and not defined in JavaScript?
 

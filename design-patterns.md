@@ -1,6 +1,7 @@
 **Status:** 🚧 - **Last Updated:** 1st May 2026
 
 #### Table of Contents
+- [Other Resources](#other-resources)
 - [Interview Questions](#interview-questions)
   - [What is MVC?](#what-is-mvc)
     - [Model](#model)
@@ -18,12 +19,16 @@
     - [Access Modifiers](#access-modifiers)
     - [Creating Objects](#creating-objects)
 
+## Other Resources
+- [Design Patterns là gì?](https://viblo.asia/p/design-patterns-la-gi-tai-sao-no-lai-la-tro-thu-dac-luc-cua-developers-tong-hop-23-mau-design-pattern-GrLZDBQV5k0)
+- [Solid là gì?](https://toidicodedao.com/2015/03/24/solid-la-gi-ap-dung-cac-nguyen-ly-solid-de-tro-thanh-lap-trinh-vien-code-cung/)
+
 ## Interview Questions
 
-| No. | Questions |
-| --- | --------- |
-| 1 | [What is MVC?](#what-is-mvc) |
-| 2 | [What is OOP?](#what-is-oop) |
+| No. | Questions                    |
+| --- | ---------------------------- |
+| 1   | [What is MVC?](#what-is-mvc) |
+| 2   | [What is OOP?](#what-is-oop) |
 
 
 ### What is MVC?
@@ -251,12 +256,12 @@ abstract class Employee {
 - **Protected:** Use when you want descendant classes to inherit access, but not strangers.
 - **Default:** Used when no keyword is specified. Access is allowed only within the same package (folder).
 
-| Access Modifier      | Same Class | Same Package | Subclass (Inheritance) | Everywhere |
-| -------------------- | :--------: | :----------: | :--------------------: | :--------: |
-| `public`             |     ✅     |      ✅      |           ✅           |     ✅     |
-| `protected`          |     ✅     |      ✅      |           ✅           |     ❌     |
-| `default` (no modifier) |  ✅     |      ✅      |           ❌           |     ❌     |
-| `private`            |     ✅     |      ❌      |           ❌           |     ❌     |
+| Access Modifier         | Same Class | Same Package | Subclass (Inheritance) | Everywhere |
+| ----------------------- | :--------: | :----------: | :--------------------: | :--------: |
+| `public`                |     ✅      |      ✅       |           ✅            |     ✅      |
+| `protected`             |     ✅      |      ✅       |           ✅            |     ❌      |
+| `default` (no modifier) |     ✅      |      ✅       |           ❌            |     ❌      |
+| `private`               |     ✅      |      ❌       |           ❌            |     ❌      |
 
 #### Creating Objects
 

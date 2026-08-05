@@ -12,6 +12,7 @@
   - Mở amiigo + download file
   - Mở ultrahand overlay: zl + zr + dpad down left
   - Mở game zelda -> nhấn L -> chọn amiibo
+- [The Zelda combat bible](The_Zelda_Combat_Bible.md)
 
 ## Slay The Spire
 - [Wiki](https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Main)

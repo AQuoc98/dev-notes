@@ -3,6 +3,7 @@
 #### Table of Contents
 - [Interview Questions](#interview-questions)
   - [What the difference between Refresh Token and Access Token?](#what-the-difference-between-refresh-token-and-access-token)
+  - [What JWT?](#what-jwt)
 
 ## Interview Questions
 
@@ -44,6 +45,12 @@
 - Store refresh tokens in **HTTP-only, Secure, SameSite=Strict/Lax cookies**, never in `localStorage`.
 - Bind tokens to a device/client fingerprint where possible.
 - Always serve over HTTPS.
+
+[↑ Back to top](#table-of-contents)
+
+### What JWT?
+
+- [JWT (JSON Web Token) là gì? Hướng dẫn tạo JWT Auth trong NodeJS](https://www.youtube.com/watch?v=LxeYH4D1YAs)
 
 [↑ Back to top](#table-of-contents)
 
