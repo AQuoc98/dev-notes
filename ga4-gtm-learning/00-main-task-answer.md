@@ -10,11 +10,12 @@ Business question
   → application dataLayer.push()
   → GTM trigger + variables + tag
   → GA4 collection request
-  → DebugView / reports
-  → QA evidence and sign-off
+  → DebugView / processed reporting data
+  → report / Exploration / chart
+  → interpretation, QA evidence, and decision
 ```
 
-The six guides in this folder explain both the theory and the work required to produce a verified proof of concept (POC).
+The twelve guides explain the theory and work required to produce a verified proof of concept (POC), operate the supporting GTM/GA4 configuration, handle common scenarios, and turn validated data into useful GA4 reports and charts.
 
 ## Core Theory
 
@@ -23,6 +24,16 @@ The six guides in this folder explain both the theory and the work required to p
 - **Google Analytics 4 (GA4)** collects event-based behavioral data and makes it available for analysis.
 - **Google Tag Manager (GTM)** manages tags that read application data, decide when to run, and send data to tools such as GA4.
 - GTM is a delivery and routing layer. It does not define the business meaning of data; the tracking plan and Data Layer contract do.
+
+### Where tags, folders, and templates fit
+
+These are areas of a **GTM container**, not sections of a GA4 property:
+
+- **Tags** are configured integrations or code that run when their firing conditions are met; a GA4 Event tag is one example.
+- **Folders** are an organizational aid. They group tags, triggers, and user-defined variables without changing runtime behavior.
+- **Templates** define reusable tag or variable types. GTM supplies built-in templates; additional templates may come from the Community Template Gallery or be created as custom templates.
+
+See the dedicated guides for [tag management](./08-tag-management-answer.md), [folder organization](./09-folder-organization-answer.md), and [template governance](./10-template-governance-answer.md).
 
 ### What is a tracking plan?
 
@@ -77,6 +88,11 @@ Required access:
 - [ ] Complete [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).
 - [ ] Complete [02-variable-management-answer.md](./02-variable-management-answer.md).
 - [ ] Complete [03-event-parameter-naming-answer.md](./03-event-parameter-naming-answer.md).
+- [ ] Complete [08-tag-management-answer.md](./08-tag-management-answer.md).
+- [ ] Complete [09-folder-organization-answer.md](./09-folder-organization-answer.md).
+- [ ] Complete [10-template-governance-answer.md](./10-template-governance-answer.md).
+- [ ] Complete [11-trigger-management-answer.md](./11-trigger-management-answer.md).
+- [ ] Complete [12-ga4-operations-and-scenarios-answer.md](./12-ga4-operations-and-scenarios-answer.md).
 - [ ] Obtain development, analytics, and QA review before implementation.
 
 ### Phase 3 — Validate the existing state
@@ -89,16 +105,22 @@ Required access:
 
 - [ ] Build the non-production POC in [06-proof-of-concept-answer.md](./06-proof-of-concept-answer.md).
 - [ ] Capture Data Layer, GTM, network, DebugView, consent, and negative-test evidence.
+- [ ] Allow for GA4 processing, then confirm that the required dimensions and metrics are reportable.
+- [ ] Complete [07-ga4-reports-and-charts-answer.md](./07-ga4-reports-and-charts-answer.md) using the validated POC data.
+- [ ] Create and QA one reusable detail report and one analysis-oriented Exploration.
 - [ ] Record reviewer sign-off and an explicit adopt/revise/reject decision.
 - [ ] Create the rollout backlog, owners, dependencies, and rollback approach.
 
 ## Definition of Done
 
-- [ ] All `01`–`06` checklists are complete or exceptions are documented.
+- [ ] All `01`–`12` checklists are complete or exceptions are documented.
 - [ ] Every event has a business definition, trigger point, source, owner, and test.
 - [ ] The POC is traceable from application action to GA4 DebugView.
 - [ ] No missing or duplicate event is observed in the agreed test cases.
 - [ ] Values and types agree at the Data Layer, GTM, and GA4 request layers.
+- [ ] Reported dimensions and metrics use the correct scope and answer a documented business question.
+- [ ] Report filters, comparisons, segments, date range, attribution context, and chart choices are documented.
+- [ ] Report results were checked for processing delay, thresholding, sampling, and high-cardinality effects where applicable.
 - [ ] No PII, secrets, raw form values, or fine-grained location are collected.
 - [ ] Relevant granted and denied consent states have been tested.
 - [ ] Evidence identifies date, environment, container version/workspace, GA4 stream, tester, and result.
@@ -117,8 +139,15 @@ Required access:
 ## Official References
 
 - [GTM components](https://support.google.com/tagmanager/answer/6103657)
+- [About tags](https://support.google.com/tagmanager/answer/3281060)
+- [GTM folders](https://support.google.com/tagmanager/answer/6231791)
+- [Custom templates](https://support.google.com/tagmanager/answer/9334084)
+- [About triggers](https://support.google.com/tagmanager/answer/7679316)
+- [GA4 account structure](https://support.google.com/analytics/answer/9679158)
 - [The Data Layer](https://developers.google.com/tag-platform/tag-manager/datalayer)
 - [Set up GA4 events](https://developers.google.com/analytics/devguides/collection/ga4/events)
 - [GTM preview and debug](https://support.google.com/tagmanager/answer/6107056)
 - [GA4 DebugView](https://support.google.com/analytics/answer/7201382)
+- [Create a GA4 detail report](https://support.google.com/analytics/answer/13844077)
+- [GA4 free-form Explorations](https://support.google.com/analytics/answer/9327972)
 - [Avoid sending PII](https://support.google.com/analytics/answer/6366371)
