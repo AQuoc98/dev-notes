@@ -4,24 +4,21 @@ This folder separates Jira-ready task descriptions from their detailed answers/i
 
 ## Document Structure
 
-| Prefix | Jira description | Answer / instructions | Estimate |
-|---|---|---|---:|
-| `00` | `00-main-task.md` | `00-main-task-answer.md` | 102 hours |
-| `01` | `01-data-layer-design.md` | `01-data-layer-design-answer.md` | 10 hours |
-| `02` | `02-variable-management.md` | `02-variable-management-answer.md` | 8 hours |
-| `03` | `03-event-parameter-naming.md` | `03-event-parameter-naming-answer.md` | 7 hours |
-| `04` | `04-debugging-analytics-qa.md` | `04-debugging-analytics-qa-answer.md` | 8 hours |
-| `05` | `05-tracking-flow-audit.md` | `05-tracking-flow-audit-answer.md` | 10 hours |
-| `06` | `06-proof-of-concept.md` | `06-proof-of-concept-answer.md` | 13 hours |
-| `07` | `07-ga4-reports-and-charts.md` | `07-ga4-reports-and-charts-answer.md` | 10 hours |
-| `08` | `08-tag-management.md` | `08-tag-management-answer.md` | 7 hours |
-| `09` | `09-folder-organization.md` | `09-folder-organization-answer.md` | 3 hours |
-| `10` | `10-template-governance.md` | `10-template-governance-answer.md` | 6 hours |
-| `11` | `11-trigger-management.md` | `11-trigger-management-answer.md` | 6 hours |
-| `12` | `12-ga4-operations-and-scenarios.md` | `12-ga4-operations-and-scenarios-answer.md` | 10 hours |
-|  | **Total subtask effort** | **98 hours** |
-
-The parent task includes an additional 4 hours for kickoff, cross-review, consolidation, and knowledge sharing, bringing the total estimate to **102 hours**. Recommended timeline: **approximately 10–11 weeks**, averaging 8–10 hours per week plus review and feedback time.
+| Prefix | Jira description | Answer / instructions |
+|---|---|---|
+| `00` | `00-main-task.md` | `00-main-task-answer.md` |
+| `01` | `01-data-layer-design.md` | `01-data-layer-design-answer.md` |
+| `02` | `02-variable-management.md` | `02-variable-management-answer.md` |
+| `03` | `03-event-parameter-naming.md` | `03-event-parameter-naming-answer.md` |
+| `04` | `04-debugging-analytics-qa.md` | `04-debugging-analytics-qa-answer.md` |
+| `05` | `05-tracking-flow-audit.md` | `05-tracking-flow-audit-answer.md` |
+| `06` | `06-proof-of-concept.md` | `06-proof-of-concept-answer.md` |
+| `07` | `07-ga4-reports-and-charts.md` | `07-ga4-reports-and-charts-answer.md` |
+| `08` | `08-tag-management.md` | `08-tag-management-answer.md` |
+| `09` | `09-folder-organization.md` | `09-folder-organization-answer.md` |
+| `10` | `10-template-governance.md` | `10-template-governance-answer.md` |
+| `11` | `11-trigger-management.md` | `11-trigger-management-answer.md` |
+| `12` | `12-ga4-operations-and-scenarios.md` | `12-ga4-operations-and-scenarios-answer.md` |
 
 ## Recommended Sequence
 

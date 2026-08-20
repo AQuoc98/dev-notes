@@ -43,7 +43,7 @@ A tracking plan is the human-readable measurement contract. It connects a busine
 
 Analytics QA verifies meaning and transport. A tag firing is insufficient: the right event must fire once, at the right business moment, with valid values, under the right consent state, and arrive in the intended GA4 property.
 
-## Working Example
+## Example Flow — Confirmed Registration
 
 Use a non-production sign-up journey unless the team selects another flow:
 

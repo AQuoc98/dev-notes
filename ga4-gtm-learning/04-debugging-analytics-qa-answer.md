@@ -64,6 +64,21 @@ A failure downstream does not identify the cause. For example, a missing DebugVi
 - Retest the fix plus adjacent regression cases.
 - Obtain independent reviewer sign-off.
 
+## Example Flow — Diagnose a Missing Event
+
+```text
+Expected `sign_up` is absent from DebugView
+→ reproduce with a known test case
+→ confirm whether `dataLayer.push()` occurred once
+→ inspect GTM event variables and trigger conditions
+→ inspect tag consent and firing status
+→ inspect the GA4 network request and destination ID
+→ verify DebugView device/property
+→ record the first failing layer, fix it, and rerun positive and negative tests
+```
+
+For example, if the Data Layer event exists but the custom-event trigger uses `signup`, the first failing layer is GTM trigger evaluation—not GA4 processing.
+
 ## Required Test Matrix
 
 | ID | Case | Action | Expected |
@@ -126,4 +141,3 @@ Do not attach evidence containing PII or live credentials. Redact safely if need
 - [Tag Assistant](https://support.google.com/tagmanager/answer/13355721)
 - [Consent Mode implementation](https://developers.google.com/tag-platform/security/guides/consent)
 - [Avoid sending PII](https://support.google.com/analytics/answer/6366371)
-

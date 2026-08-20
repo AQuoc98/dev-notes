@@ -44,6 +44,21 @@ The audit is not merely a tag inventory. It must establish traceability, test be
 9. Prioritize Must/Should/Could and quick-win/long-term items.
 10. Review factual accuracy with development, QA, analytics, and the business owner.
 
+## Example Flow — Audit a Registration Event
+
+```text
+Stakeholder expects one confirmed registration
+→ reproduce the journey and capture baseline counts
+→ trace application success callback and Data Layer push
+→ inventory trigger, variables, tag, consent, and destination
+→ compare network payload with DebugView
+→ find that both a form-click tag and `sign_up` custom-event tag send success
+→ classify duplicate counting as Must fix
+→ recommend retaining only the authoritative custom-event implementation
+```
+
+The evidence links the observed duplicate to its exact source and gives the POC a measurable before/after target.
+
 ## As-is Flow Map Template
 
 ```text

@@ -25,6 +25,21 @@ Alternatives such as platform/vendor, project, or team can work, but document th
 - Keep names descriptive because search and inventories remain important even with folders.
 - Reorganize in a dedicated workspace, review the change set, run Preview, and publish through the normal approval process.
 
+## Example Flow — Organize a Registration Journey
+
+```text
+Inventory registration tags, triggers, and user-defined variables
+→ create `Journey - Registration`
+→ move journey-specific components into that folder
+→ keep the shared Google tag in `Shared - GA4 Foundation`
+→ document shared consumers
+→ review the workspace change set
+→ run Preview to confirm behavior is unchanged
+→ publish through normal approval
+```
+
+Folder movement improves navigation only; it does not change firing, access, dependencies, or publication behavior.
+
 ## Inventory Template
 
 | Folder | Purpose | Included components | Owner | Review/cleanup date | Notes |

@@ -142,6 +142,22 @@ Views: Table/heat map for exact comparison; line chart tab for trend
 - [ ] Check totals and trends for plausibility; explain, do not silently dismiss, discrepancies.
 - [ ] Have a stakeholder answer the original question using only the report and its notes.
 
+## Example Flow — From Question to Report and Chart
+
+```text
+Question: Which registration method has the highest completion rate?
+→ confirm `form_start` and `sign_up` definitions and `method` availability
+→ register `method` only if a custom definition is required
+→ wait for processed data
+→ build a reusable detail report for monitoring
+→ build an Exploration segmented by method for deeper comparison
+→ choose a bar chart for method comparison
+→ validate filters, scope, counts, freshness, and privacy
+→ write an interpretation with limitations and owner
+```
+
+The conclusion distinguishes observed association from causation and records whether thresholding, sampling, or low volume limits the comparison.
+
 ## Interpretation Note Template
 
 ```text

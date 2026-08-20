@@ -114,6 +114,21 @@ Use the current native Google tag and GA4 event tag templates. Do not deploy gta
 - [ ] Choose adopt, revise, or reject and explain why.
 - [ ] Create rollout/remediation items with owner, effort, dependency, and rollback plan.
 
+## Example Flow — Execute the Registration POC
+
+```text
+Approve the registration contract and success criteria
+→ create an isolated GTM workspace and QA destination
+→ implement Data Layer pushes, variables, custom-event triggers, and GA4 tags
+→ test valid, invalid, duplicate, SPA, and consent cases
+→ verify Data Layer, Preview, network, and DebugView evidence
+→ compare results with the previous implementation
+→ obtain reviewer sign-off
+→ decide adopt, revise, or reject and create rollout actions
+```
+
+The POC passes only when confirmed registration produces exactly one `sign_up` and invalid submission produces none.
+
 ## Test Result Template
 
 | Test | Data Layer | GTM | Network | DebugView | Privacy/consent | Overall | Evidence |

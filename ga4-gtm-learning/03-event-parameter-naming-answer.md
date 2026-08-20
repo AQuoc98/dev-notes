@@ -70,6 +70,21 @@ Do not create a custom synonym such as `registration_complete` when recommended 
 | `sign_up` | `form_id` | string | No | `account_registration` | Application constant | Event-scoped dimension if approved |
 | `sign_up_error` | `error_type` | string | Yes | Controlled enum | Application error mapping | Event-scoped dimension if approved |
 
+## Example Flow — Business Meaning to GA4 Schema
+
+```text
+Business question: Which registration methods complete successfully?
+→ select recommended event `sign_up`
+→ define success as confirmed account creation
+→ add controlled parameter `method`
+→ document type and allowed values: `email`, `google`, `apple`
+→ implement the same names in the Data Layer and GTM
+→ register a custom dimension only if reporting requires it
+→ QA checks naming, values, cardinality, and privacy
+```
+
+Button labels such as `Click blue Google button` never become event names because presentation text may change without changing the business action.
+
 ## Steps to Complete the Task
 
 1. List the business questions before listing events.

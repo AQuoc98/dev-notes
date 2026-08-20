@@ -1,128 +1,314 @@
 # 01 — Data Layer Design
 
-## Theory
+## What is a Data Layer, GTM and GA?
 
-### What is a Data Layer?
-
-A Data Layer is a structured JavaScript interface through which an application exposes business events and contextual values to GTM. GTM temporarily reads these messages and uses them in triggers, variables, and tags.
-
-It is a **contract**, not a database and not merely an array of arbitrary values. It separates business meaning from UI markup so a CSS, layout, or text change does not silently break analytics.
-
-### Data Layer principles
-
-1. **Business-oriented:** describe an outcome (`sign_up`), not a UI gesture (`green_button_click`).
-2. **Authoritative:** push from the code that knows the outcome. For example, push success after the server confirms it, not when the user clicks Submit.
-3. **Stable:** producers and consumers agree on names, types, allowed values, and timing.
-4. **Event-scoped:** include the values needed for that event in the same push.
-5. **Minimal:** collect only data that answers an approved business question.
-6. **Privacy-safe:** never expose PII, credentials, tokens, or unrestricted user input.
-7. **Deterministic:** one business occurrence produces one event.
-8. **Implementation-independent:** avoid DOM selectors, presentation text, and framework internals.
-9. **Versioned:** incompatible contract changes require migration and coordination.
-10. **Testable:** every field has an explicit type, source, and validation rule.
-
-GTM processes Data Layer messages in first-in, first-out order. Tags triggered by an event evaluate that message before GTM moves to the next message. Therefore, push the event and its required values together.
-
-## Recommended Contract
-
-Use one global Data Layer and never overwrite it after GTM loads:
-
-```javascript
-window.dataLayer = window.dataLayer || [];
+```text
+Website/App
+↓
+Data Layer
+↓
+GTM - processes Data Layer messages in first-in, first-out order
+↓
+GA4 / Ads / other tools
 ```
 
-Example success event:
+A **Data Layer** is a JavaScript object used to store structured data that Google Tag Manager can read and send to GA4.
 
-```javascript
-window.dataLayer.push({
-  event: 'sign_up',
-  event_schema_version: '1.0',
-  method: 'email',
-  form_id: 'account_registration',
-  page_type: 'registration'
+**GTM (Google Tag Manager)** is a tool for managing and deploying tracking tags on a website or app without needing to change application code every time.
+
+**GA (Google Analytics)** is a platform for collecting, analyzing, and reporting user behavior on websites and apps.
+
+## Data Layer principles
+
+### 1 - Describe business facts
+
+Event should describe what happened from a business perspective, rather than the UI action the user performed
+
+**bad**
+
+```js
+dataLayer.push({
+  event: "green_button_click",
 });
 ```
 
-Invalid example:
+**good**
 
-```javascript
-window.dataLayer.push({
-  event: 'submit_button_clicked', // UI action, not confirmed outcome
-  email: 'person@example.com',    // PII: prohibited
-  total: 'true'                   // unclear name and wrong/unclear type
+```js
+dataLayer.push({
+  event: "sign_up",
 });
 ```
 
-### Contract table
+The UI may change from a green button to a blue button, or the button text may change from "Create Account" to "Register", but the business outcome remains the same: the user signed up.
 
-| Field | Type | Required | Allowed/example | Source | Rule |
-| --- | --- | --- | --- | --- | --- |
-| `event` | string | Yes | `sign_up` | Application outcome handler | Stable business name |
-| `event_schema_version` | string | Yes | `1.0` | Application constant | Increment for incompatible changes |
-| `method` | string | Yes | `email`, `google`, `apple` | Authentication method enum | No email address |
-| `form_id` | string | Yes | `account_registration` | Application constant | Stable ID, not DOM ID |
-| `page_type` | string | No | `registration` | Route metadata | Controlled vocabulary |
+This keeps analytics independent of UI implementation.
 
-### Reset and stale-data rule
+### 2 - Emit reliable events
 
-GTM’s internal Data Layer model can retain values. Do not rely on a previous push to supply current event values. Put event-specific values in the same push. For ecommerce, clear stale ecommerce data before the next ecommerce event when required by the implementation pattern:
+Push an event only when the business outcome has actually been confirmed, and emit it once per occurrence.
 
-```javascript
-window.dataLayer.push({ ecommerce: null });
-window.dataLayer.push({
-  event: 'view_item',
-  ecommerce: {
-    currency: 'USD',
-    value: 29.99,
-    items: [{ item_id: 'SKU_123', item_name: 'Example product', price: 29.99 }]
+**bad**
+
+```js
+const handleSubmit = () => {
+  dataLayer.push({
+    event: "sign_up",
+  });
+
+  createAccount();
+};
+```
+
+**good**
+
+```js
+const handleSubmit = async () => {
+  const response = await createAccount();
+
+  if (response.success) {
+    dataLayer.push({
+      event: "sign_up",
+    });
   }
+};
+```
+
+### 3 - Use a clear, stable contract
+
+The team should agree on the exact structure of each event
+
+```js
+dataLayer.push({
+  event: "calculation_completed",
+  country: "us",
+  connection_type: "ledger",
+  result_count: 12,
 });
 ```
 
-### SPA rule
+```text
+event
+  type: string
+  value: "calculation_completed"
 
-For a single-page application:
+country
+  type: string
+  allowed values: "us" | "ca" | "uk" | ...
 
-- Emit a route event after the router has committed and title/context are final.
-- Choose either GA4 enhanced-measurement history tracking or a manual page-view design; prevent double collection.
-- Do not emit business success events merely because a component rendered.
-- Guard against repeated subscriptions, React development double effects, retries, and back/forward navigation.
+connection_type
+  type: string
+  source: calculation input
 
-## Steps to Complete the Task
+result_count
+  type: number
+  source: API response
+```
 
-1. Pick one journey and list its business outcomes.
-2. Trace each value to its authoritative application source.
-3. Define one row per event/field using the contract table above.
-4. Mark required/optional fields, types, enums, nullability, and examples.
-5. Define exact trigger timing and deduplication responsibility.
-6. Document SPA, asynchronous response, retry, and reset behavior.
-7. Review every value for PII, secrets, sensitive data, and cardinality.
-8. Add valid, invalid, edge, and denied-consent examples.
-9. Have development confirm feasibility and QA derive test cases.
-10. Version and approve the contract before GTM configuration.
+### 4 - Keep each event self-contained
 
-## Review Checklist
+Each event should contain all the information required to understand that event.
 
-- [ ] Each event represents a business fact and has an owner.
-- [ ] The exact push point is documented.
-- [ ] Required values are in the same push as `event`.
-- [ ] Types and allowed values are unambiguous.
-- [ ] Duplicate prevention and retry behavior are defined.
-- [ ] SPA route behavior and page-view ownership are defined.
-- [ ] No DOM scraping is required for contract data.
-- [ ] No prohibited personal or sensitive data appears in examples.
-- [ ] Compatible versus breaking version changes are defined.
-- [ ] Development and QA approve the contract.
+**avoid**
 
-## Deliverable Template
+```js
+dataLayer.push({
+  country: "us",
+});
 
-| Event | Business definition | Trigger point | Field | Type | Required | Allowed values | Source | Owner | Test ID |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `sign_up` | Account created successfully | Successful server response, once | `method` | string | Yes | `email`, `google`, `apple` | Auth response/context | Product | TC-01 |
+dataLayer.push({
+  connection_type: "ledger",
+});
 
-## Official References
+dataLayer.push({
+  event: "calculation_completed",
+});
+```
 
-- [The Data Layer](https://developers.google.com/tag-platform/tag-manager/datalayer)
-- [GTM components and Data Layer guidance](https://support.google.com/tagmanager/answer/6103657)
-- [Consent implementation](https://developers.google.com/tag-platform/security/guides/consent)
-- [Avoid sending PII](https://support.google.com/analytics/answer/6366371)
+**prefer**
+
+```js
+dataLayer.push({
+  event: "calculation_completed",
+  country: "us",
+  connection_type: "ledger",
+  result_count: 12,
+});
+```
+
+```text
+What happened?
+→ calculation_completed
+
+Where?
+→ us
+
+Which connection type?
+→ ledger
+
+How many results?
+→ 12
+```
+
+### 5 - Collect only safe, useful data
+
+Every field should answer an approved business question.
+
+For example, if the business wants to know: Which connection types are calculated most frequently?
+
+Then this is useful
+
+```js
+{
+  event: 'calculation_completed',
+  connection_type: 'ledger'
+}
+```
+
+Avoid sending the entire application state just because it is available. That object may contain unnecessary or sensitive information.
+
+```js
+dataLayer.push({
+  event: "calculation_completed",
+  ...formData,
+});
+```
+
+.
+Never send values such as:
+
+```js
+{
+email: 'user@example.com', // PII ❌
+access_token: 'eyJ...', // Secret ❌
+password: '...', // Secret ❌
+user_comment: inputValue // Unrestricted input ❌
+}
+```
+
+### Summary
+
+```text
+
+1. WHAT happened?
+   → Describe the business outcome
+
+2. DID it actually happen?
+   → Emit only when confirmed, once
+
+3. WHAT does the event look like?
+   → Define a stable contract
+
+4. CAN the event stand alone?
+   → Include all required context
+
+5. DO we really need this data?
+   → Collect only useful and safe data
+   Together, these principles make the Data Layer business-oriented, reliable, consistent, self-contained, and privacy-safe.
+```
+
+## Example review: FD Calculation Action
+
+The original FD payload is a useful starting point, but it does not fully satisfy the principles because it uses a generic UI-oriented event name, display labels as values, mixed naming conventions, and strings for numeric and Boolean concepts. The corrected example below makes the business fact, timing, types, and contract explicit while retaining the complete calculation snapshot needed by the approved reporting questions.
+
+## FD Calculation Action — Business Flow and Data Layer Contract
+
+### Business logic and event flow
+
+The business wants to measure how often users change FD calculation inputs and how often those calculations produce a solution. The **Calculation Action** journey begins whenever a user changes an input value:
+
+```text
+User changes an FD input value
+→ application captures the complete input snapshot
+→ application sends that snapshot to the calculation API
+→ API returns for the same snapshot
+→ application determines whether the response produced output
+→ application sets `solution_found` to `Yes` or `No`
+→ application pushes one complete `calculation_action` message
+→ GTM maps the approved fields and sends the event to GA4
+```
+
+The input change initiates the journey, but the application pushes the event only after the matching API response is known. This makes `solution_found` authoritative:
+
+- `"Yes"`: the API returned a result that was produced in the output section.
+- `"No"`: the API response produced no result in the output section.
+
+### Canonical event fields
+
+| Field                  | Type    | Required | Allowed/example      | Source                    | Rule                                                           |
+| ---------------------- | ------- | -------- | -------------------- | ------------------------- | -------------------------------------------------------------- |
+| `event`                | string  | Yes      | `calculation_action` | Application constant      | Stable business event name                                     |
+| `event_schema_version` | string  | Yes      | `1.0`                | Application constant      | Increment for incompatible contract changes                    |
+| `app_name`             | string  | Yes      | `fd`                 | Application constant      | Stable application identifier                                  |
+| `solution_found`       | boolean | Yes      | `true`, `false`      | Matching API response     | `true` only when that response produced output                 |
+| `inputs`               | object  | Yes      | See the table below  | Current calculation state | One complete snapshot associated with the matching API request |
+
+### `inputs` fields
+
+The current UI supplies display-form values, but the canonical contract uses stable machine-readable values and natural types. Keep the mapping from UI/API values to these values in application code, not in GTM.
+
+| Field                   | Type    | Example                          | Source/UI mapping                |
+| ----------------------- | ------- | -------------------------------- | -------------------------------- |
+| `country`               | string  | `gb`                             | `United Kingdom`                 |
+| `language`              | string  | `en`                             | `English`                        |
+| `building_code`         | string  | `en_1995_1_1_2004_a2_2014`       | `EN 1995-1-1:2004/A2:2014`       |
+| `design_method`         | string  | `lsd`                            | `Limit States Design (LSD)`      |
+| `unit_system`           | string  | `metric`                         | `Metric`                         |
+| `connection_type`       | string  | `clt_floor_floor_half_lap_joint` | `CLT Floor-Floor Half-Lap Joint` |
+| `fastener_installation` | string  | `typical`                        | `Typical`                        |
+| `fx`                    | number  | `1`                              | `fxInput: "1"`                   |
+| `fy`                    | number  | `0`                              | `fyInput: "0"`                   |
+| `load_duration`         | string  | `medium_term`                    | `Medium Term`                    |
+| `main_member_thickness` | number  | `180`                            | `tm: "180"`                      |
+| `side_member_thickness` | number  | `180`                            | `ts: "180"`                      |
+| `side_member_grade`     | string  | `c24`                            | `sgs: "350 (C24)"`               |
+| `side_member_density`   | number  | `350`                            | `sgs: "350 (C24)"`               |
+| `main_member_grade`     | string  | `c24`                            | `sgm: "350 (C24)"`               |
+| `main_member_density`   | number  | `350`                            | `sgm: "350 (C24)"`               |
+| `contact_length`        | number  | `3000`                           | `contactLength: "3000"`          |
+| `predrilled`            | boolean | `false`                          | `predrill: "No"`                 |
+| `fastener_angle`        | number  | `90`                             | `alphaFastener: "90"`            |
+| `service_class`         | string  | `service_class_1`                | `Service Class 1`                |
+
+### Complete Data Layer message
+
+This is the complete message for a calculation that produced a solution:
+
+```javascript
+window.dataLayer.push({
+  event: "calculation_action",
+  event_schema_version: "1.0",
+  app_name: "fd",
+  solution_found: true,
+  inputs: {
+    country: "gb",
+    language: "en",
+    building_code: "en_1995_1_1_2004_a2_2014",
+    design_method: "lsd",
+    unit_system: "metric",
+    connection_type: "clt_floor_floor_half_lap_joint",
+    fastener_installation: "typical",
+    fx: 1,
+    fy: 0,
+    load_duration: "medium_term",
+    main_member_thickness: 180,
+    side_member_thickness: 180,
+    side_member_grade: "c24",
+    side_member_density: 350,
+    main_member_grade: "c24",
+    main_member_density: 350,
+    contact_length: 3000,
+    predrilled: false,
+    fastener_angle: 90,
+    service_class: "service_class_1",
+  },
+});
+```
+
+This design follows the Data Layer principles:
+
+- **Business fact:** `calculation_action` identifies a completed FD calculation attempt, independent of a field label, component, or button.
+- **Reliable event:** the matching API response is the authoritative trigger, and one completed change produces one event.
+- **Stable contract:** field names, string types, allowed values, and sources are explicit. Breaking changes require a coordinated contract version update.
+- **Self-contained message:** `solution_found` and the complete input snapshot are sent together.
+- **Safe and useful data:** irrelevant UI text and GTM-owned metadata are omitted, and the payload contains no PII, credentials, or unrestricted user text.

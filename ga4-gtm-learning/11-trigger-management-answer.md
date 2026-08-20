@@ -22,6 +22,20 @@ A trigger listens for a GTM event and evaluates conditions that tell a tag wheth
 - Reuse a trigger only when every consumer has identical firing semantics.
 - Do not add blocking triggers merely to compensate for misunderstood consent-mode behavior.
 
+## Example Flow — Evaluate the `sign_up` Trigger
+
+```text
+Application pushes `event: sign_up` after server confirmation
+→ GTM creates the `sign_up` event in its timeline
+→ `CE - sign_up` matches the exact event name
+→ required variables are evaluated at that event
+→ the GA4 Event tag fires once
+→ `signup`, invalid submission, and route revisit do not match
+→ Preview and network evidence confirm the outcome
+```
+
+If several tags consume this trigger, every consumer is regression-tested before its conditions are changed.
+
 ## Inventory Template
 
 | Trigger | Type/event | Conditions | Consuming tags | Exceptions/group | Timing risk | Owner | Status |

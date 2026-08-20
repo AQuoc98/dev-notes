@@ -1,56 +1,20 @@
-# Subtask 01: Design the Data Layer
+# Jira Work Request: Research Data Layer Design
 
 ## Objective
 
-Create a stable Data Layer contract between the application and GTM, separating business data from DOM/UI implementation and supporting consistent tracking for a website or SPA.
+Research and document how a Data Layer connects an application to GTM and GA4. Define a simple, reusable design that is independent of the UI and suitable for projects of any size.
 
 ## Scope
 
-- Data Layer design principles and ownership.
-- Event object structure and relevant ecommerce, user, or context data.
-- Event push, data reset, SPA navigation, and timing rules.
-- Versioning, backward compatibility, consent, and PII controls.
-- The selected user journey, not an enterprise-wide schema.
-
-## Work Items
-
-1. Review the current data flow and data sources.
-2. Define business events, required/optional fields, and data types.
-3. Design the schema and sample `dataLayer.push()` payloads.
-4. Define ownership across product, development, and analytics.
-5. Document validation, versioning, SPA timing, consent, and PII rules.
-6. Review the contract with development and QA.
+- Define the roles of the Data Layer, GTM, and GA4.
+- Explain five principles: business-focused events, reliable timing, a stable contract, self-contained events, and safe/useful data.
+- Describe the fields a contract should define: names, types, allowed values, sources, timing, and schema version.
+- Include guidance for UI-independent values, asynchronous outcomes, data minimization, PII, secrets, and unrestricted input.
+- Use generic examples such as `sign_up` and `calculation_completed`; do not define an enterprise-wide schema or implement tracking.
 
 ## Deliverables / Outputs
 
-- Data Layer specification covering event, field, type, requirement, source, description, and example.
-- Valid and invalid payload examples.
-- Data-flow diagram and implementation guidance.
-- Versioning rules and a Data Layer review checklist.
-
-## Expected Result
-
-The application exposes a clear event contract, GTM does not depend on fragile DOM scraping, and the team can extend tracking with lower regression risk.
-
-## Acceptance Criteria
-
-- [ ] Every event has a business definition, trigger point, and owner.
-- [ ] Required fields, types, allowed values, and examples are documented.
-- [ ] SPA route changes, duplicates, and asynchronous state are covered.
-- [ ] Sample payloads contain no email addresses, phone numbers, or other PII.
-- [ ] Development and QA confirm the schema is implementable and testable.
-
-## Dependencies
-
-- Defined user journey and measurement requirements.
-- Access to the current code and Data Layer.
-- Developer input about data sources and application lifecycle.
-
-## Estimated Effort
-
-**10 hours** — discovery 2h, design 4h, examples/checklist 2h, review and revision 2h.
-
-## Instructions / Answer
-
-See [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).
-
+- A short Data Layer design document with a simple application → Data Layer → GTM → GA4 flow.
+- A clear explanation of the five principles.
+- Contract examples showing field definitions, valid/invalid events, correct types, complete context, and privacy-safe data.
+- The detailed response and reference: [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).

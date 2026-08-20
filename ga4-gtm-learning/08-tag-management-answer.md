@@ -26,6 +26,20 @@ Use `[platform/type] - [event or purpose] - [qualifier]`, for example:
 
 The description should state business purpose, owner, ticket/spec, expected event, parameters, destination, consent behavior, and retirement condition.
 
+## Example Flow — Configure a GA4 Event Tag
+
+```text
+Approved `sign_up` Data Layer event occurs
+→ `CE - sign_up` trigger matches
+→ `GA4 Event - sign_up` reads `method` and `form_id`
+→ built-in consent checks evaluate the current state
+→ tag sends once to the QA Google tag destination
+→ network payload and DebugView confirm the event
+→ denied, invalid, and repeated cases follow documented behavior
+```
+
+The tag description links to the tracking plan, lists its inputs and destination, and identifies its owner and retirement condition.
+
 ## Inventory Template
 
 | Tag | Type/template | Purpose | Firing triggers | Exceptions | Variables/parameters | Consent | Destination | Owner | Status |

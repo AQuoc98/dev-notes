@@ -27,6 +27,21 @@ For every non-built-in template, record:
 
 Never include secrets in template code or fields, and never approve collection of prohibited personal data.
 
+## Example Flow — Evaluate a Community Tag Template
+
+```text
+A vendor integration is not available as a built-in tag
+→ confirm the business requirement
+→ inspect the Gallery publisher, source, license, maintenance, and documentation
+→ review requested permissions, endpoints, and data handling
+→ import into a non-production workspace
+→ test normal, invalid, failure, and consent cases
+→ approve and record the version and consumers
+→ review future updates as new code changes
+```
+
+If permissions are broader than the requirement or maintenance is unclear, reject the template and assess a safer supported alternative.
+
 ## Inventory Template
 
 | Template | Tag/variable | Origin/source | Version | Permissions/endpoints | Consumers | Owner | Last review | Status |

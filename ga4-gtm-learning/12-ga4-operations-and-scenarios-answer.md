@@ -34,6 +34,21 @@ Use separate properties or streams only for a documented business and governance
 | Offline/server interaction | Measurement Protocol supplements normal tagging | Identity linkage, time/session context, validation, consent, deduplication |
 | Raw/long-term analysis | Assess BigQuery export or Data API | Surface differences, cost, access, retention, ownership |
 
+## Example Flow — Cross-Domain Checkout
+
+```text
+User arrives on `www.example.com` from a campaign
+→ browses products and starts checkout
+→ follows a link to owned `checkout.example-pay.com`
+→ both domains use the same approved web stream/tag ID
+→ cross-domain configuration decorates navigation with `_gl`
+→ checkout preserves the parameter through redirects
+→ purchase returns to the original site without a self-referral or new user/session
+→ QA validates acquisition, client/session continuity, consent, and purchase deduplication
+```
+
+If the checkout domain is an external provider that cannot participate in cross-domain measurement, evaluate unwanted-referral configuration while preserving the original campaign source.
+
 ## Enhanced Measurement and SPAs
 
 Inventory enabled enhanced-measurement events and exact definitions. Do not deploy custom tracking with overlapping semantics without preventing duplicates. For an SPA, test initial load, route change, back/forward, relevant query/hash changes, title/location values, and consent states.
