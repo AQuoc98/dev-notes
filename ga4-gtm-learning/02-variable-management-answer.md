@@ -31,7 +31,7 @@ These rules affect how Data Layer Variables behave:
 
 Recommended:
 
-~~~javascript
+```javascript
 window.dataLayer.push({
   event: "calculation_action",
   solution_found: true,
@@ -39,14 +39,14 @@ window.dataLayer.push({
     connection_type: "multi_ply_connection",
   },
 });
-~~~
+```
 
 Avoid splitting the event across messages:
 
-~~~javascript
+```javascript
 window.dataLayer.push({ inputs: { connection_type: "multi_ply_connection" } });
 window.dataLayer.push({ event: "calculation_action", solution_found: true });
-~~~
+```
 
 ## Key aspects of variable management
 
@@ -1256,7 +1256,7 @@ The goal is not to make every variable follow the same text style. The goal is t
 
 | Prefix   | Type                | Example                                 |
 | -------- | ------------------- | --------------------------------------- |
-| `DLV`    | Data Layer Variable | `SHARED - DLV - solution_found`        |
+| `DLV`    | Data Layer Variable | `SHARED - DLV - solution_found`         |
 | `CONST`  | Constant            | `FD - CONST - GA4 Measurement ID - QA`  |
 | `LUT`    | Lookup Table        | `FD - LUT - Hostname to Measurement ID` |
 | `RLT`    | RegEx Table         | `WEB - RLT - Page Path to Page Type`    |

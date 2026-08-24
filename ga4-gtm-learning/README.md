@@ -4,21 +4,21 @@ This folder separates Jira-ready task descriptions from their detailed answers/i
 
 ## Document Structure
 
-| Prefix | Jira description | Answer / instructions |
-|---|---|---|
-| `00` | `00-main-task.md` | `00-main-task-answer.md` |
-| `01` | `01-data-layer-design.md` | `01-data-layer-design-answer.md` |
-| `02` | `02-variable-management.md` | `02-variable-management-answer.md` |
-| `03` | `03-event-parameter-naming.md` | `03-event-parameter-naming-answer.md` |
-| `04` | `04-debugging-analytics-qa.md` | `04-debugging-analytics-qa-answer.md` |
-| `05` | `05-tracking-flow-audit.md` | `05-tracking-flow-audit-answer.md` |
-| `06` | `06-proof-of-concept.md` | `06-proof-of-concept-answer.md` |
-| `07` | `07-ga4-reports-and-charts.md` | `07-ga4-reports-and-charts-answer.md` |
-| `08` | `08-tag-management.md` | `08-tag-management-answer.md` |
-| `09` | `09-folder-organization.md` | `09-folder-organization-answer.md` |
-| `10` | `10-template-governance.md` | `10-template-governance-answer.md` |
-| `11` | `11-trigger-management.md` | `11-trigger-management-answer.md` |
-| `12` | `12-ga4-operations-and-scenarios.md` | `12-ga4-operations-and-scenarios-answer.md` |
+| Prefix | Jira description                     | Answer / instructions                       |
+| ------ | ------------------------------------ | ------------------------------------------- |
+| `00`   | `00-main-task.md`                    | `00-main-task-answer.md`                    |
+| `01`   | `01-data-layer-design.md`            | `01-data-layer-design-answer.md`            |
+| `02`   | `02-variable-management.md`          | `02-variable-management-answer.md`          |
+| `03`   | `03-event-parameter-naming.md`       | `03-event-parameter-naming-answer.md`       |
+| `04`   | `04-debugging-analytics-qa.md`       | `04-debugging-analytics-qa-answer.md`       |
+| `05`   | `05-tracking-flow-audit.md`          | `05-tracking-flow-audit-answer.md`          |
+| `06`   | `06-proof-of-concept.md`             | `06-proof-of-concept-answer.md`             |
+| `07`   | `07-ga4-reports-and-charts.md`       | `07-ga4-reports-and-charts-answer.md`       |
+| `08`   | `08-tag-management.md`               | `08-tag-management-answer.md`               |
+| `09`   | `09-folder-organization.md`          | `09-folder-organization-answer.md`          |
+| `10`   | `10-template-governance.md`          | `10-template-governance-answer.md`          |
+| `11`   | `11-trigger-management.md`           | `11-trigger-management-answer.md`           |
+| `12`   | `12-ga4-operations-and-scenarios.md` | `12-ga4-operations-and-scenarios-answer.md` |
 
 ## Recommended Sequence
 
@@ -42,3 +42,10 @@ This folder separates Jira-ready task descriptions from their detailed answers/i
 - Start with `00`; use `01`–`03` to define data and naming; apply `08`–`11` to GTM; use `12` for GA4 property and scenario decisions; prepare QA with `04`; use `05` to select the POC target; execute `06`; and use its validated data in `07`.
 - Replace bracketed placeholders and complete each answer checklist with links to sanitized evidence.
 - Re-check linked official Google documentation during implementation because platform limits and interfaces can change.
+
+## References
+
+- [Google Analytics 4](https://ga4.com/) -[Google An ](https://developers.google.com/analytics)
+- [Google Tag Manager](https://support.google.com/tagmanager/?hl=en#topic=15191151)
+- [Google Analytics Developer Documentation](https://developers.google.com/analytics)
+- [Google Tag Manager](https://support.google.com/tagmanager/?hl=en#topic=15191151)

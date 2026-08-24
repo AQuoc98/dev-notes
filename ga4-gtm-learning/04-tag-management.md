@@ -17,12 +17,6 @@ Define how GTM tags are selected, configured, named, tested, approved, monitored
 - One scoped tag inventory and dependency map containing purpose, template/type, variables, triggers, exceptions, consent, destination, owner, status, and linked requirements.
 - One tag decision matrix and sanitized POC tag test record demonstrating expected and prohibited firing behavior through Preview, network, and destination evidence.
 
-## Dependencies
-
-- Approved Data Layer contract and event naming standard.
-- GTM workspace and Preview/Tag Assistant access.
-- Applicable consent requirements and destination identifiers.
-
 ## Instructions / Answer
 
 See [08-tag-management-answer.md](./08-tag-management-answer.md).

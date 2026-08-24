@@ -1,4 +1,4 @@
-# 08 — GTM Tag Management
+# 04 — GTM Tag Management
 
 ## Theory
 
@@ -42,9 +42,9 @@ The tag description links to the tracking plan, lists its inputs and destination
 
 ## Inventory Template
 
-| Tag | Type/template | Purpose | Firing triggers | Exceptions | Variables/parameters | Consent | Destination | Owner | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `GA4 Event - sign_up` | GA4 Event | Confirmed registration | `CE - sign_up` | None | `method`, `form_id` | `[required state]` | `[stream/ID]` | Analytics | Active |
+| Tag                   | Type/template | Purpose                | Firing triggers | Exceptions | Variables/parameters | Consent            | Destination   | Owner     | Status |
+| --------------------- | ------------- | ---------------------- | --------------- | ---------- | -------------------- | ------------------ | ------------- | --------- | ------ |
+| `GA4 Event - sign_up` | GA4 Event     | Confirmed registration | `CE - sign_up`  | None       | `method`, `form_id`  | `[required state]` | `[stream/ID]` | Analytics | Active |
 
 ## Review and Test Workflow
 
