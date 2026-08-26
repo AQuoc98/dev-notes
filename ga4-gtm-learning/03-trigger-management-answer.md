@@ -757,3 +757,10 @@ Evidence location:      [Preview, Network, DebugView links or sanitized capture]
 | T10     | Consuming tags        | Inspect Network and DebugView                          | Correct event, parameters, destination, type, consent, and count | **Not run—Network/DebugView required**                | `[add link]` | Pending |
 
 Because no GTM Preview or network evidence is included in the source material, the FD rows above are a required completion record, not a claim that the tests have passed.
+
+## References
+
+- [Tag Manager Help — About triggers](https://support.google.com/tagmanager/answer/7679316?hl=en): trigger behavior, trigger filters, and the requirement that tags have a trigger.
+- [Tag Manager Help — Custom event trigger](https://support.google.com/tagmanager/answer/7679219?hl=en): using a custom event pushed to the data layer to trigger tags.
+- [Tag Manager Help — Best practices for trigger configuration](https://support.google.com/tagmanager/answer/7679102?hl=en): testing, scoping filters, and consent-initialization considerations.
+- [Tag Manager Help — Preview and debug containers](https://support.google.com/tagmanager/answer/6107056?hl=en): using Tag Assistant to inspect firing status, order, and processed data before publishing.

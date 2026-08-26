@@ -312,3 +312,9 @@ This design follows the Data Layer principles:
 - **Stable contract:** field names, string types, allowed values, and sources are explicit. Breaking changes require a coordinated contract version update.
 - **Self-contained message:** `solution_found` and the complete input snapshot are sent together.
 - **Safe and useful data:** irrelevant UI text and GTM-owned metadata are omitted, and the payload contains no PII, credentials, or unrestricted user text.
+
+## References
+
+- [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer): data layer structure, `dataLayer.push()`, event processing order, persistence, naming, and troubleshooting.
+- [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en): how tags, triggers, variables, and the data layer work together.
+- [Google Analytics — Set up events](https://developers.google.com/analytics/devguides/collection/ga4/events): GA4 event names, parameters, custom events, and validation in Realtime and DebugView.

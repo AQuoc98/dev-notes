@@ -2193,3 +2193,10 @@ Update ownership, consumers, and inventory.
 RETIRE
 Deprecate and safely remove obsolete variables.
 ```
+
+## References
+
+- [Tag Manager Help — Variable](https://support.google.com/tagmanager/answer/13355320?hl=en): the role of variables in tags and triggers.
+- [Tag Manager Help — User-defined variable types for web](https://support.google.com/tagmanager/answer/7683362?hl=en): supported user-defined variable types, including Data Layer, URL, cookie, DOM, and Custom JavaScript variables.
+- [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en): the relationship between variables, the data layer, triggers, and tags.
+- [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer): data layer values, event processing, persistence, and naming considerations.
