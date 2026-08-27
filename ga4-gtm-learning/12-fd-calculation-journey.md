@@ -132,38 +132,38 @@ The submit click is not the successful signup. It may be useful as a separate in
 
 Example contract:
 
-| Contract field | Approved example |
-| --- | --- |
-| Business event | Account creation confirmed by the server |
-| GA4 event name | `sign_up` |
-| Authoritative source | Application Data Layer push after successful account creation |
-| Required parameter | `method`, for example `email`, `google`, or `apple` |
-| Required parameter | `form_id`, for example `register` |
-| Optional parameter | `event_schema_version`, if included in the approved measurement plan |
-| Expected frequency | Exactly one event per confirmed account creation |
-| Failed validation | No `sign_up` event |
-| Server/API failure | No `sign_up` event |
-| Missing required value | Fail QA and block the invalid Tag path; do not send a placeholder |
-| Optional value missing | Omit it unless the contract defines another behavior |
-| Consent | Follow the approved analytics consent matrix |
-| Destination | Environment-specific GA4 web stream selected safely |
-| Privacy | No email address, password, access token, credential, secret, or unrestricted user input |
-| Owner | Named product/analytics owner and GTM maintainer |
-| Consumers | Approved GA4 reports, key-event analysis, or downstream processes |
+| Contract field         | Approved example                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| Business event         | Account creation confirmed by the server                                                 |
+| GA4 event name         | `sign_up`                                                                                |
+| Authoritative source   | Application Data Layer push after successful account creation                            |
+| Required parameter     | `method`, for example `email`, `google`, or `apple`                                      |
+| Required parameter     | `form_id`, for example `register`                                                        |
+| Optional parameter     | `event_schema_version`, if included in the approved measurement plan                     |
+| Expected frequency     | Exactly one event per confirmed account creation                                         |
+| Failed validation      | No `sign_up` event                                                                       |
+| Server/API failure     | No `sign_up` event                                                                       |
+| Missing required value | Fail QA and block the invalid Tag path; do not send a placeholder                        |
+| Optional value missing | Omit it unless the contract defines another behavior                                     |
+| Consent                | Follow the approved analytics consent matrix                                             |
+| Destination            | Environment-specific GA4 web stream selected safely                                      |
+| Privacy                | No email address, password, access token, credential, secret, or unrestricted user input |
+| Owner                  | Named product/analytics owner and GTM maintainer                                         |
+| Consumers              | Approved GA4 reports, key-event analysis, or downstream processes                        |
 
 ### 3.2 Confirmed `sign_in` variant
 
 For a successful login, use the same workflow with this contract:
 
-| Contract field | Approved example |
-| --- | --- |
-| Business event | Authentication completed successfully |
-| GA4 event name | `sign_in` |
-| Authoritative source | Application Data Layer push after successful authentication |
-| Required parameter | `method`, for example `email`, `google`, or `apple` |
-| Expected frequency | Exactly one event per successful login occurrence, according to the tracking plan |
-| Failed authentication | No `sign_in` event |
-| Privacy | Do not send email, username, password, token, session ID, or authentication response data |
+| Contract field        | Approved example                                                                          |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| Business event        | Authentication completed successfully                                                     |
+| GA4 event name        | `sign_in`                                                                                 |
+| Authoritative source  | Application Data Layer push after successful authentication                               |
+| Required parameter    | `method`, for example `email`, `google`, or `apple`                                       |
+| Expected frequency    | Exactly one event per successful login occurrence, according to the tracking plan         |
+| Failed authentication | No `sign_in` event                                                                        |
+| Privacy               | Do not send email, username, password, token, session ID, or authentication response data |
 
 Do not send both `sign_up` and `sign_in` for the same account-creation occurrence unless the measurement plan explicitly defines both events and their separate meanings.
 
@@ -205,10 +205,10 @@ Avoid sending sensitive or unnecessary values:
 ```javascript
 window.dataLayer.push({
   event: "sign_up",
-  email: "user@example.com",       // PII: do not send
-  password: "...",                 // secret: do not send
-  access_token: "...",             // credential: do not send
-  ...formData,                      // uncontrolled and unsafe
+  email: "user@example.com", // PII: do not send
+  password: "...", // secret: do not send
+  access_token: "...", // credential: do not send
+  ...formData, // uncontrolled and unsafe
 });
 ```
 
@@ -228,7 +228,7 @@ async function submitRegistration(form) {
   window.dataLayer.push({
     event: "sign_up",
     event_schema_version: "1.0",
-    method: form.authMethod,     // approved enum, not an email address
+    method: form.authMethod, // approved enum, not an email address
     form_id: "register",
   });
 }
@@ -447,12 +447,12 @@ Do not enable or use DOM and click Variables as a substitute for an application 
 
 For the `sign_up` example, create or reuse:
 
-| GTM Variable name | Type | Data Layer key | Required behavior |
-| --- | --- | --- | --- |
-| `DLV - Website - method` | Data Layer Variable | `method` | Required approved enum; missing/invalid value fails QA and must not create a valid conversion |
-| `DLV - Website - form_id` | Data Layer Variable | `form_id` | Required for `sign_up`; exact approved value or approved set |
-| `DLV - Website - event_schema_version` | Data Layer Variable | `event_schema_version` | Required if included in the measurement contract |
-| `DLV - Website - app_name` | Data Layer Variable | `app_name` | Required only when the shared container needs application scope |
+| GTM Variable name                      | Type                | Data Layer key         | Required behavior                                                                             |
+| -------------------------------------- | ------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
+| `DLV - Website - method`               | Data Layer Variable | `method`               | Required approved enum; missing/invalid value fails QA and must not create a valid conversion |
+| `DLV - Website - form_id`              | Data Layer Variable | `form_id`              | Required for `sign_up`; exact approved value or approved set                                  |
+| `DLV - Website - event_schema_version` | Data Layer Variable | `event_schema_version` | Required if included in the measurement contract                                              |
+| `DLV - Website - app_name`             | Data Layer Variable | `app_name`             | Required only when the shared container needs application scope                               |
 
 For `sign_in`, the same `DLV - Website - method` may be reused if the allowed values and missing-data rules are identical.
 
@@ -482,12 +482,12 @@ Example:
 LUT - Shared - GA4 Measurement ID by Hostname
 ```
 
-| Page Hostname | Destination |
-| --- | --- |
-| `qa.example.com` | QA Measurement ID |
-| `staging.example.com` | Staging Measurement ID |
-| `www.example.com` | Production Measurement ID |
-| unknown hostname | No valid destination / tag blocked |
+| Page Hostname         | Destination                        |
+| --------------------- | ---------------------------------- |
+| `qa.example.com`      | QA Measurement ID                  |
+| `staging.example.com` | Staging Measurement ID             |
+| `www.example.com`     | Production Measurement ID          |
+| unknown hostname      | No valid destination / tag blocked |
 
 Required controls:
 
@@ -625,15 +625,15 @@ Use it only when the application has confirmed successful authentication. A fail
 
 Use the smallest reliable filter:
 
-| Requirement | Preferred approach |
-| --- | --- |
-| Exact event name | Custom Event with exact name and casing |
-| Exact value | `equals` |
-| Approved value set | Bounded `matches RegEx` or approved lookup, with documented values |
-| Route only | Page Path, when route is genuinely part of the contract |
-| Full URL | Page URL only when host, protocol, path, and query are relevant |
-| Link destination | Click URL for link-specific tracking |
-| DOM state | DOM Ready or Element Visibility only when no authoritative application event exists |
+| Requirement        | Preferred approach                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| Exact event name   | Custom Event with exact name and casing                                             |
+| Exact value        | `equals`                                                                            |
+| Approved value set | Bounded `matches RegEx` or approved lookup, with documented values                  |
+| Route only         | Page Path, when route is genuinely part of the contract                             |
+| Full URL           | Page URL only when host, protocol, path, and query are relevant                     |
+| Link destination   | Click URL for link-specific tracking                                                |
+| DOM state          | DOM Ready or Element Visibility only when no authoritative application event exists |
 
 Anchor regular expressions when boundaries matter. For example:
 
@@ -705,12 +705,12 @@ Trigger:     CE - Website - sign_up - Confirmed
 
 Map only the approved parameters:
 
-| GA4 parameter | GTM value | Behavior |
-| --- | --- | --- |
-| `method` | `{{DLV - Website - method}}` | Required approved enum |
-| `form_id` | `{{DLV - Website - form_id}}` | Required for `sign_up` if in the contract |
-| `event_schema_version` | `{{DLV - Website - event_schema_version}}` | Include only if approved |
-| `app_name` | `{{DLV - Website - app_name}}` | Include only if approved and needed for scope/reporting |
+| GA4 parameter          | GTM value                                  | Behavior                                                |
+| ---------------------- | ------------------------------------------ | ------------------------------------------------------- |
+| `method`               | `{{DLV - Website - method}}`               | Required approved enum                                  |
+| `form_id`              | `{{DLV - Website - form_id}}`              | Required for `sign_up` if in the contract               |
+| `event_schema_version` | `{{DLV - Website - event_schema_version}}` | Include only if approved                                |
+| `app_name`             | `{{DLV - Website - app_name}}`             | Include only if approved and needed for scope/reporting |
 
 Do not add raw email, username, password, access token, API response, free-text form input, or convenient application state.
 
@@ -896,30 +896,30 @@ Inspect:
 
 At minimum, test the following:
 
-| Test | Setup | Expected result |
-| --- | --- | --- |
-| Valid success | Server confirms account creation | One valid `sign_up` request when consent permits |
-| Failed validation | Form validation fails | No `sign_up` event and no success request |
-| Server/API failure | Account creation fails | No `sign_up` event |
-| Click without success | Click Submit but do not complete account creation | No `sign_up` event |
-| Wrong event name | Push `signup` or another name | `sign_up` Trigger does not match |
-| Wrong case | Push `Sign_Up` | Exact Trigger does not match |
-| Missing required value | Omit `method` or `form_id` | Invalid event is blocked or fails QA; no placeholder is sent |
-| Invalid enum | Push an unapproved `method` | Trigger/Tag does not produce a valid production request |
-| Optional value missing | Omit an approved optional value | Parameter is omitted according to the contract |
-| Double click | Submit twice during one successful occurrence | No unintended duplicate request |
-| Retry/callback | Repeat the same success callback | Duplicate behavior is blocked or investigated according to the contract |
-| Two real signups | Complete two separate account creations | Two requests, one per legitimate occurrence |
-| Reload/navigation | Reload or navigate without a new success | No new `sign_up` request |
-| SPA remount | Remount the form/component | No event without a new confirmed outcome |
-| Consent granted | Consent is granted before success | Approved request behavior occurs |
-| Consent denied | Consent is denied before success | Tag is blocked or uses the approved privacy-preserving behavior |
-| Consent update | Change consent before a later success | Behavior follows the consent matrix |
-| QA/staging host | Run on a known non-production host | Non-production Measurement ID is used |
-| Production host | Run the approved smoke test | Production Measurement ID is used only on the known production host |
-| Unknown host | Run on an unsupported host | No production fallback; Tag is blocked or has no valid destination |
-| Legacy path | Trigger a legacy dispatcher event | No duplicate preferred `sign_up` request unless migration explicitly requires it |
-| Privacy review | Inspect Data Layer and request payload | No PII, secrets, tokens, or unrestricted input |
+| Test                   | Setup                                             | Expected result                                                                  |
+| ---------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Valid success          | Server confirms account creation                  | One valid `sign_up` request when consent permits                                 |
+| Failed validation      | Form validation fails                             | No `sign_up` event and no success request                                        |
+| Server/API failure     | Account creation fails                            | No `sign_up` event                                                               |
+| Click without success  | Click Submit but do not complete account creation | No `sign_up` event                                                               |
+| Wrong event name       | Push `signup` or another name                     | `sign_up` Trigger does not match                                                 |
+| Wrong case             | Push `Sign_Up`                                    | Exact Trigger does not match                                                     |
+| Missing required value | Omit `method` or `form_id`                        | Invalid event is blocked or fails QA; no placeholder is sent                     |
+| Invalid enum           | Push an unapproved `method`                       | Trigger/Tag does not produce a valid production request                          |
+| Optional value missing | Omit an approved optional value                   | Parameter is omitted according to the contract                                   |
+| Double click           | Submit twice during one successful occurrence     | No unintended duplicate request                                                  |
+| Retry/callback         | Repeat the same success callback                  | Duplicate behavior is blocked or investigated according to the contract          |
+| Two real signups       | Complete two separate account creations           | Two requests, one per legitimate occurrence                                      |
+| Reload/navigation      | Reload or navigate without a new success          | No new `sign_up` request                                                         |
+| SPA remount            | Remount the form/component                        | No event without a new confirmed outcome                                         |
+| Consent granted        | Consent is granted before success                 | Approved request behavior occurs                                                 |
+| Consent denied         | Consent is denied before success                  | Tag is blocked or uses the approved privacy-preserving behavior                  |
+| Consent update         | Change consent before a later success             | Behavior follows the consent matrix                                              |
+| QA/staging host        | Run on a known non-production host                | Non-production Measurement ID is used                                            |
+| Production host        | Run the approved smoke test                       | Production Measurement ID is used only on the known production host              |
+| Unknown host           | Run on an unsupported host                        | No production fallback; Tag is blocked or has no valid destination               |
+| Legacy path            | Trigger a legacy dispatcher event                 | No duplicate preferred `sign_up` request unless migration explicitly requires it |
+| Privacy review         | Inspect Data Layer and request payload            | No PII, secrets, tokens, or unrestricted input                                   |
 
 For `sign_in`, substitute successful authentication and verify that failed authentication never produces the success event.
 
@@ -980,18 +980,18 @@ Tester/date:            [name / YYYY-MM-DD]
 Evidence:               [Preview, Network, DebugView, sanitized captures]
 ```
 
-| Test ID | Setup/action | Expected result | Actual result | Evidence | Status |
-| --- | --- | --- | --- | --- | --- |
-| T01 | Confirmed signup | One valid `sign_up` request | [record] | [link] | Pending |
-| T02 | Failed validation/API response | No success event/request | [record] | [link] | Pending |
-| T03 | Missing/invalid required value | No misleading valid request | [record] | [link] | Pending |
-| T04 | Click without confirmed success | No `sign_up` request | [record] | [link] | Pending |
-| T05 | Duplicate callback/double submit | Count follows contract | [record] | [link] | Pending |
-| T06 | Consent denied/granted/updated | Approved consent behavior | [record] | [link] | Pending |
-| T07 | QA/staging/production routing | Correct destination per environment | [record] | [link] | Pending |
-| T08 | Unknown environment | No production fallback | [record] | [link] | Pending |
-| T09 | Network payload | Correct event, values, type, and count | [record] | [link] | Pending |
-| T10 | GA4 DebugView/downstream | Event arrives in expected destination | [record] | [link] | Pending |
+| Test ID | Setup/action                     | Expected result                        | Actual result | Evidence | Status  |
+| ------- | -------------------------------- | -------------------------------------- | ------------- | -------- | ------- |
+| T01     | Confirmed signup                 | One valid `sign_up` request            | [record]      | [link]   | Pending |
+| T02     | Failed validation/API response   | No success event/request               | [record]      | [link]   | Pending |
+| T03     | Missing/invalid required value   | No misleading valid request            | [record]      | [link]   | Pending |
+| T04     | Click without confirmed success  | No `sign_up` request                   | [record]      | [link]   | Pending |
+| T05     | Duplicate callback/double submit | Count follows contract                 | [record]      | [link]   | Pending |
+| T06     | Consent denied/granted/updated   | Approved consent behavior              | [record]      | [link]   | Pending |
+| T07     | QA/staging/production routing    | Correct destination per environment    | [record]      | [link]   | Pending |
+| T08     | Unknown environment              | No production fallback                 | [record]      | [link]   | Pending |
+| T09     | Network payload                  | Correct event, values, type, and count | [record]      | [link]   | Pending |
+| T10     | GA4 DebugView/downstream         | Event arrives in expected destination  | [record]      | [link]   | Pending |
 
 Do not mark a test `Pass` without evidence. Do not claim that a source-level configuration is validated when GTM Preview or network evidence has not been collected.
 
@@ -1122,21 +1122,21 @@ Retire an asset only when no active Tag, Trigger Group, sequencing dependency, r
 
 ## 14. Common mistakes to avoid
 
-| Mistake | Why it is unsafe | Correct approach |
-| --- | --- | --- |
-| Fire `sign_up` on the Submit click | Click means intent, not account creation | Push after server-confirmed success |
-| Split event fields across Data Layer pushes | Later events can read stale values | Push the event and all event-specific values together |
-| Read email/password from the DOM | Fragile and privacy risk | Send only approved non-sensitive parameters |
-| Use a broad `All Pages` Trigger for a business event | Fires outside the business moment | Use the exact Custom Event |
-| Add `All Pages` and a page filter expecting AND logic | Multiple firing Triggers are OR logic | Put all required conditions inside the correct Trigger |
-| Use `unknown` for a missing required value | Hides upstream data failures | Block/fail QA and fix the contract |
+| Mistake                                                         | Why it is unsafe                              | Correct approach                                               |
+| --------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------- |
+| Fire `sign_up` on the Submit click                              | Click means intent, not account creation      | Push after server-confirmed success                            |
+| Split event fields across Data Layer pushes                     | Later events can read stale values            | Push the event and all event-specific values together          |
+| Read email/password from the DOM                                | Fragile and privacy risk                      | Send only approved non-sensitive parameters                    |
+| Use a broad `All Pages` Trigger for a business event            | Fires outside the business moment             | Use the exact Custom Event                                     |
+| Add `All Pages` and a page filter expecting AND logic           | Multiple firing Triggers are OR logic         | Put all required conditions inside the correct Trigger         |
+| Use `unknown` for a missing required value                      | Hides upstream data failures                  | Block/fail QA and fix the contract                             |
 | Create separate copies for QA and production without governance | Configuration drift and duplicate maintenance | Centralize reviewed environment routing or document separation |
-| Let an unknown hostname use production | Environment leakage | Block or return no valid destination |
-| Use Custom HTML for a supported GA4 event | More code and harder review | Use the built-in GA4 Event Tag |
-| Rely only on “Tag Fired” | Does not prove payload or destination | Inspect Network and downstream receipt |
-| Use a Trigger Group to build application workflow | GTM is not the business process owner | Push one authoritative application event |
-| Add a generic legacy path and a new event path together | One occurrence can create duplicate requests | Inventory, migrate, verify, and retire deliberately |
-| Delete old assets immediately | Dependencies can be missed | Deprecate, monitor, retain recovery, then retire |
+| Let an unknown hostname use production                          | Environment leakage                           | Block or return no valid destination                           |
+| Use Custom HTML for a supported GA4 event                       | More code and harder review                   | Use the built-in GA4 Event Tag                                 |
+| Rely only on “Tag Fired”                                        | Does not prove payload or destination         | Inspect Network and downstream receipt                         |
+| Use a Trigger Group to build application workflow               | GTM is not the business process owner         | Push one authoritative application event                       |
+| Add a generic legacy path and a new event path together         | One occurrence can create duplicate requests  | Inventory, migrate, verify, and retire deliberately            |
+| Delete old assets immediately                                   | Dependencies can be missed                    | Deprecate, monitor, retain recovery, then retire               |
 
 ---
 

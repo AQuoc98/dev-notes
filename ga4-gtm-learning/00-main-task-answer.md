@@ -15,7 +15,7 @@ Business question
   → interpretation, QA evidence, and decision
 ```
 
-The twelve guides explain the theory and work required to produce a verified proof of concept (POC), operate the supporting GTM/GA4 configuration, handle common scenarios, and turn validated data into useful GA4 reports and charts.
+The numbered guides explain the theory and work required to operate the supporting GTM/GA4 configuration, define a verified measurement contract, validate collection, handle common scenarios, release changes safely, and turn validated data into useful GA4 reports and charts.
 
 ## Core Theory
 
@@ -33,7 +33,7 @@ These are areas of a **GTM container**, not sections of a GA4 property:
 - **Folders** are an organizational aid. They group tags, triggers, and user-defined variables without changing runtime behavior.
 - **Templates** define reusable tag or variable types. GTM supplies built-in templates; additional templates may come from the Community Template Gallery or be created as custom templates.
 
-See the dedicated guides for [tag management](./08-tag-management-answer.md), [folder organization](./09-folder-organization-answer.md), and [template governance](./10-template-governance-answer.md).
+See the dedicated guides for [tag management](./04-tag-management-answer.md), [template governance](./06-template-governance-answer.md), [measurement planning](./07-measurement-plan-answer.md), and [release monitoring](./11-release-monitoring-answer.md).
 
 ### What is a tracking plan?
 
@@ -87,33 +87,34 @@ Required access:
 
 - [ ] Complete [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).
 - [ ] Complete [02-variable-management-answer.md](./02-variable-management-answer.md).
-- [ ] Complete [03-event-parameter-naming-answer.md](./03-event-parameter-naming-answer.md).
-- [ ] Complete [08-tag-management-answer.md](./08-tag-management-answer.md).
-- [ ] Complete [09-folder-organization-answer.md](./09-folder-organization-answer.md).
-- [ ] Complete [10-template-governance-answer.md](./10-template-governance-answer.md).
-- [ ] Complete [11-trigger-management-answer.md](./11-trigger-management-answer.md).
-- [ ] Complete [12-ga4-operations-and-scenarios-answer.md](./12-ga4-operations-and-scenarios-answer.md).
+- [ ] Complete [03-trigger-management-answer.md](./03-trigger-management-answer.md).
+- [ ] Complete [04-tag-management-answer.md](./04-tag-management-answer.md).
+- [ ] Complete [05-consent-answer.md](./05-consent-answer.md).
+- [ ] Complete [06-template-governance-answer.md](./06-template-governance-answer.md).
+- [ ] Complete [07-measurement-plan-answer.md](./07-measurement-plan-answer.md).
+- [ ] Complete [10-ga4-operations-answer.md](./10-ga4-operations-answer.md).
 - [ ] Obtain development, analytics, and QA review before implementation.
 
 ### Phase 3 — Validate the existing state
 
-- [ ] Prepare the workflow in [04-debugging-analytics-qa-answer.md](./04-debugging-analytics-qa-answer.md).
-- [ ] Audit one existing flow with [05-tracking-flow-audit-answer.md](./05-tracking-flow-audit-answer.md).
+- [ ] Prepare the workflow in [08-debug-qa-answer.md](./08-debug-qa-answer.md).
+- [ ] Audit one existing flow using the approved tracking-flow audit artifact, if that supporting artifact is in scope.
 - [ ] Turn findings into Must/Should/Could remediation items.
 
 ### Phase 4 — Prove and decide
 
-- [ ] Build the non-production POC in [06-proof-of-concept-answer.md](./06-proof-of-concept-answer.md).
+- [ ] Build the non-production POC using the approved POC artifact, if that supporting artifact is in scope.
 - [ ] Capture Data Layer, GTM, network, DebugView, consent, and negative-test evidence.
 - [ ] Allow for GA4 processing, then confirm that the required dimensions and metrics are reportable.
-- [ ] Complete [07-ga4-reports-and-charts-answer.md](./07-ga4-reports-and-charts-answer.md) using the validated POC data.
+- [ ] Complete [09-reports-charts-answer.md](./09-reports-charts-answer.md) using the validated POC data.
+- [ ] Complete [11-release-monitoring-answer.md](./11-release-monitoring-answer.md) before production rollout.
 - [ ] Create and QA one reusable detail report and one analysis-oriented Exploration.
 - [ ] Record reviewer sign-off and an explicit adopt/revise/reject decision.
 - [ ] Create the rollout backlog, owners, dependencies, and rollback approach.
 
 ## Definition of Done
 
-- [ ] All `01`–`12` checklists are complete or exceptions are documented.
+- [ ] All available `01`–`11` checklists are complete or exceptions are documented.
 - [ ] Every event has a business definition, trigger point, source, owner, and test.
 - [ ] The POC is traceable from application action to GA4 DebugView.
 - [ ] No missing or duplicate event is observed in the agreed test cases.

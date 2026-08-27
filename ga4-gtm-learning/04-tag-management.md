@@ -19,4 +19,4 @@ Define how GTM tags are selected, configured, named, tested, approved, monitored
 
 ## Instructions / Answer
 
-See [08-tag-management-answer.md](./08-tag-management-answer.md).
+See [04-tag-management-answer.md](./04-tag-management-answer.md).
