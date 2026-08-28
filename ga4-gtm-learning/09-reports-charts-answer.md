@@ -18,18 +18,44 @@ Audience
   → interpretation and action
 ```
 
+## Shared Terminology
+
+Use these plain-language meanings when discussing a report with product, marketing, engineering, QA, or leadership. In this document, **audience** means the people who read the report; it does not mean a GA4 Audience used for targeting.
+
+| Term | Plain meaning | Registration example |
+| --- | --- | --- |
+| Audience | The people who will use the report and the decision they need to make. | Product team deciding which registration method needs investigation. |
+| Population | The exact users, sessions, events, or items included in the analysis. | Users who entered the registration journey. |
+| Grain | What one row or one counted unit represents. | One user, one session, one event, or one ecommerce item. |
+| Scope | The level at which a value belongs. | `method` belongs to an event; the scope of `device category` must be checked for the selected GA4 surface. |
+| Dimension | A label or category used to group data. | `method`, `device category`, or `event_name`. |
+| Metric | A number that is counted, summed, or calculated. | Users, event count, revenue, or completion rate. |
+| Denominator | The base number used to calculate a rate. | Users with `registration_start` when calculating completion rate. |
+| Field readiness (whether the data field is ready) | Whether a field is safe and technically available for a report—not merely present in a request. | `method` is collected, registered if needed, processed, compatible, and approved for reporting. |
+| GA4 surface | The GA4 area where the analysis is built or viewed. | Reports for recurring monitoring; Explorations for investigation. |
+
+The practical distinction is:
+
+```text
+Population = who or what is included?
+Grain      = what does one row or count represent?
+Scope      = at what level does each value belong?
+Readiness  = can this field be used safely and correctly yet?
+```
+
 ## Core Reporting Concepts
 
 ### Dimensions, metrics, and scope
 
-| Concept       | Meaning                                        | Example                                 | Common mistake                                                           |
-| ------------- | ---------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------ |
-| Dimension     | Describes or groups data                       | Event name, device category, `form_id`  | Treating a label as a numeric measure                                    |
-| Metric        | Numeric measurement or calculation             | Users, event count, key events, revenue | Comparing metrics with different denominators                            |
-| User scope    | Describes a user across activity               | User ID, user property                  | Interpreting a user value as an event value                              |
-| Session scope | Describes a visit/session                      | Session source/medium                   | Mixing session and user acquisition questions                            |
-| Event scope   | Describes one event occurrence                 | Event name, event parameter             | Assuming event count equals users or conversions                         |
-| Item scope    | Describes a product/item in an ecommerce array | Item name, item category                | Combining item-level data with event-level totals without checking grain |
+| Concept | Easy explanation | Example | Common mistake |
+| --- | --- | --- | --- |
+| Dimension | A label used to split data into groups. | `method`, `device category`, `event_name` | Treating a label as a number. |
+| Metric | A number that tells us how much or how many. | Users, event count, key events, revenue | Comparing numbers with different bases. |
+| Scope | The level where a value belongs. | User, session, event, or item | Using an event value to answer a user-level question. |
+| User scope | A value describes the user across their activity. | User property | Treating it as if it changed for every event. |
+| Session scope | A value describes one visit/session. | Session source/medium | Mixing session acquisition with user acquisition. |
+| Event scope | A value describes one event occurrence. | Event name or event parameter | Assuming event count equals unique users. |
+| Item scope | A value describes one product/item inside ecommerce data. | Item name or item category | Adding item rows to event totals without checking grain. |
 
 Always write the grain of the question:
 
@@ -97,10 +123,25 @@ Avoid titles such as `Dashboard 1`, `Test`, or `All Events`.
 
 ### Step 2 — Define the population and grain
 
+**Population** answers: “Who or what is included?” **Grain** answers: “What does one row or one counted unit represent?” These must be written before choosing a chart.
+
+Examples:
+
+```text
+Population: Users who entered the registration journey
+Grain:     One user counted once
+Question:  What percentage of these users completed registration?
+
+Population: All sign_up events sent in the QA period
+Grain:     One event occurrence
+Question:  Was one request sent for each confirmed account?
+```
+
 Record:
 
 - date range and property timezone;
-- user/session/event/item population;
+- the population in plain language;
+- grain: user, session, event, or item;
 - inclusion/exclusion conditions;
 - comparison periods or segments;
 - identity setting/reporting identity if relevant;
@@ -108,7 +149,11 @@ Record:
 - key-event definition and deduplication assumption;
 - expected data freshness.
 
-### Step 3 — Confirm field readiness
+Do not calculate a user-level rate with an event count unless the difference is explicitly intended and documented.
+
+### Step 3 — Confirm field readiness (can this field be used yet?)
+
+**Field readiness** means the field has passed all relevant checks: it is collected, registered when required, processed and available, compatible with the selected report, safe to use, and approved for the stated question. A parameter appearing in a Network request does not automatically make it ready for reporting.
 
 Before building a report:
 
@@ -126,14 +171,14 @@ Google notes that custom dimensions and metrics are created from collected custo
 
 **Purpose:** Use this inventory to track whether a dimension or metric is ready for reporting. It separates “the parameter is being collected” from “the field is registered, processed, compatible, and safe to use in a report.”
 
-| Field             | Meaning                | Source              | Scope                      | Standard/custom    | Registration date | Expected availability  | Risk/notes            |
+| Field             | Meaning                | Source              | Scope (data level)         | Standard/custom    | Registration date | Expected availability  | Risk/notes            |
 | ----------------- | ---------------------- | ------------------- | -------------------------- | ------------------ | ----------------- | ---------------------- | --------------------- |
 | `event_name`      | Canonical event        | GA4 event           | Event                      | Standard           | N/A               | Standard processing    | Stable                |
 | `method`          | Registration method    | `sign_up` parameter | Event                      | Custom if required | YYYY-MM-DD        | After processing delay | Controlled values     |
 | `form_id`         | Stable form identifier | `sign_up` parameter | Event                      | Custom if required | YYYY-MM-DD        | After processing delay | Avoid free text       |
 | `device_category` | Device category        | GA4 collection      | User/session/event context | Standard           | N/A               | Standard processing    | Scope must be checked |
 
-### Step 4 — Choose the surface
+### Step 4 — Choose the GA4 area (surface)
 
 Use a **detail report** when the same audience will repeatedly monitor a stable question. Use an **Exploration** when the analyst needs to compare segments, test hypotheses, inspect a funnel/path, or explore a question that is not yet stable.
 
@@ -173,33 +218,69 @@ Do not call `sign_up event count / page views` a completion rate unless that is 
 
 Charts are a communication layer. Keep the table or calculation visible whenever exact values or denominators matter.
 
-### Step 7 — Build and document the report
+### Step 7 — Build, publish, and document the asset
 
-For a detail report:
+#### A. Create a detail report
 
-1. Open **Reports → Library** or the appropriate customization area.
-2. Choose a suitable template or blank detail report.
-3. Add only approved dimensions and metrics.
-4. Set the default dimension and useful secondary dimensions.
-5. Add the chart(s) that match the question.
-6. Apply only the documented filters/comparisons.
-7. Use a clear title and description with owner and maintenance trigger.
-8. Add it to the correct collection/topic if the audience needs navigation.
-9. Have a reviewer answer the original question using only the saved report.
+You need the **Editor** or **Administrator** role to create or customize a report. Use a detail report when the question is stable and will be monitored repeatedly.
 
-Google’s [customize detail reports](https://support.google.com/analytics/answer/10445879) documentation should be rechecked before implementation because UI permissions and limits can change.
+1. In GA4, open **Reports → Library**.
+2. In the **Reports** section, select **+ Create new report → Create detail report**.
+3. Choose **Blank** or start from a suitable template. A report based on a template may receive future template updates; record whether the report remains linked or is unlinked.
+4. In **Customize report**, configure the dimension picker, metrics, report filter, and the two charts. Add only fields that are ready and compatible.
+5. Set the default dimension, default sort metric, chart type, filters/comparisons, title, description, owner, and maintenance trigger.
+6. Click **Save**, enter a clear report name, and save again.
+7. Open the saved report from **Reports**, not only from Library, and review whether it answers the original question.
 
-For a free-form Exploration:
+A detail report contains two charts and a table. The charts reflect the data shown in the table, so changing the dimension, filter, comparison, or default sort can change the chart data. Document the table configuration and the chart purpose, not only the visual type. See [create a detail report](https://support.google.com/analytics/answer/13844077) and [customize detail reports](https://support.google.com/analytics/answer/10445879).
 
-1. Open **Explore → Free form**.
-2. Import only the needed dimensions, metrics, and segments.
-3. Set rows, columns, values, filters, and segment comparisons.
-4. Select table, bar, line, donut, scatterplot, or map based on the question.
-5. Use separate tabs only for distinct follow-up questions.
-6. Name the Exploration with question, audience, owner, and date/version.
-7. Record the configuration and limitations in the interpretation note.
+#### B. Create a summary card and overview report
 
-Free-form Explorations support tables/graphs, nested rows, multiple metrics, segments, and filters. See [free-form Exploration](https://support.google.com/analytics/answer/9327972).
+An overview report is a high-level page made from summary cards. A summary card is created from a detail report and can link users to the underlying detail report.
+
+To create a summary card:
+
+1. Open the relevant detail report and click **Customize report**.
+2. Under **SUMMARY CARDS**, select **+ Create new card**.
+3. Choose the dimension dropdown, metric dropdown, visualization, and optional card filter.
+4. Click **Apply**, then **Save → Save changes to current report**.
+
+To create an overview report:
+
+1. Go to **Reports → Library**.
+2. Select **+ Create new report → Create overview report**.
+3. Select **+ Add cards**, choose the required cards, and arrange them in the desired order. An overview report can contain up to 16 summary cards.
+4. Save and name the report.
+
+Custom summary cards may appear in the overview report’s **Summary Cards** tab only after the source detail report is included in at least one report collection. See [create a summary card](https://support.google.com/analytics/answer/13819308) and [create an overview report](https://support.google.com/analytics/answer/13823841).
+
+#### C. Add the report to the left navigation
+
+Saving a report in Library does not automatically make it visible in the property’s left navigation. An Editor or Administrator must add it to a collection:
+
+1. In **Reports → Library**, create a collection or edit an existing collection.
+2. Create or choose a topic.
+3. Drag the detail or overview report into the topic.
+4. Click **Save**, then use the collection’s **More → Publish** action.
+
+Use a collection for reports that a defined audience needs to find repeatedly. Keep exploratory work private or shared as an Exploration until the question, definitions, and ownership are stable. See [customize report navigation](https://support.google.com/analytics/answer/10460557).
+
+#### D. Create a chart in a free-form Exploration
+
+Use an Exploration for an investigation, a flexible comparison, or a question that is not yet stable.
+
+1. Open **Explore → Free form** or start from an Exploration template.
+2. In **Variables**, add only the required dimensions, metrics, and segments.
+3. In **Tab Settings**, place dimensions in **Rows/Columns**, metrics in **Values**, and apply the required filters or segment comparisons.
+4. Under **Visualization**, choose a table, bar, line, donut, scatterplot, or geo map according to the analytical task.
+5. Add another tab only for a distinct follow-up question; do not mix unrelated questions in one tab.
+6. Use a clear name, save the Exploration, and record its date range, configuration, limitations, and owner.
+
+The **Data quality** indicator should be reviewed before interpreting the result. Explorations can be shared and exported, but a shared Exploration is view-only for other users; they must duplicate it to edit. See [free-form Exploration](https://support.google.com/analytics/answer/9327972) and [get started with Explorations](https://support.google.com/analytics/answer/7579450).
+
+#### E. Share or export the result
+
+For a saved report, open it from **Reports**, select **Share this report**, and choose **Share Link** or **Download File**. Reports can be exported to PDF, CSV, or Google Sheets. For an Exploration, use **Share exploration** or **Export data** and choose the required format. Do not share a Library customization screen as if it were the saved report. See [share and export reports](https://support.google.com/analytics/answer/9317657).
 
 ## Chart and Report QA
 
@@ -235,6 +316,8 @@ Free-form Explorations support tables/graphs, nested rows, multiple metrics, seg
 - [ ] Known tracking defects and data limitations are disclosed.
 - [ ] The decision/action and owner are recorded.
 
+Open the **Data quality** indicator next to the report or Exploration title before finalizing the analysis. Record whether the result is unsampled, thresholded, or sampled and explain any effect on the decision. See [GA4 data quality](https://support.google.com/analytics/answer/12856703).
+
 ## Limitations to Record
 
 ### Freshness and processing
@@ -257,14 +340,18 @@ High-cardinality dimensions can cause values to be grouped into `(other)` or red
 
 Acquisition results depend on attribution settings, reporting identity, lookback windows, consent, cross-domain setup, and data freshness. A DebugView result is not final attribution. Document the attribution/identity context whenever the decision depends on source, medium, campaign, or cross-device behavior.
 
+### Reports and Explorations can legitimately differ
+
+Do not treat every difference between a Report and an Exploration as an implementation defect. Compare the selected fields, filters, comparisons/segments, date range, data-retention window, low-user thresholding, behavioral modeling, and processing time. Reports and Explorations can support different fields and use different filtering behavior, so record which surface is authoritative for the decision. See [data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379) and [data compatibility](https://support.google.com/analytics/answer/11608978).
+
 ## Report Requirements Template
 
-**Purpose:** Use this template before building a report or Exploration. It defines the business question, decision, population, grain, fields, surface, cadence, and owner so the output remains useful after the original analyst leaves.
+**Purpose:** Use this template before building a report or Exploration. It defines the business question, decision, who/what is included, what one row represents, the fields, GA4 area, cadence, and owner so the output remains useful after the original analyst leaves.
 
-| ID   | Audience     | Business question                               | Decision            | Cadence     | Population/scope              | Dimensions                  | Metrics                 | Filter/segment      | Surface       | Owner    |
-| ---- | ------------ | ----------------------------------------------- | ------------------- | ----------- | ----------------------------- | --------------------------- | ----------------------- | ------------------- | ------------- | -------- |
-| R-01 | Product      | Which method has lower registration completion? | Prioritize UX work  | Weekly      | Users in registration journey | Method, device, date        | Users, key events, rate | Registration events | Detail report | `[name]` |
-| R-02 | Analytics/QA | Is confirmed registration sent once?            | Approve/fix release | Per release | Events in test period         | Event name, method, form ID | Event count             | QA traffic          | Exploration   | `[name]` |
+| ID   | Audience     | Business question                               | Decision            | Cadence     | Population (who/what is included) | Grain (one row/count represents) | Dimensions                  | Metrics                 | Filter/segment      | GA4 area       | Owner    |
+| ---- | ------------ | ----------------------------------------------- | ------------------- | ----------- | --------------------------------- | -------------------------------- | --------------------------- | ----------------------- | ------------------- | -------------- | -------- |
+| R-01 | Product      | Which method has lower registration completion? | Prioritize UX work  | Weekly      | Users in registration journey     | One user                         | Method, device, date        | Users, key events, rate | Registration events | Detail report  | `[name]` |
+| R-02 | Analytics/QA | Is confirmed registration sent once?            | Approve/fix release | Per release | Events in test period             | One event occurrence             | Event name, method, form ID | Event count             | QA traffic          | Exploration    | `[name]` |
 
 ## Interpretation Note Template
 
@@ -277,7 +364,8 @@ Audience and owner:
 GA4 property / stream:
 Report or Exploration:
 Date range and property timezone:
-Population and grain (user/session/event/item):
+Population (who/what is included):
+Grain (what one row/count represents):
 Filters, comparisons, and segments:
 Dimensions and metrics with scope:
 Calculation/denominator:
@@ -315,14 +403,15 @@ GA4 property/stream:
 Collection/topic or Exploration:
 Business question:
 Decision and owner:
-Population and grain:
+Population (who/what is included):
+Grain (what one row/count represents):
 Date range/timezone:
-Dimensions with scope:
+Dimensions with scope (data level):
 Metrics and formulas:
 Filters/comparisons/segments:
 Chart/table configuration:
 Custom definitions required:
-Field-readiness record:
+Field-readiness record (is the field ready for reporting?):
 Access/sharing:
 Report URL or saved location:
 Version/last updated:
@@ -376,28 +465,23 @@ Visualization: Table/heat map for exact comparison; line tab for trend
 
 The output should say what was observed, what action it supports, and what it cannot prove. For example, a lower completion rate by method may justify investigation; it does not by itself prove that the method caused the drop.
 
-## Definition of Done
-
-- [ ] Every report/Exploration answers a named business question and supports a decision.
-- [ ] Audience, owner, cadence, date range, population, grain, scope, and filters are documented.
-- [ ] Standard fields were preferred and custom definitions have rationale, registration date, and availability notes.
-- [ ] One reusable detail report and one appropriate Exploration are configured.
-- [ ] Chart choices match analytical tasks and retain exact values where needed.
-- [ ] Results were reconciled with validated collection evidence after processing.
-- [ ] Freshness, thresholding, sampling, cardinality, identity, attribution, and discrepancies are recorded.
-- [ ] An independent reviewer can interpret the report without verbal context.
-- [ ] Owner, maintenance trigger, sharing permissions, and retirement condition are assigned.
-
 ## Official References
 
 - [Reports in the Analytics app](https://support.google.com/analytics/answer/9924671)
+- [Create a detail report](https://support.google.com/analytics/answer/13844077)
 - [GA4 detail report](https://support.google.com/analytics/answer/10659476)
 - [Customize detail reports](https://support.google.com/analytics/answer/10445879)
+- [Create a summary card](https://support.google.com/analytics/answer/13819308)
+- [Create an overview report](https://support.google.com/analytics/answer/13823841)
+- [Customize report navigation](https://support.google.com/analytics/answer/10460557)
+- [Share and export reports](https://support.google.com/analytics/answer/9317657)
 - [Get started with Explorations](https://support.google.com/analytics/answer/7579450)
 - [Free-form Exploration](https://support.google.com/analytics/answer/9327972)
 - [Path Exploration](https://support.google.com/analytics/answer/9317498)
 - [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)
 - [GA4 data freshness](https://support.google.com/analytics/answer/11198161)
-- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9377334)
+- [Data quality](https://support.google.com/analytics/answer/12856703)
+- [Data compatibility](https://support.google.com/analytics/answer/11608978)
+- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379)
 - [About data thresholds](https://support.google.com/analytics/answer/9383630)
 - [GA4 cardinality](https://support.google.com/analytics/answer/12226705)
