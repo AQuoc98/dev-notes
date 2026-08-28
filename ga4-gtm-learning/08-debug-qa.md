@@ -2,36 +2,35 @@
 
 ## Objective
 
-Create a repeatable, evidence-based workflow that verifies tracking from the user interaction through the Data Layer, GTM evaluation, network request, GA4 DebugView, and processed reporting data before and after release.
+Create a practical, evidence-based workflow that verifies an approved tracking contract from the business outcome through the Data Layer, GTM, consent, network request, GA4 DebugView, and processed reporting data.
 
 ## Scope — Included Items
 
-- GTM Preview/Tag Assistant, browser developer tools, network requests, GA4 DebugView, Realtime, and processed-report checks.
-- Positive, negative, boundary, duplicate, SPA/navigation, consent, routing, and regression cases.
-- Diagnosis of missing, duplicated, misnamed, mistimed, blocked, or misrouted events.
-- Test evidence, defect severity, pre-publish gates, post-publish smoke testing, and reviewer sign-off.
-- One completed sample QA report for a representative event flow.
+- Verify the approved contract from Sections 01–07 across Application, Data Layer, Variables, Triggers, Tags, Templates, Consent, GA4, and reporting.
+- Use GTM Preview/Tag Assistant, browser Network tools, GA4 DebugView/Realtime, and processed reports.
+- Test positive, negative, duplicate, consent, privacy, routing, SPA/navigation, collection-source, and regression cases.
+- Diagnose missing, duplicated, misnamed, mistimed, blocked, misrouted, or privacy-unsafe events.
+- Record test context, reset state, evidence, defect/retest details, release decision, and post-release observation.
 
 ## Scope — Excluded Items
 
 - Building a complete automated analytics test framework.
 - Fixing every defect discovered during the audit.
+- Redefining the Measurement Plan, consent policy, or reporting requirements.
 - Treating DebugView as a replacement for processed reporting validation.
 
 ## Deliverables / Outputs
 
-- One end-to-end debugging playbook with a layer-by-layer decision tree.
-- One reusable analytics QA checklist and test-case matrix.
-- One evidence template covering Data Layer, GTM, network, consent, DebugView, and reports.
-- One defect severity and triage guide.
-- One completed sample test report with positive, negative, duplicate, consent, and routing cases.
+- One layer-by-layer debugging playbook and risk-based QA strategy.
+- One reusable test matrix, evidence template, and completed Registration Journey QA report.
+- One decision tree plus defect severity, triage, and retest guidance.
+- One release decision matrix and post-release observation plan.
 
 ## Dependencies
 
-- Measurement plan, Data Layer contract, naming conventions, and selected event flow.
-- Test environment, safe test data, browser developer tools, GTM Preview/Tag Assistant, and GA4 DebugView access.
-- Correct GA4 property, web stream, Measurement ID, and GTM workspace/version.
-- Release owner and QA reviewer.
+- Sections 01–07, including the approved Measurement Plan, Data Layer contract, naming, consent, and selected event flow.
+- Test environment, safe test data, browser Network tools, GTM Preview/Tag Assistant, and GA4 DebugView access.
+- Correct GA4 property, web stream, Measurement ID, GTM workspace/version, release owner, and QA reviewer.
 
 ## Instructions / Answer
 

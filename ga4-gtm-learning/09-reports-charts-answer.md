@@ -22,14 +22,14 @@ Audience
 
 ### Dimensions, metrics, and scope
 
-| Concept | Meaning | Example | Common mistake |
-| --- | --- | --- | --- |
-| Dimension | Describes or groups data | Event name, device category, `form_id` | Treating a label as a numeric measure |
-| Metric | Numeric measurement or calculation | Users, event count, key events, revenue | Comparing metrics with different denominators |
-| User scope | Describes a user across activity | User ID, user property | Interpreting a user value as an event value |
-| Session scope | Describes a visit/session | Session source/medium | Mixing session and user acquisition questions |
-| Event scope | Describes one event occurrence | Event name, event parameter | Assuming event count equals users or conversions |
-| Item scope | Describes a product/item in an ecommerce array | Item name, item category | Combining item-level data with event-level totals without checking grain |
+| Concept       | Meaning                                        | Example                                 | Common mistake                                                           |
+| ------------- | ---------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------ |
+| Dimension     | Describes or groups data                       | Event name, device category, `form_id`  | Treating a label as a numeric measure                                    |
+| Metric        | Numeric measurement or calculation             | Users, event count, key events, revenue | Comparing metrics with different denominators                            |
+| User scope    | Describes a user across activity               | User ID, user property                  | Interpreting a user value as an event value                              |
+| Session scope | Describes a visit/session                      | Session source/medium                   | Mixing session and user acquisition questions                            |
+| Event scope   | Describes one event occurrence                 | Event name, event parameter             | Assuming event count equals users or conversions                         |
+| Item scope    | Describes a product/item in an ecommerce array | Item name, item category                | Combining item-level data with event-level totals without checking grain |
 
 Always write the grain of the question:
 
@@ -45,14 +45,14 @@ If a metric and dimension are incompatible, GA4 may disable the combination or r
 
 ### Reports versus Explorations
 
-| Surface | Best use | Strength | Caution |
-| --- | --- | --- | --- |
-| Reports snapshot/overview | High-level monitoring | Discoverable summary for broad audiences | Limited detail and analytical flexibility |
-| Detail report | Recurring, governed operational question | Saved dimensions, metrics, charts, and table | Requires suitable configuration and publishing access |
-| Free-form Exploration | Flexible comparison and investigation | Rows, columns, values, segments, filters, and visualizations | Can be easy to misread; configuration must be documented |
-| Funnel exploration | Step-by-step progression | Compare completion/drop-off through defined steps | User/event counting and open/closed funnel settings matter |
-| Path exploration | Discover next/previous behavior | Visualizes journeys and loops | It is exploratory, not proof of causation |
-| Cohort exploration | Retention or repeated behavior | Compare groups over time | Requires a meaningful cohort definition and sufficient data |
+| Surface                   | Best use                                 | Strength                                                     | Caution                                                     |
+| ------------------------- | ---------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| Reports snapshot/overview | High-level monitoring                    | Discoverable summary for broad audiences                     | Limited detail and analytical flexibility                   |
+| Detail report             | Recurring, governed operational question | Saved dimensions, metrics, charts, and table                 | Requires suitable configuration and publishing access       |
+| Free-form Exploration     | Flexible comparison and investigation    | Rows, columns, values, segments, filters, and visualizations | Can be easy to misread; configuration must be documented    |
+| Funnel exploration        | Step-by-step progression                 | Compare completion/drop-off through defined steps            | User/event counting and open/closed funnel settings matter  |
+| Path exploration          | Discover next/previous behavior          | Visualizes journeys and loops                                | It is exploratory, not proof of causation                   |
+| Cohort exploration        | Retention or repeated behavior           | Compare groups over time                                     | Requires a meaningful cohort definition and sufficient data |
 
 Google describes a detail report as a report with two charts and a table; Explorations provide more advanced techniques and flexible analysis. See [GA4 detail reports](https://support.google.com/analytics/answer/10659476) and [get started with Explorations](https://support.google.com/analytics/answer/7579450).
 
@@ -126,12 +126,12 @@ Google notes that custom dimensions and metrics are created from collected custo
 
 **Purpose:** Use this inventory to track whether a dimension or metric is ready for reporting. It separates “the parameter is being collected” from “the field is registered, processed, compatible, and safe to use in a report.”
 
-| Field | Meaning | Source | Scope | Standard/custom | Registration date | Expected availability | Risk/notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `event_name` | Canonical event | GA4 event | Event | Standard | N/A | Standard processing | Stable |
-| `method` | Registration method | `sign_up` parameter | Event | Custom if required | YYYY-MM-DD | After processing delay | Controlled values |
-| `form_id` | Stable form identifier | `sign_up` parameter | Event | Custom if required | YYYY-MM-DD | After processing delay | Avoid free text |
-| `device_category` | Device category | GA4 collection | User/session/event context | Standard | N/A | Standard processing | Scope must be checked |
+| Field             | Meaning                | Source              | Scope                      | Standard/custom    | Registration date | Expected availability  | Risk/notes            |
+| ----------------- | ---------------------- | ------------------- | -------------------------- | ------------------ | ----------------- | ---------------------- | --------------------- |
+| `event_name`      | Canonical event        | GA4 event           | Event                      | Standard           | N/A               | Standard processing    | Stable                |
+| `method`          | Registration method    | `sign_up` parameter | Event                      | Custom if required | YYYY-MM-DD        | After processing delay | Controlled values     |
+| `form_id`         | Stable form identifier | `sign_up` parameter | Event                      | Custom if required | YYYY-MM-DD        | After processing delay | Avoid free text       |
+| `device_category` | Device category        | GA4 collection      | User/session/event context | Standard           | N/A               | Standard processing    | Scope must be checked |
 
 ### Step 4 — Choose the surface
 
@@ -160,16 +160,16 @@ Do not call `sign_up event count / page views` a completion rate unless that is 
 
 ### Step 6 — Select the chart by analytical task
 
-| Task | Preferred visualization | Why | Caution |
-| --- | --- | --- | --- |
-| Trend over time | Line chart | Shows direction and change | Recent/incomplete data may look artificially low |
-| Compare categories | Bar chart | Supports ranking and side-by-side comparison | Too many categories reduce readability |
-| Exact values | Table | Preserves values and multiple fields | Patterns may be harder to see |
-| Composition with few categories | Donut/pie | Shows parts of a meaningful whole | Avoid many slices or unrelated totals |
-| Relationship between numeric fields | Scatterplot | Shows association | Correlation is not causation |
-| Step progression | Funnel | Shows movement through defined steps | Check user/event counting and funnel rules |
-| Journey discovery | Path | Shows common next/previous actions | It is exploratory and may include loops/noise |
-| Geography | Geo map | Compares approved geographic groups | Privacy thresholds and small groups matter |
+| Task                                | Preferred visualization | Why                                          | Caution                                          |
+| ----------------------------------- | ----------------------- | -------------------------------------------- | ------------------------------------------------ |
+| Trend over time                     | Line chart              | Shows direction and change                   | Recent/incomplete data may look artificially low |
+| Compare categories                  | Bar chart               | Supports ranking and side-by-side comparison | Too many categories reduce readability           |
+| Exact values                        | Table                   | Preserves values and multiple fields         | Patterns may be harder to see                    |
+| Composition with few categories     | Donut/pie               | Shows parts of a meaningful whole            | Avoid many slices or unrelated totals            |
+| Relationship between numeric fields | Scatterplot             | Shows association                            | Correlation is not causation                     |
+| Step progression                    | Funnel                  | Shows movement through defined steps         | Check user/event counting and funnel rules       |
+| Journey discovery                   | Path                    | Shows common next/previous actions           | It is exploratory and may include loops/noise    |
+| Geography                           | Geo map                 | Compares approved geographic groups          | Privacy thresholds and small groups matter       |
 
 Charts are a communication layer. Keep the table or calculation visible whenever exact values or denominators matter.
 
@@ -261,10 +261,10 @@ Acquisition results depend on attribution settings, reporting identity, lookback
 
 **Purpose:** Use this template before building a report or Exploration. It defines the business question, decision, population, grain, fields, surface, cadence, and owner so the output remains useful after the original analyst leaves.
 
-| ID | Audience | Business question | Decision | Cadence | Population/scope | Dimensions | Metrics | Filter/segment | Surface | Owner |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R-01 | Product | Which method has lower registration completion? | Prioritize UX work | Weekly | Users in registration journey | Method, device, date | Users, key events, rate | Registration events | Detail report | `[name]` |
-| R-02 | Analytics/QA | Is confirmed registration sent once? | Approve/fix release | Per release | Events in test period | Event name, method, form ID | Event count | QA traffic | Exploration | `[name]` |
+| ID   | Audience     | Business question                               | Decision            | Cadence     | Population/scope              | Dimensions                  | Metrics                 | Filter/segment      | Surface       | Owner    |
+| ---- | ------------ | ----------------------------------------------- | ------------------- | ----------- | ----------------------------- | --------------------------- | ----------------------- | ------------------- | ------------- | -------- |
+| R-01 | Product      | Which method has lower registration completion? | Prioritize UX work  | Weekly      | Users in registration journey | Method, device, date        | Users, key events, rate | Registration events | Detail report | `[name]` |
+| R-02 | Analytics/QA | Is confirmed registration sent once?            | Approve/fix release | Per release | Events in test period         | Event name, method, form ID | Event count             | QA traffic          | Exploration   | `[name]` |
 
 ## Interpretation Note Template
 
@@ -296,13 +296,13 @@ Review/retirement trigger:
 
 These templates manage the report after the measurement plan has defined the event and parameter contract. Use the report requirements template for the request, the field-readiness inventory for input availability, the configuration record for the saved asset, the chart specification for visual choices, and the interpretation note for the published conclusion.
 
-| Template | Purpose | Use when |
-| --- | --- | --- |
-| Report Requirements Template | Defines the question, decision, population, grain, fields, surface, cadence, and owner. | Before creating a report or Exploration. |
-| Field-readiness Inventory | Confirms that dimensions and metrics are collected, registered, processed, compatible, and safe. | Before using a field in a report. |
-| Report Configuration Record | Records the exact saved report/Exploration configuration and maintenance information. | After a report is built or materially changed. |
-| Chart Specification Record | Explains why a chart type, breakdown, metric, and date granularity were chosen. | When a chart will support a recurring decision or be shared with stakeholders. |
-| Interpretation Note Template | Records the observed result, interpretation, limitations, and action. | When publishing or reviewing an analysis. |
+| Template                     | Purpose                                                                                          | Use when                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Report Requirements Template | Defines the question, decision, population, grain, fields, surface, cadence, and owner.          | Before creating a report or Exploration.                                       |
+| Field-readiness Inventory    | Confirms that dimensions and metrics are collected, registered, processed, compatible, and safe. | Before using a field in a report.                                              |
+| Report Configuration Record  | Records the exact saved report/Exploration configuration and maintenance information.            | After a report is built or materially changed.                                 |
+| Chart Specification Record   | Explains why a chart type, breakdown, metric, and date granularity were chosen.                  | When a chart will support a recurring decision or be shared with stakeholders. |
+| Interpretation Note Template | Records the observed result, interpretation, limitations, and action.                            | When publishing or reviewing an analysis.                                      |
 
 ### Report configuration record template
 
@@ -335,17 +335,17 @@ Reviewer:
 
 **Purpose:** Use this record to make the visual choice explicit. A chart should communicate an analytical task, not merely make the report look attractive.
 
-| Field | What to record |
-| --- | --- |
-| Chart ID and report ID | Stable IDs for the chart and the saved report/Exploration. |
-| Analytical task | Trend, category comparison, composition, relationship, funnel, path, or exact values. |
-| Chart type | Line, bar, table, donut/pie, scatterplot, funnel, path, or map. |
-| Dimension/breakdown | The field on the axis, rows, series, or slices, including its scope. |
-| Metric and denominator | The value shown and the denominator for any rate or percentage. |
-| Date granularity | Day, week, month, or another documented period. |
-| Included population/filter | Exact inclusion, exclusion, comparison, or segment logic. |
-| Reason and caveat | Why this chart answers the task and what it must not imply. |
-| Owner/review date | Person/team responsible for maintenance and next review. |
+| Field                      | What to record                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| Chart ID and report ID     | Stable IDs for the chart and the saved report/Exploration.                            |
+| Analytical task            | Trend, category comparison, composition, relationship, funnel, path, or exact values. |
+| Chart type                 | Line, bar, table, donut/pie, scatterplot, funnel, path, or map.                       |
+| Dimension/breakdown        | The field on the axis, rows, series, or slices, including its scope.                  |
+| Metric and denominator     | The value shown and the denominator for any rate or percentage.                       |
+| Date granularity           | Day, week, month, or another documented period.                                       |
+| Included population/filter | Exact inclusion, exclusion, comparison, or segment logic.                             |
+| Reason and caveat          | Why this chart answers the task and what it must not imply.                           |
+| Owner/review date          | Person/team responsible for maintenance and next review.                              |
 
 Do not use a chart specification as a substitute for the interpretation note. The specification describes how the chart is built; the interpretation note describes what the data means for a decision.
 

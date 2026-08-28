@@ -428,6 +428,7 @@ The completed example later in this document includes a few derived views and ha
 | GA4 property / stream               | `[property] / [web stream]`                                                 |
 | GTM container / environment         | `[container] / QA → production`                                             |
 | Platform / collection source        | Web client-side via GTM                                                     |
+| Collection-source ownership         | GTM is the canonical client-side source; no undocumented second source     |
 | Event name                          | `sign_up`                                                                   |
 | Schema version                      | `v1`                                                                        |
 | Event type                          | Recommended                                                                 |
@@ -540,7 +541,7 @@ This Registration Journey has three events, one approved business outcome, a cli
 | **Required before production collection** | Section 08 Required Test Matrix and Evidence Template | Canonical QA records in [Debug/QA](08-debug-qa-answer.md) | Proves positive, negative, duplicate, consent, privacy, and routing behavior across the collection layers. |
 | **Required in this example because `sign_up` is a key event or custom fields are used** | Key-event and custom-definition decision record | Canonical decision record in this Measurement Plan | Separately justifies the GA4 key event and the registration of `method`/`error_type`; key-event marking does not validate collection. |
 | **Required only if the report is part of the deliverable** | Section 09 Report Requirements and Field-readiness templates | Canonical reporting records in [Reports and Charts](09-reports-charts-answer.md) | Defines the completion-rate question, denominator, report fields, and availability. Tracking can be implemented without building the final report. |
-| **Required before production activation when the change is material** | Approval record and Section 11 Release Record | Project governance record plus [Release & Monitoring](11-release-monitoring-answer.md) | Records the accountable approval, deployment version, smoke test, observation window, and rollback/monitoring decision. |
+| **Required before production activation when the change is material** | Approval record and Section 10 Release Record | Project governance record plus [Release & Monitoring](10-release-monitoring-answer.md) | Records the accountable approval, deployment version, smoke test, observation window, and rollback/monitoring decision. |
 
 The minimum tracking packet for this example is therefore: **context → journey coverage → event contracts → parameter dictionary → traceability → consent/privacy → QA evidence**. Add the key-event/custom-definition record because this example uses those decisions. Add reporting, release, and monitoring records only when the corresponding deliverable or production change is in scope.
 
@@ -784,6 +785,7 @@ This section summarizes the QA contract for the journey. The canonical test case
 | TC-REG-007 | Consent denied                   | Behavior matches the approved consent design; no prohibited data | No unauthorized request or parameter                          | Consent evidence is attached                            | Pass/Fail |
 | TC-REG-008 | Wrong environment or destination | Test is blocked or routed to the intended stream                 | Request contains the approved Measurement ID only             | Routing evidence is attached                            | Pass/Fail |
 | TC-REG-009 | User-ID out-of-scope check       | Registration tracking does not introduce an identity field       | No email/phone/raw identifier or unapproved User-ID parameter | Identity tracking remains separately scoped              | Pass/Fail/Out of scope |
+| TC-REG-010 | Collection source ownership     | Only the canonical application → Data Layer path is used; no undocumented duplicate source | One request or documented deduplication behavior | Source map and request timeline are attached | Pass/Fail |
 
 For each test, store the same `Test ID` across application evidence, Data Layer inspection, GTM Preview, Network request, consent state, DebugView, and processed reporting. Record the first failing layer rather than marking a test as passed because the GTM tag fired.
 

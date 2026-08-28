@@ -428,6 +428,7 @@ Các section derived view và handoff trong completed example chỉ nhằm giúp
 | GA4 property / stream               | `[property] / [web stream]`                                                          |
 | GTM container / environment         | `[container] / QA → production`                                                      |
 | Platform / collection source        | Web client-side qua GTM                                                              |
+| Collection-source ownership         | GTM là client-side source chuẩn; không có source thứ hai chưa được document          |
 | Event name                          | `sign_up`                                                                            |
 | Schema version                      | `v1`                                                                                 |
 | Event type                          | Recommended                                                                          |
@@ -540,7 +541,7 @@ Registration Journey này có ba event, một business outcome đã được app
 | **Bắt buộc trước production collection** | Required Test Matrix và Evidence Template trong Section 08 | QA record chuẩn trong [Debug/QA](08-debug-qa-answer.md) | Chứng minh positive, negative, duplicate, consent, privacy và routing behavior qua các collection layer. |
 | **Bắt buộc trong ví dụ này vì `sign_up` là key event hoặc có custom field** | Key-event và custom-definition decision record | Canonical decision record trong Measurement Plan này | Giải thích riêng việc đánh dấu GA4 key event và register `method`/`error_type`; đánh dấu key event không validate collection. |
 | **Chỉ bắt buộc nếu report nằm trong deliverable** | Report Requirements và Field-readiness template trong Section 09 | Reporting record chuẩn trong [Reports và Charts](09-reports-charts-answer.md) | Định nghĩa completion-rate question, denominator, report field và availability. Có thể implement tracking trước khi build report cuối cùng. |
-| **Bắt buộc trước production activation khi change có ý nghĩa** | Approval record và Release Record trong Section 11 | Project governance record và [Release & Monitoring](11-release-monitoring-answer.md) | Ghi accountable approval, deployment version, smoke test, observation window và rollback/monitoring decision. |
+| **Bắt buộc trước production activation khi change có ý nghĩa** | Approval record và Release Record trong Section 10 | Project governance record và [Release & Monitoring](10-release-monitoring-answer.md) | Ghi accountable approval, deployment version, smoke test, observation window và rollback/monitoring decision. |
 
 Minimum tracking packet cho ví dụ này là: **context → journey coverage → event contracts → parameter dictionary → traceability → consent/privacy → QA evidence**. Thêm key-event/custom-definition record vì ví dụ dùng các decision đó. Chỉ thêm reporting, release và monitoring record khi deliverable hoặc production change tương ứng nằm trong scope.
 
@@ -784,6 +785,7 @@ Section này tóm tắt QA contract cho journey. Test case, debug session record
 | TC-REG-007 | Consent denied                   | Behavior theo consent design; không prohibited data              | Không unauthorized request hoặc parameter                       | Consent evidence được đính kèm                      | Pass/Fail |
 | TC-REG-008 | Sai environment hoặc destination | Test bị block hoặc route tới stream đúng                         | Request chỉ chứa Measurement ID đã approve                      | Routing evidence được đính kèm                      | Pass/Fail |
 | TC-REG-009 | Kiểm tra User-ID ngoài scope     | Registration tracking không tự thêm identity field               | Không email/phone/raw identifier hoặc User-ID chưa approve      | Identity tracking vẫn nằm ở scope riêng              | Pass/Fail/Out of scope |
+| TC-REG-010 | Collection source ownership     | Chỉ dùng application → Data Layer path chuẩn; không có duplicate source chưa được document | Một request hoặc deduplication behavior đã document | Đính kèm source map và request timeline | Pass/Fail |
 
 Với mỗi test, dùng cùng `Test ID` trong application evidence, Data Layer inspection, GTM Preview, Network request, consent state, DebugView và processed reporting. Ghi nhận first failing layer thay vì đánh dấu Pass chỉ vì GTM tag đã fire.
 
