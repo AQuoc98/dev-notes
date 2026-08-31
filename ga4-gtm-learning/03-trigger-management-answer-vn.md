@@ -54,7 +54,7 @@ Người dùng click Submit
 → GTM fire tag signup của GA4
 ```
 
-Click Submit không phải trigger đúng cho conversion. Người dùng có thể click button rồi validation thất bại, gặp lỗi server hoặc bỏ dở quy trình. Response thành công từ server mới là thời điểm nghiệp vụ có tính quyết định.
+Click Submit không phải trigger đúng cho confirmed business outcome hoặc GA4 key event. Người dùng có thể click button rồi validation thất bại, gặp lỗi server hoặc bỏ dở quy trình. Response thành công từ server mới là thời điểm nghiệp vụ có tính quyết định.
 
 Hãy dùng Custom Event do application sở hữu:
 
@@ -75,7 +75,7 @@ Conditions:   All Custom Events cho đúng event name
 Expected:     một lần fire cho mỗi account được tạo thành công
 ```
 
-Không dùng click trigger cho conversion này. Click trigger vẫn hữu ích để đo ý định signup, nhưng nên gửi một event riêng như `sign_up_start` và không dùng chung tag `sign_up` thành công.
+Không dùng click trigger cho confirmed outcome này. Click trigger vẫn hữu ích để đo ý định signup, nhưng nên gửi một event riêng như `sign_up_start` và không dùng chung tag `sign_up` thành công.
 
 ### Ma trận quyết định trigger
 
@@ -219,10 +219,10 @@ Expected count:
 Một event sign_up cho mỗi account tạo thành công
 
 Trigger:
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 
 Consumer tag:
-GA4 Event - sign_up
+REG - GA4 Event - sign_up
 
 Environment:
 Production và các environment QA/staging được phê duyệt
@@ -249,15 +249,15 @@ Kiểm tra:
 Ví dụ, trước khi tạo:
 
 ```text
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 ```
 
 hãy kiểm tra các trigger tương tự:
 
 ```text
-CE - sign_up
-CE - signup
-CE - account_created
+REG - CE - sign_up
+REG - CE - signup
+REG - CE - account_created
 ```
 
 Đồng thời kiểm tra consumer của chúng:
@@ -448,19 +448,19 @@ method = google
         ↓
 
 Variable:
-DLV - method
+REG - DLV - method
 → google
 
         ↓
 
 Trigger:
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 → matched
 
         ↓
 
 Tag:
-GA4 Event - sign_up
+REG - GA4 Event - sign_up
 → fired
 ```
 
@@ -566,7 +566,7 @@ Container version:
 v128
 
 Change:
-Add CE - sign_up - Confirmed
+Add REG - CE - sign_up - Confirmed
 
 Expected behavior:
 Một event sign_up cho mỗi account được server xác nhận tạo thành công
@@ -611,25 +611,25 @@ Last review date
 Sử dụng:
 
 ```text
-[TYPE] - [business event hoặc purpose] - [scope/qualifier]
+[SCOPE] - [TYPE] - [BUSINESS EVENT OR PURPOSE] - [QUALIFIER]
 ```
 
-| Prefix | Ý nghĩa                          | Ví dụ                                      |
-| ------ | -------------------------------- | ------------------------------------------ |
-| `CI`   | Consent Initialization           | `CI - Consent Defaults - All Pages`        |
-| `INIT` | Initialization                   | `INIT - Google Tag - All Pages`            |
-| `PV`   | Page View                        | `PV - Product Detail - /products/*`        |
-| `DOM`  | DOM Ready                        | `DOM - Pricing Widget - /pricing`          |
-| `WL`   | Window Loaded                    | `WL - Full Resource Load - Campaign Landing` |
-| `CE`   | Custom Event                     | `CE - sign_up - Confirmed`                 |
-| `CLK`  | Click: All Elements              | `CLK - Calculator - Submit`                |
-| `LINK` | Click: Just Links                | `LINK - Documentation - External`         |
-| `FORM` | Form Submission                  | `FORM - Contact - Lead Form`               |
-| `HC`   | History Change                   | `HC - SPA Route - Virtual Pageview`        |
-| `VIS`  | Element Visibility               | `VIS - Pricing CTA - Once Per Page`        |
-| `TMR`  | Timer                            | `TMR - Chat Widget - Loaded`               |
-| `GRP`  | Trigger Group                    | `GRP - Checkout - Payment + Confirmation`  |
-| `EXC`  | Exception/blocking trigger       | `EXC - Internal Traffic - QA`              |
+| Type | Ý nghĩa                          | Ví dụ                                              |
+| ---- | -------------------------------- | -------------------------------------------------- |
+| `CI`   | Consent Initialization           | `SHARED - CI - Consent Defaults - All Pages`       |
+| `INIT` | Initialization                   | `SHARED - INIT - Google tag - All Pages`           |
+| `PV`   | Page View                        | `WEB - PV - Product Detail - /products/*`          |
+| `DOM`  | DOM Ready                        | `WEB - DOM - Pricing Widget - /pricing`            |
+| `WL`   | Window Loaded                    | `WEB - WL - Full Resource Load - Campaign Landing` |
+| `CE`   | Custom Event                     | `REG - CE - sign_up - Confirmed`                   |
+| `CLK`  | Click: All Elements              | `CALC - CLK - Calculator - Submit`                 |
+| `LINK` | Click: Just Links                | `DOCS - LINK - Documentation - External`           |
+| `FORM` | Form Submission                  | `CONTACT - FORM - Lead Form`                       |
+| `HC`   | History Change                   | `WEB - HC - SPA Route - Virtual Pageview`          |
+| `VIS`  | Element Visibility               | `WEB - VIS - Pricing CTA - Once Per Page`          |
+| `TMR`  | Timer                            | `SUPPORT - TMR - Chat Widget - Loaded`             |
+| `GRP`  | Trigger Group                    | `CHECKOUT - GRP - Payment + Confirmation`          |
+| `EXC`  | Exception/blocking trigger       | `SHARED - EXC - Internal Traffic - QA`             |
 
 Không dùng `Trigger 1`, `New Trigger`, `Test` hoặc `Temp` cho item đang live.
 
@@ -716,10 +716,10 @@ Test ở các tầng application/Data Layer, GTM, browser Network và GA4 DebugV
 | ID  | Test case                                 | Behavior trigger kỳ vọng                              | Behavior downstream kỳ vọng                         |
 | --- | ----------------------------------------- | ----------------------------------------------------- | --------------------------------------------------- |
 | T01 | Event hợp lệ và đúng kỳ vọng              | Trigger match một lần                                 | Tag đúng và một request đúng                        |
-| T02 | Sai event name hoặc case                  | Trigger không match                                   | Không có conversion request                          |
+| T02 | Sai event name hoặc case                  | Trigger không match                                   | Không có key-event/business-outcome request          |
 | T03 | URL, selector hoặc action tương tự         | Trigger không match                                   | Không có event không liên quan                       |
-| T04 | Thiếu hoặc sai giá trị bắt buộc           | Tag bị block hoặc theo rule đã ghi nhận               | Không có conversion gây hiểu nhầm                    |
-| T05 | Form không hợp lệ hoặc server response lỗi | Không có success trigger                              | Không có success/conversion request                  |
+| T04 | Thiếu hoặc sai giá trị bắt buộc           | Tag bị block hoặc theo rule đã ghi nhận               | Không có business outcome gây hiểu nhầm              |
+| T05 | Form không hợp lệ hoặc server response lỗi | Không có success trigger                              | Không có successful-outcome request                  |
 | T06 | Double click, retry, submit lặp lại       | Không có duplicate ngoài ý muốn                       | Số request khớp tracking plan                       |
 | T07 | SPA route, revisit, back/forward, reload  | Route behavior khớp contract                          | Không duplicate virtual pageview                    |
 | T08 | Consent denied, granted và updated        | Consent rule allow/block đúng thiết kế               | Request có consent behavior đúng                     |

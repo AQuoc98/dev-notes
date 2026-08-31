@@ -1,8 +1,6 @@
-# GTM Tag Management Standard — Bản dịch tiếng Việt
+# 04 — Tiêu chuẩn Quản lý Tag trong GTM
 
-## Mục đích và phạm vi (Purpose and Scope)
-
-## 1. Lý thuyết (1. Theory)
+## Lý thuyết (Theory)
 
 ### Tag là gì? (What is a tag?)
 
@@ -49,7 +47,7 @@ GTM tag
 
 Global site tag cũ (`gtag.js`) và Google tag là các khái niệm Google measurement có liên quan. Tuy nhiên, một GTM container vẫn có nhiều loại tag.
 
-## 2. Các loại tag phổ biến (2. Common Tag Types)
+## Các loại tag phổ biến (Common Tag Types)
 
 Chọn tag type được hỗ trợ và phù hợp nhất với requirement.
 
@@ -63,7 +61,7 @@ Chọn tag type được hỗ trợ và phù hợp nhất với requirement.
 
 Ưu tiên tag type có sẵn trong GTM hoặc reviewed template. Custom HTML không phải phương án mặc định khi đã có tag type được hỗ trợ đáp ứng requirement.
 
-## 3. Các thành phần của một tag (3. Anatomy of a Tag)
+## Các thành phần của một tag (Anatomy of a Tag)
 
 Một production tag phải có thể được hiểu thông qua các thành phần sau:
 
@@ -86,10 +84,10 @@ Một production tag phải có thể được hiểu thông qua các thành ph�
 
 Nếu không trả lời được bất kỳ câu hỏi nào ở trên, tag chưa sẵn sàng cho production.
 
-## 4. Tiêu chuẩn thiết kế (4. Design Standard)
+## Tiêu chuẩn thiết kế (Design Standard)
 
 - **Chỉ tạo tag khi có measurement hoặc operational requirement được ghi nhận.** Mọi production tag phải có purpose và owner rõ ràng.  
-  **Ví dụ:** Chỉ tạo `GA4 Event - FD - calculation_action` khi `calculation_action` đã được định nghĩa trong FD measurement plan đã approve.
+  **Ví dụ:** Chỉ tạo `FD - GA4 Event - calculation_action` khi `calculation_action` đã được định nghĩa trong FD measurement plan đã approve.
 
 - **Ưu tiên built-in GTM tag type hoặc reviewed template.** Chỉ dùng Custom HTML khi không có supported option phù hợp và implementation đã được review.  
   **Ví dụ:** Dùng GA4 Event tag để gửi `calculation_action`, thay vì viết custom `gtag()` call trong Custom HTML tag.
@@ -122,9 +120,9 @@ Nếu không trả lời được bất kỳ câu hỏi nào ở trên, tag chư
   **Ví dụ:** Unknown hostname trả về không có Measurement ID hoặc block tag, thay vì fallback về production.
 
 - **Review trigger, exception, variable, consent setting, sequencing, destination và consumer trước khi sửa hoặc retire tag.**  
-  **Ví dụ:** Trước khi xóa `GA4 Event - FD - calculation_action`, kiểm tra mọi reference, downstream consumer, replacement và production dependency.
+  **Ví dụ:** Trước khi xóa `FD - GA4 Event - calculation_action`, kiểm tra mọi reference, downstream consumer, replacement và production dependency.
 
-## 5. Hướng dẫn quyết định tạo tag (5. Tag Decision Guide)
+## Hướng dẫn quyết định tạo tag (Tag Decision Guide)
 
 Trước khi tạo tag, trả lời lần lượt các câu hỏi sau:
 
@@ -149,23 +147,23 @@ Trước khi tạo tag, trả lời lần lượt các câu hỏi sau:
 10. **Đã có owner được chỉ định và inventory record chưa?**
     - **Chưa:** Phân công owner trước khi tag trở thành production-active.
 
-## 6. Tiêu chuẩn đặt tên (6. Naming Standard)
+## Tiêu chuẩn đặt tên (Naming Standard)
 
 Dùng format dễ đoán:
 
 ```text
-[TYPE] - [SCOPE] - [EVENT OR PURPOSE] - [QUALIFIER]
+[SCOPE] - [TYPE] - [EVENT OR PURPOSE] - [QUALIFIER]
 ```
 
 Ví dụ:
 
 ```text
-Google tag - FD - Primary
-GA4 Event - FD - calculation_action
-Google Ads - Web - purchase
-CE - FD - calculation_action
-DLV - FD - solution_found
-LUT - Shared - GA4 Measurement ID by Environment
+FD - Google tag - Primary
+FD - GA4 Event - calculation_action
+WEB - Google Ads - purchase
+FD - CE - calculation_action
+FD - DLV - solution_found
+SHARED - LUT - GA4 Measurement ID by Environment
 ```
 
 Quy tắc đặt tên:
@@ -178,7 +176,7 @@ Quy tắc đặt tên:
 
 Description của tag phải ghi business purpose, owner, requirement hoặc ticket, event name, parameter contract, destination, consent behavior, expected firing count, dependencies và retirement condition.
 
-## 7. Hành vi firing của tag (7. Tag Firing Behavior)
+## Hành vi firing của tag (Tag Firing Behavior)
 
 ### Events tạo timeline (Events create the timeline)
 
@@ -243,14 +241,14 @@ Kiểm tra các nguyên nhân có thể tạo duplicate:
 
 Có thể dùng firing option được GTM hỗ trợ khi phù hợp, nhưng không dùng firing option để sửa một business-event contract bị hỏng. Application hoặc Data Layer phải định nghĩa hai calculation hoàn tất là hai occurrence hợp lệ hay chỉ là một occurrence bị lặp.
 
-## 8. Quản lý environment và destination (8. Environment & Destination Management)
+## Quản lý environment và destination (Environment & Destination Management)
 
 Environment routing phải được tập trung, có thể review và fail-safe.
 
 ### Các control bắt buộc (Required controls)
 
-- Giữ Google tag/GA4 configuration ở một nơi dùng chung và đã review khi có thể.
-- Route các value phụ thuộc environment qua configuration variable hoặc lookup table đã review, ví dụ `{{LUT - Shared - GA4 Measurement ID by Environment}}`.
+- Giữ Google tag và shared configuration settings của tag tại một nơi đã review khi có thể.
+- Route các value phụ thuộc environment qua configuration variable hoặc lookup table đã review, ví dụ `{{SHARED - LUT - GA4 Measurement ID by Environment}}`.
 - Map rõ các environment đã biết như local, QA, staging và production.
 - Không hard-code production Measurement ID trong event tag khi đã có shared configuration có kiểm soát.
 - Không tạo tag trùng chỉ vì destination khác nhau giữa các environment.
@@ -269,7 +267,7 @@ Unknown hostname          → undefined / tag blocked
 
 Nếu cần container hoặc workspace riêng cho một environment, phải ghi rõ lý do và giữ configuration contract nhất quán. Tách environment không được tự động tạo ra tracking logic khác nhau mà không qua review.
 
-## 12. Inventory và ownership (12. Inventory & Ownership)
+## Inventory và ownership (Inventory & Ownership)
 
 Inventory là operational record của container, không chỉ là danh sách tên tag.
 
@@ -296,7 +294,7 @@ Inventory là operational record của container, không chỉ là danh sách t�
 
 Ownership không chỉ là việc có tên trong spreadsheet. Owner phải approve measurement purpose, parameter contract, destination, consent behavior và quyết định retirement.
 
-## 13. Quy trình review và test (13. Review and Test Workflow)
+## Quy trình review và test (Review and Test Workflow)
 
 Dùng workflow này cho tag mới và material change của tag hiện có:
 
@@ -315,7 +313,7 @@ Dùng workflow này cho tag mới và material change của tag hiện có:
 
 Hãy xem “Tag Fired” là một diagnostic signal, không phải bằng chứng collection end-to-end.
 
-## 14. Vòng đời tag (14. Tag Lifecycle)
+## Vòng đời tag (Tag Lifecycle)
 
 ### Các status được khuyến nghị (Recommended statuses)
 
@@ -349,7 +347,7 @@ Retired
 - Chỉ deprecate legacy `webApps` consumer sau khi verify authoritative event path và actual production request count.
 - Kiểm tra lại report, audience, export và downstream use trước khi retire event.
 
-## 15. Các anti-pattern phổ biến (15. Common Anti-patterns)
+## Các anti-pattern phổ biến (Common Anti-patterns)
 
 | Anti-pattern                                                              | Rủi ro                                         | Cách ưu tiên                                                |
 | ------------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------- |
@@ -368,7 +366,7 @@ Retired
 | Placeholder cho required field                                            | Âm thầm tạo data-quality failure               | Fail QA và sửa upstream contract                            |
 | Bypass consent bằng custom trigger                                        | Privacy và governance failure                  | Dùng consent design đã approve, test state changes          |
 
-## 11. Ví dụ chi tiết: Tạo một FD GA4 Event tag đạt production quality (11. Detailed Best-Practice Example — Create One Production-Quality FD GA4 Event Tag)
+## Ví dụ chi tiết: Tạo một FD GA4 Event tag đạt production quality (Detailed Best-Practice Example)
 
 Ví dụ này mô tả toàn bộ vòng đời của một tag. Tên trong ví dụ là tên mẫu và phải được điều chỉnh theo naming convention và measurement plan thực tế.
 
@@ -417,7 +415,7 @@ Dùng value do application sở hữu trong Data Layer. Không đọc DOM hoặc
 | `FD - DLV - solution_found`                        | Data Layer Variable           | `solution_found` trong event `calculation_action`  | Phải là boolean và có trong event hợp lệ           |
 | `FD - DLV - connection_type`                       | Data Layer Variable           | `connection_type` trong event `calculation_action` | Phải khớp approved enum                            |
 | `FD - DLV - product_category`                      | Data Layer Variable           | `product_category` trong event                     | Optional; bỏ khi không có                          |
-| `LUT - Shared - GA4 Measurement ID by Environment` | Lookup/configuration variable | Approved environment mapping                       | Environment không biết thì không trả production ID |
+| `SHARED - LUT - GA4 Measurement ID by Environment` | Lookup/configuration variable | Approved environment mapping                       | Environment không biết thì không trả production ID |
 
 Với mỗi variable, kiểm tra:
 
@@ -455,7 +453,7 @@ Tạo hoặc reuse built-in GA4 Event tag:
 
 ```text
 Tag type: GA4 Event
-Name:     GA4 Event - FD - calculation_action
+Name:     FD - GA4 Event - calculation_action
 Google tag / configuration: approved FD shared Google tag
 Event name: calculation_action
 ```
@@ -479,7 +477,7 @@ Nếu GTM có thể gửi empty hoặc undefined trái contract, hãy sửa vari
 Tạo hoặc reuse:
 
 ```text
-Name:       CE - FD - calculation_action
+Name:       FD - CE - calculation_action
 Trigger:    Custom Event
 Event name: calculation_action
 Condition:  All Custom Events, trừ khi contract yêu cầu explicit FD scope filter
@@ -524,8 +522,8 @@ Nếu tổ chức dùng Consent Mode với cookieless behavior đã approve, ghi
 ### Bước 9 — Hoàn tất tên, description, owner và dependency (Step 9 — Complete naming, description, owner, and dependencies)
 
 ```text
-Tag:     GA4 Event - FD - calculation_action
-Trigger: CE - FD - calculation_action
+Tag:     FD - GA4 Event - calculation_action
+Trigger: FD - CE - calculation_action
 ```
 
 Description mẫu:
@@ -557,7 +555,7 @@ Dùng GTM Preview/Tag Assistant để xem event timeline, Data Layer value, trig
 | `solution_found = false`           | Tag vẫn theo contract; gửi boolean đã approve                                   |
 | Thiếu required `connection_type`   | Không tạo production request không hợp lệ; QA fail và release bị block          |
 | Thiếu optional `product_category`  | Event gửi không có parameter này nếu consent và required value hợp lệ           |
-| Event application khác             | `CE - FD - calculation_action` không match                                      |
+| Event application khác             | `FD - CE - calculation_action` không match                                      |
 | Click nhưng chưa calculation xong  | Tag không fire                                                                  |
 | Event `webApps` tương tự/legacy    | Preferred tag không fire, trừ khi migration design quy định khác                |
 | Push giống nhau lặp lại            | Request count theo contract; phải điều tra duplicate                            |
@@ -633,10 +631,10 @@ Không tuyên bố thành công chỉ dựa trên publish confirmation. Containe
 Thêm tag và dependency vào inventory:
 
 ```text
-Tag:              GA4 Event - FD - calculation_action
+Tag:              FD - GA4 Event - calculation_action
 Type:             GA4 Event
 Purpose:          One event per completed FD calculation
-Trigger:          CE - FD - calculation_action
+Trigger:          FD - CE - calculation_action
 Parameters:       solution_found, connection_type, product_category (optional)
 Consent:          Approved analytics consent behavior
 Destination:      Environment-safe FD Google tag / GA4 destination

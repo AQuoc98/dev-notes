@@ -1,120 +1,326 @@
 # 08 — Quy trình Debug và Analytics QA
 
-## Mục đích
+## 1. Tổng quan
 
-Debug cần xác định lớp đầu tiên bị lỗi, không chỉ xác nhận một tag hiển thị là đã fired. Analytics QA kiểm tra occurrence, payload, routing, consent, privacy và behavior trong reporting.
+### Mục tiêu
 
-Dùng pipeline sau:
+Dùng section này để kiểm tra một tracking change từ business outcome đến dữ liệu GA4 đã collection và processing. Mục tiêu là tìm **first failing layer**, không chỉ xác nhận GTM tag xuất hiện dưới **Tags Fired**.
+
+Chuỗi validation:
 
 ```text
-User interaction
-  → application state
+Authoritative application state
   → Data Layer message
-  → GTM event/variable evaluation
-  → tag decision và consent
+  → GTM trigger và variable evaluation
+  → consent decision
   → GA4 network request
-  → GA4 DebugView/Realtime
-  → processed report/Exploration
+  → DebugView/Realtime diagnostic
+  → processed report
 ```
 
-Nếu event không xuất hiện trong DebugView, nguyên nhân có thể nằm ở application, Data Layer, trigger, variable, tag, consent, browser/network, Measurement ID, property, debug mode hoặc processing. Hãy kiểm tra từng boundary theo đúng thứ tự.
+Chỉ đánh dấu **Pass** cho một material event khi business outcome đã xảy ra, event được gửi đúng số lần với payload đã approve, request đi đúng destination trong consent state phù hợp và các kiểm tra downstream liên quan đều đạt. Nếu report downstream vẫn đang trong processing window được GA4 document, hãy đánh dấu kiểm tra đó là **Pending**, ghi owner và ngày follow-up, và chưa xem phần đó là hoàn tất.
 
-## QA Strategy
+### Phạm vi
 
-Analytics QA là quy trình nhiều layer, dựa trên risk. Không xem “tag đã fired” là tiêu chí để release. Một test chỉ pass khi business state, collection payload, consent behavior, destination và reporting outcome liên quan đã được chứng minh hoặc limitation do processing/platform đã được ghi rõ.
+Quy trình này tập trung vào cách vận hành web GTM và GA4 ổn định:
 
-Dùng assertion chain này cho mỗi event quan trọng:
+- contract từ application đến Data Layer;
+- variable, trigger, tag, Google tag routing và collection-source ownership;
+- GTM Preview/Tag Assistant, browser Network, GA4 DebugView/Realtime và processed report;
+- kiểm tra positive, negative, duplicate, consent, privacy, routing, SPA/navigation, browser và regression;
+- record cho evidence, defect, retest và handoff.
+
+Media buying, campaign optimization, attribution strategy và Google Ads operations nằm ngoài section này. Release approval và post-release monitoring vẫn ở [Release & Monitoring](10-release-monitoring-answer.md).
+
+### Test level và stopping rule
+
+Bắt đầu từ L0 và dừng ở mức thấp nhất đủ trả lời risk. Change chỉ sửa documentation có thể cần contract check và test run tập trung; consent, ecommerce hoặc key business event mới cần toàn bộ sequence.
+
+| Level                       | Cần chứng minh                                                                       | Khi dùng                                           | Evidence kết thúc                                              |
+| --------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------- |
+| L0 — Contract review        | Event, parameter, count, source, destination, consent và negative case đã định nghĩa | Trước khi mở debugger                              | Measurement Plan/Event Contract và precondition rõ ràng        |
+| L1 — Isolated event         | Một action có kiểm soát tạo đúng Data Layer signal và request                        | Mọi event mới hoặc thay đổi                        | Event và request count đúng được quan sát                      |
+| L2 — Journey flow           | Thứ tự event và business-state transition đúng                                       | Flow nhiều event                                   | Sequence không thiếu hoặc duplicate business event             |
+| L3 — Boundary/privacy       | Invalid input, failure, retry, refresh, consent, PII, routing và browser behavior    | Material release hoặc change risk cao              | Các boundary case khớp contract đã approve                     |
+| L4 — Regression             | Event lân cận, shared tag và destination không đổi sai                               | Thay đổi shared GTM/Google tag/consent/application | Baseline event vẫn đúng                                        |
+| L5 — Processed data         | Field availability, scope, count, filter và interpretation                           | Khi report hoặc decision phụ thuộc kết quả         | Processed result được reconcile hoặc discrepancy được ghi nhận |
+| L6 — Production observation | Version đã publish và impact ban đầu                                                 | Sau production activation                          | Release version, smoke evidence, window và owner được ghi nhận |
+
+### Mỗi tool chứng minh điều gì?
+
+| Tool/layer                  | Inspect                                                      | Chứng minh                                     | Không chứng minh                                         |
+| --------------------------- | ------------------------------------------------------------ | ---------------------------------------------- | -------------------------------------------------------- |
+| Application                 | Authoritative state và event call                            | Product đã expose signal cần đo                | GTM đã nhận hoặc routing signal                          |
+| Data Layer                  | Name, value, type, order và count                            | GTM có message để evaluate                     | Tag đã fire hoặc request thành công                      |
+| GTM Preview/Tag Assistant   | Timeline, variable, fired/not-fired tag, consent, order      | Previewed container evaluate draft đúng        | Production dùng version đó hoặc GA4 đã process           |
+| Browser Network             | Request URL, Measurement ID, event, parameter, count, status | Browser đã cố gắng gửi collection request đúng | GA4 đã populate mọi report                               |
+| GA4 DebugView/Realtime      | Device, event, parameter, timing, recent activity            | GA4 đã nhận diagnostic/recent signal           | Historical processing hoặc final attribution             |
+| Standard report/Exploration | Processed field, scope, filter, freshness                    | Data dùng được cho analysis đã định nghĩa      | Upstream implementation đúng nếu thiếu upstream evidence |
+
+Xem [Preview and debug containers](https://support.google.com/tagmanager/answer/6107056), [Tag Assistant](https://support.google.com/tagmanager/answer/13355721) và [Monitor events in DebugView](https://support.google.com/analytics/answer/7201382).
+
+## 2. Bộ record QA cốt lõi
+
+Dùng một bộ record nhỏ. QA report là gói tổng hợp các record này, không phải một template độc lập khác.
+
+| Record                   | Priority                                   | Khi áp dụng                                            | Output                                                           |
+| ------------------------ | ------------------------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| Test Run Setup Record    | P0 — mọi run                               | Trước khi test                                         | Environment, version, consent, data an toàn, reset state, tester |
+| Required Test Matrix     | P0 — mọi behavior change                   | Trước khi thực thi                                     | Scenario và expected outcome                                     |
+| Evidence Template        | P1 — material event hoặc boundary thay đổi | Trong/sau khi thực thi                                 | Evidence theo layer, gắn với scenario ID                         |
+| Debug Session Record     | P2 — conditional                           | First failing layer chưa rõ hoặc behavior intermittent | State được giữ, đường điều tra, conclusion                       |
+| Defect and Retest Record | P2 — conditional                           | Case fail, có rủi ro production hoặc cần retest        | Defect, containment, fix, retest evidence                        |
+
+Priority: **P0** bắt buộc, **P1** bắt buộc cho change material/impact cao, **P2** là conditional.
+
+### 2.1 Test Run Setup Record
+
+Hoàn thành record dùng lại này một lần cho mỗi test run trước khi mở GTM Preview:
+
+| Field                              | Value                                                    |
+| ---------------------------------- | -------------------------------------------------------- |
+| Test run ID                        | `[run ID]`                                               |
+| Environment và URL                 | `[QA/staging URL]`                                       |
+| Application/build                  | `[commit/build]`                                         |
+| GTM container/workspace/version    | `[container]` / `[workspace]` / `[version]`              |
+| GA4 property/stream/Measurement ID | `[property]` / `[stream]` / `[sanitized ID]`             |
+| Browser/device và date             | `[browser/device/date]`                                  |
+| Test account/data                  | Chỉ synthetic account và safe values                     |
+| Consent state                      | `[granted/denied/unresolved by category]`                |
+| Tester/reviewer                    | `[name]`                                                 |
+| Reset method                       | `[controlled profile, stored state, Preserve log, etc.]` |
+
+Không đưa tên thật, email, phone, address, token, payment data hoặc free-form user content vào test data/evidence.
+
+Chỉ reset state cần thiết cho scenario. Ghi nhận cookies/storage, consent, application journey state, Preview session, Network log và browser extensions được giữ hay reset. Không mặc định xoá tất cả vì có thể phá hỏng behavior returning-user, retry, refresh hoặc multi-tab đang cần test.
+
+### 2.2 Required Test Matrix
+
+Dùng test ID ổn định. Scenario được chọn có thể có block expectation L0 chi tiết trong workflow, nhưng block đó là một phần của matrix, không phải template riêng.
+
+| ID    | Case               | Action                               | Expected                                                  |
+| ----- | ------------------ | ------------------------------------ | --------------------------------------------------------- |
+| TC-01 | Happy path         | Hoàn thành flow hợp lệ               | Một canonical event với required parameter hợp lệ         |
+| TC-02 | Validation failure | Submit input không hợp lệ            | Không có success event                                    |
+| TC-03 | Server failure     | Tạo response lỗi                     | Không có success event                                    |
+| TC-04 | Duplicate/retry    | Submit hoặc retry nhanh              | Một event cho mỗi business occurrence                     |
+| TC-05 | Refresh/back       | Refresh hoặc quay lại result         | Không duplicate ngoài ý muốn                              |
+| TC-06 | SPA navigation     | Vào, rời và quay lại route           | Route event theo plan; không duplicate business event     |
+| TC-07 | Missing optional   | Bỏ optional value                    | Omit hoặc fallback đúng tài liệu                          |
+| TC-08 | Missing required   | Bỏ required value                    | QA fail; không tạo success payload gây hiểu nhầm          |
+| TC-09 | Consent denied     | Deny consent liên quan               | Behavior đúng consent design; không có prohibited request |
+| TC-10 | Consent granted    | Grant consent liên quan              | Collection bắt đầu/cập nhật đúng                          |
+| TC-11 | Routing            | Chạy trên QA hostname                | Request chỉ đến QA destination                            |
+| TC-12 | Privacy            | Inspect Data Layer và request        | Không PII, secret, raw form value hoặc unsafe URL         |
+| TC-13 | Browser            | Test browser/device được hỗ trợ      | Không có khác biệt implementation đáng kể                 |
+| TC-14 | Regression         | Chạy journey lân cận                 | Event cũ vẫn đúng và không duplicate                      |
+| TC-15 | Collection source  | Kiểm tra mọi collection path đã biết | Một canonical source hoặc deduplication đã document       |
+
+### 2.3 Evidence Template
+
+Dùng một dòng cho mỗi layer của một test case được chọn. `Pending` chỉ hợp lệ khi runtime collection đã hoàn tất nhưng GA4 chưa hết processing window; phải ghi owner và ngày follow-up.
+
+| Test ID | Layer              | Expected                                            | Actual     | Evidence                 | Result            | Defect   |
+| ------- | ------------------ | --------------------------------------------------- | ---------- | ------------------------ | ----------------- | -------- |
+| `[ID]`  | Application        | Business state đã xác nhận                          | `[actual]` | `[application log/link]` | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | Data Layer         | Một event self-contained với value đã approve       | `[actual]` | `[capture/log]`          | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | GTM                | Trigger/tag đúng được evaluate một lần              | `[actual]` | `[Tag Assistant]`        | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | Collection source  | Một canonical source hoặc deduplication đã document | `[actual]` | `[source map/timeline]`  | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | Network            | Request count và destination đúng expected          | `[actual]` | `[redacted request]`     | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | Consent            | Behavior đúng state đang test                       | `[actual]` | `[consent evidence]`     | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | DebugView/Realtime | Diagnostic/recent activity đúng expected            | `[actual]` | `[capture]`              | Pass/Fail/Pending | `[ID/—]` |
+| `[ID]`  | Report             | Processed result reconcile với test                 | `[actual]` | `[report/follow-up]`     | Pass/Fail/Pending | `[ID/—]` |
+
+Evidence phải có date, environment, version, property/stream, tester, browser, result và known limitation. Redact identifier và sensitive value.
+
+### 2.4 Conditional records
+
+#### Debug Session Record
+
+Chỉ tạo sau khi giữ nguyên failing state hoặc khi behavior intermittent:
 
 ```text
-Business state là đúng
-  → Data Layer signal được emit một lần
-  → GTM evaluate đúng trigger và variable
-  → Consent cho phép behavior dự kiến
-  → Network request có destination và payload đúng
-  → DebugView/Realtime nhận activity dự kiến
-  → Processed reporting data hỗ trợ interpretation dự kiến
+Debug session ID:
+Test case/journey ID:
+Business question hoặc release:
+Environment và URL:
+Application/build và GTM version:
+GA4 property/stream/Measurement ID:
+Browser/device và consent state:
+Expected business moment và event/count:
+Canonical source và duplicate source đã kiểm tra:
+Các layer đã kiểm tra:
+Observed result:
+First failing layer:
+Evidence links:
+Tester/date và reviewer/status:
+Follow-up defect hoặc decision:
 ```
 
-### Các test level và thứ tự thực hiện
+#### Defect and Retest Record
 
-| Level                             | Mục đích                                                                                        | Khi nào chạy                                                                 | Evidence hoặc điều kiện kết thúc                                                     |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| L0 — Contract review              | Xác nhận event, parameter, count, source, destination, consent và negative case                 | Trước khi mở debugger                                                        | Measurement Plan/Event Contract được tham chiếu và precondition rõ ràng              |
-| L1 — Isolated event               | Chứng minh một event mà không bị nhiễu bởi navigation/action khác                               | Với mọi event mới hoặc thay đổi                                              | Một controlled action tạo đúng Data Layer và request result                          |
-| L2 — Journey flow                 | Chứng minh event order, business-state transition và denominator                                | Với flow nhiều event như registration hoặc checkout                          | Journey tạo đúng sequence, không thiếu hoặc duplicate business event                 |
-| L3 — Boundary và privacy          | Chứng minh invalid input, server failure, retry, refresh, consent, PII, routing và browser case | Mọi material release; độ sâu tùy risk                                        | Negative case đã biết bị block hoặc behavior đúng tài liệu                           |
-| L4 — Regression                   | Xác nhận event và destination cũ không bị thay đổi                                              | Khi shared GTM, Google tag, consent, variable hoặc application code thay đổi | Baseline event vẫn đúng, không có duplicate/misroute mới                             |
-| L5 — Processed data               | Xác nhận field availability, scope, count, filter và interpretation sau processing              | Khi kết quả dùng cho report, key event, audience hoặc business decision      | Processed result được reconcile hoặc discrepancy được ghi nhận                       |
-| L6 — Production smoke/observation | Xác nhận version đã publish và theo dõi tác động ban đầu                                        | Sau production activation                                                    | Release version, smoke evidence, observation window và follow-up owner được ghi nhận |
+Dùng khi test fail hoặc cần theo dõi production risk:
 
-Bắt đầu từ L0 và chỉ đi đến mức phù hợp với risk. Copy change nhỏ có thể chỉ cần L0 và L1; purchase hoặc consent flow mới thường cần toàn bộ sequence.
+| Field                     | Cần ghi nhận                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| Defect và severity        | Stable ID và phân loại Critical/High/Medium/Low                                  |
+| First failing layer       | Application, Data Layer, GTM, consent, browser/network, GA4 setup hoặc reporting |
+| Expected versus actual    | Contract expectation và behavior quan sát được                                   |
+| Reproduction              | Test ID, URL, browser/device, consent state, steps, frequency                    |
+| Impact và affected period | Event/user/report/environment và time range đã biết                              |
+| Evidence                  | Application, Preview, Network, DebugView hoặc report evidence đã sanitize        |
+| Containment               | Block, routing correction, pause, filter hoặc monitoring action                  |
+| Root cause và fix         | Cause đã xác nhận, change/ticket, owner, target version                          |
+| Retest result             | Test ID, date, evidence, residual impact, reviewer decision                      |
 
-## Mỗi công cụ chứng minh điều gì?
+## 3. Thứ tự áp dụng và quy trình debug
 
-| Tool/layer                  | Cần inspect                                                        | Nó chứng minh điều gì?                         | Nó chưa chứng minh điều gì?                                  |
-| --------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------------------ |
-| Application                 | Authoritative state và event call                                  | Product có thể expose signal cần đo            | GTM đã nhận hoặc routing signal đó                           |
-| Data Layer                  | Event name, value, type, order, count                              | GTM có message để evaluate                     | Tag đã fired hoặc request đã được gửi                        |
-| GTM Preview/Tag Assistant   | Event timeline, variables, fired/not-fired tags, consent, order    | Container trong preview đã evaluate draft đúng | Production đang dùng cùng version hoặc GA4 đã accept request |
-| Browser Network             | Request URL, Measurement ID, event name, parameters, count, status | Browser đã cố gắng gửi collection request đúng | GA4 đã process event vào mọi report                          |
-| GA4 DebugView               | Debug device, event, parameters, timing                            | GA4 đã nhận một debuggable event               | Normal report đã đầy đủ hoặc attribution đã final            |
-| Realtime                    | User/event hiện tại và collection cơ bản                           | Property đang nhận activity gần đây            | Historical processing và final attribution                   |
-| Standard report/Exploration | Processed dimensions, metrics, filters, scope, freshness           | Data có thể dùng cho analysis đã định nghĩa    | Implementation đúng nếu chưa có upstream evidence            |
+### 3.1 Thứ tự và mức ưu tiên
 
-GTM Preview và debug mode cho phép tester inspect tag nào fired, tag nào không fired, thứ tự event và dữ liệu được previewed container xử lý. Xem [Preview and debug containers](https://support.google.com/tagmanager/answer/6107056). Tag Assistant cũng cung cấp diagnostic cho Google tag bị thiếu, duplicate hoặc cấu hình sai; xem [Tag Assistant](https://support.google.com/tagmanager/answer/13355721).
+1. **Setup run (P0):** hoàn thành Test Run Setup Record và kiểm soát browser/application state.
+2. **Define coverage (P0):** tạo hoặc cập nhật Required Test Matrix từ Measurement Plan.
+3. **Define expectation được chọn (L0):** ghi business moment, event/count, required parameter, destination, consent và negative case cho scenario đang test. Đây là chi tiết của matrix, không phải template mới.
+4. **Execute và summarize (P0):** chạy từng scenario và cập nhật Scenario Execution Summary.
+5. **Capture proof có chọn lọc (P1):** hoàn thành các dòng Evidence Template cho boundary material hoặc boundary đã thay đổi.
+6. **Escalate khi cần (P2):** tạo Debug Session Record cho behavior chưa giải thích được và Defect and Retest Record cho failure/retest cần theo dõi.
 
-## Test Setup và Data Safety
+Shortcut:
 
-Ghi nhận trước khi test:
+- Tracking change material thông thường dùng Bước 1–5.
+- Change chỉ sửa documentation dùng Bước 1–2 và evidence của boundary bị ảnh hưởng.
+- Happy path không có mismatch không cần Debug Session hoặc Defect record.
+- Change consent, routing, key event, ecommerce hoặc shared tag cần đủ positive, negative, duplicate và regression coverage.
+- Sau fix, chạy lại cùng scenario ID với attempt timestamp mới; chỉ đóng defect sau khi regression evidence liên quan đã pass.
 
-| Field                           | Ví dụ                                         |
-| ------------------------------- | --------------------------------------------- |
-| Test ID                         | TC-REG-001                                    |
-| Environment                     | QA/staging, không dùng production             |
-| URL và application version      | `[sanitized URL]`, `[commit/build]`           |
-| GTM container/workspace/version | `[container]`, `[workspace]`, `[version]`     |
-| GA4 property và web stream      | `[property]`, `[stream]`                      |
-| Measurement ID                  | `G-XXXXXXX` hoặc evidence đã sanitize         |
-| Browser/device                  | Chrome, desktop, version/date                 |
-| Account/data                    | Synthetic account và safe values              |
-| Consent state                   | Granted, denied hoặc unresolved theo category |
-| Expected event                  | `sign_up` một lần với `method` và `form_id`   |
-| Tester/reviewer                 | `[name]`                                      |
+### 3.2 Frontend checks trước GTM Preview
 
-Dùng synthetic value. Không đưa tên thật, email, số điện thoại, địa chỉ, authentication token, payment data hoặc free-form user content vào test hay evidence.
+GTM Preview kiểm tra integration, không thay thế application test. Test layer sớm nhất sở hữu failure:
 
-### “Reset state liên quan” nghĩa là gì?
+| Test level          | Cần chứng minh                                                                   | Cách tiếp cận                    |
+| ------------------- | -------------------------------------------------------------------------------- | -------------------------------- |
+| Unit                | Analytics adapter chỉ nhận approved event contract                               | TypeScript/project test runner   |
+| Service/integration | API result đã confirm emit một lần; validation/failure/cancel không emit success | Mocked API hoặc integration test |
+| Component/SPA       | Strict Mode, remount, route transition, double click và retry không duplicate    | Component/browser test           |
+| Browser contract    | Trang thật push đúng Data Layer message trước khi GTM evaluate                   | E2E test với Data Layer capture  |
 
-Kết quả test phụ thuộc vào context tại thời điểm bắt đầu. Consent đã lưu có thể block request, một lần registration thành công trước đó có thể làm application suppress duplicate event, còn Preview session cũ có thể kết nối tới sai GTM workspace. Vì vậy, trước mỗi attempt, hãy tự hỏi hai câu:
+Assert final Data Layer message, occurrence count, value type và absence của prohibited field. Không chỉ assert adapter function đã được gọi.
 
-1. **State nào phải ở trạng thái mới cho test này?** Chỉ reset state đó.
-2. **State nào phải được giữ nguyên cho test này?** Giữ nguyên và ghi nhận nó.
+### 3.3 Các bước debug end to end
 
-Không tự động xoá toàn bộ cookie, storage, application data và browser state. Việc đó có thể phá hỏng đúng scenario cần test, ví dụ returning-user consent, refresh behavior, retry behavior hoặc multi-tab behavior. Hãy ghi cách reset nếu tester khác cần reproduce kết quả.
+#### Bước 1 — Xác nhận behavior mong đợi (L0 Contract Review)
 
-Ví dụ:
+Đọc Measurement Plan trước khi mở debugger và điền block expectation cấp scenario:
 
-- **New-visitor happy path:** dùng browser profile có kiểm soát, connect lại đúng GTM Preview session, tạo synthetic account, đặt consent state theo plan và bật **Preserve log** trước action.
-- **Refresh hoặc duplicate test:** giữ account và consent state liên quan, reset application về pre-action state đã document, xoá Network log rồi chỉ thực hiện refresh hoặc retry cần kiểm tra.
-- **Returning-user consent test:** không xoá cookie hoặc local storage; ghi consent state đang lưu và xác nhận page xử lý đúng như returning user.
+```text
+Action:
+Business moment:
+Expected Data Layer event:
+Expected request count:
+Required parameters:
+Expected destination:
+Expected consent:
+Negative cases:
+```
 
-Một reset record đầy đủ có thể rất ngắn: `browser profile mới; GTM Preview connect lại QA workspace v42; analytics consent=denied; synthetic account; Network Preserve log=on`.
+Block này cung cấp các giá trị `Expected` cho Evidence Template. Không debug implementation khi expectation chưa được định nghĩa.
 
-| State                            | Vì sao có thể làm thay đổi kết quả                                             | Cách reset hoặc kiểm soát                                                |
-| -------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| GTM Preview session              | Workspace/version đang preview có tính session-specific                        | Connect lại đúng container, workspace, environment và version            |
-| Cookie, local storage và consent | Consent hoặc identifier đã lưu có thể block, allow hoặc deduplicate collection | Dùng browser profile có kiểm soát và ghi initial consent state           |
-| Application journey state        | Success, retry hoặc cached form trước đó có thể suppress hoặc duplicate event  | Dùng synthetic account mới hoặc reset path đã document                   |
-| Network log                      | Navigation có thể làm mất request trước đó khỏi màn hình                       | Bật Preserve log trước redirect hoặc SPA navigation                      |
-| Browser extension/privacy tool   | Có thể block request hoặc thay đổi storage                                     | Ghi clean profile hay không và repeat bằng tool đã approve nếu liên quan |
+#### Bước 2 — Mở đúng preview session
 
-Không trộn nhiều test case trong cùng browser state, trừ khi test đó chủ đích kiểm tra returning user, stored consent, multi-tab hoặc retry behavior.
+1. Mở đúng GTM container, workspace, environment và QA URL.
+2. Start Preview; xác nhận container, version và hostname đã connect.
+3. Bật Preserve Network log khi có navigation hoặc redirect.
+4. Xác nhận browser state và consent state khớp Test Run Setup Record.
 
-## Quy trình Debug end to end
+#### Bước 3 — Thực hiện một action
 
-### Bước 1 — Xác nhận behavior mong đợi
+Thực hiện đúng một action rồi dừng. Xác nhận application đã đạt authoritative business state và Data Layer signal xảy ra một lần, đúng thời điểm. Kiểm tra event name, parameter name, type, value, optional-field behavior và prohibited data.
 
-Đọc Measurement Plan trước khi mở debugger. Ghi rõ:
+Nếu business outcome chưa xảy ra, không dùng button click làm success event.
+
+#### Bước 4 — Inspect GTM evaluation
+
+Ở đúng event trong Tag Assistant:
+
+1. So khớp Custom Event name chính xác, bao gồm cả case.
+2. Inspect mọi variable được trigger và tag sử dụng.
+3. Xác nhận trigger đúng match và tag fire một lần.
+4. Kiểm tra tag không fire, blocking trigger, exception, consent requirement, sequencing và tag setting.
+5. Tìm tag hoặc implementation khác có thể gửi cùng event.
+6. Xác nhận Google tag và event tag trỏ đến đúng destination.
+
+Một business occurrence nên có một canonical collection source. Nếu có nhiều source có chủ đích, phải document ownership, deduplication và expected request count.
+
+#### Bước 5 — Inspect Network request
+
+Filter GA4 collection request trong Developer Tools và xác nhận:
+
+- request count đúng contract;
+- Measurement ID và destination là QA/test value;
+- event name, required parameter, type và value đúng;
+- không có extra, prohibited hoặc sensitive field;
+- consent signal đúng approved design;
+- blocker, browser privacy, CSP, redirect hoặc network error không làm thay đổi kết quả.
+
+Redact identifier và payload value trước khi chia sẻ evidence.
+
+#### Bước 6 — Check GA4 DebugView và Realtime
+
+Chọn đúng property và debug device. Xác nhận event và required parameter xuất hiện đúng count. DebugView/Realtime chỉ là collection diagnostic, không phải bằng chứng historical reporting đã hoàn chỉnh. Privacy control hoặc consent có thể làm event không hiển thị.
+
+Xoá hoặc giới hạn test-only debug setting sau khi test. Không để `debug_mode` áp dụng cho toàn bộ user trong production.
+
+#### Bước 7 — Validate processed reporting data
+
+Sau documented processing window:
+
+- chọn đúng property, stream, timezone và date range;
+- xác nhận event và custom definition đã đăng ký có thể dùng;
+- kiểm tra metric/dimension scope, filter, `(other)`, thresholding, sampling và recent date chưa hoàn tất;
+- reconcile processed count với test evidence;
+- ghi discrepancy thay vì âm thầm đổi conclusion.
+
+### 3.4 Consent debugging
+
+Consent là một runtime dimension. Thêm case cho default state, analytics denied, analytics granted, consent update sau load, SPA navigation sau mỗi state, returning-user có stored consent và CMP unresolved/failed. Với mỗi case, ghi:
+
+- thời điểm default và update;
+- tag được expected fire hoặc remain blocked;
+- request có được gửi không và mang signal nào;
+- behavior có khớp approved privacy design không;
+- DebugView visibility có được expected không.
+
+Không bypass consent model bằng ad hoc trigger. Inspect consent requirement và additional consent check trong Tag Assistant. Xem [unblock Google tags when using consent mode](https://support.google.com/tagmanager/answer/12962079).
+
+### 3.5 Chẩn đoán failure
+
+Luôn chẩn đoán first failing layer:
+
+| Symptom                                  | First check                                               | Likely layer           | Evidence cần capture                    |
+| ---------------------------------------- | --------------------------------------------------------- | ---------------------- | --------------------------------------- |
+| Không có Data Layer event                | Business state, callback, event push                      | Application/Data Layer | Application log và test state           |
+| Có Data Layer event nhưng tag không fire | Event name, filter, variable, exception                   | GTM                    | Tag Assistant event và not-fired reason |
+| Tag fire nhưng không có request          | Google tag/config, consent, blocker, tag error            | GTM/browser            | Tag detail và Network log               |
+| Sai Measurement ID                       | Environment lookup, Google tag, stream selection          | Routing                | Redacted request                        |
+| Sai parameter                            | Data Layer path, timing, type conversion                  | Contract/GTM           | Data Layer/request comparison           |
+| Một action có hai request                | Duplicate push, overlapping tag, remount, retry           | Application/GTM        | Timeline và request count               |
+| Có request nhưng DebugView trống         | Property/device, debug mode, consent/privacy, delay       | GA4/debug setup        | Property, device, consent, timestamp    |
+| DebugView đúng nhưng report sai          | Processing, definition delay, filter, scope, thresholding | GA4 reporting          | Report setting và date range            |
+
+## 4. Lưu ý thực chiến và handoff
+
+- **First failing layer là điểm neo chẩn đoán.** Sửa symptom ở layer sau có thể che giấu nguyên nhân thật.
+- **Freeze trước khi đổi.** Giữ nguyên state và evidence ban đầu; không refresh hoặc đổi nhiều setting cùng lúc.
+- **Ownership phải rõ.** Hardcoded `gtag`, CMS/plugin, Enhanced Measurement path, server-side path, Measurement Protocol call hoặc GTM tag thứ hai là duplicate source nếu chưa được document và deduplicate.
+- **Evidence phải an toàn.** Dùng synthetic data, redact ID/payload value và không lưu credential.
+- **Kết luận phải đúng phạm vi.** Network chứng minh browser đã cố gửi collection; DebugView chứng minh GA4 nhận debuggable event; processed report chứng minh reporting availability sau processing. Không gộp các kết luận này.
+- **Handoff tối thiểu.** Frontend cần event name, business moment, payload schema, occurrence rule, source, consent assumption và test ID. GTM owner cần variable/trigger/tag mapping và destination. QA owner cần expected matrix và evidence link.
+- **Ranh giới release.** Dùng [Release & Monitoring](10-release-monitoring-answer.md) cho approval, production activation, rollback ownership và post-release observation.
+
+## 5. Ví dụ hoàn chỉnh — Registration Journey
+
+Đây là ví dụ duy nhất trong tài liệu. Đây là minh họa non-production; thay toàn bộ sample ID, value và evidence placeholder bằng dữ liệu của project.
+
+### 5.1 L0 expectation block đã điền
 
 ```text
 Action: Hoàn thành registration hợp lệ
@@ -127,370 +333,73 @@ Expected consent: analytics behavior đã được phê duyệt
 Negative cases: invalid input, server failure, double submit, refresh
 ```
 
-Không debug một implementation khi expectation chưa được định nghĩa.
+### 5.2 Context của test run
 
-### Bước 2 — Mở đúng preview session
+| Field                        | Giá trị ghi nhận                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| QA report ID                 | `QA-REG-001`                                                                                                        |
+| Measurement Plan             | `MP-REG-001 / v1.0`                                                                                                 |
+| Journey                      | `J-REG-001` — Registration                                                                                          |
+| Environment                  | Chỉ QA/staging                                                                                                      |
+| Application/GTM/GA4          | `[build]` / `[GTM version]` / `[QA property và stream]`                                                             |
+| Browser và data              | Controlled profile; synthetic account; safe values                                                                  |
+| Consent state                | Analytics granted; test không cần advertising consent                                                               |
+| Canonical source             | Backend xác nhận account creation → application Data Layer → GTM → GA4                                              |
+| Duplicate source đã kiểm tra | Không có hardcoded `gtag`, plugin, GTM tag thứ hai, server-side path hoặc Measurement Protocol source cho event này |
+| Expected result              | Một `sign_up` với `method=email` và `form_id=registration`                                                          |
 
-1. Mở đúng GTM container và workspace.
-2. Start Preview và connect tới QA URL.
-3. Xác nhận page báo đúng container đã connected.
-4. Kiểm tra environment, container ID và version đang preview.
-5. Giữ network log nếu có navigation hoặc redirect.
-6. Dùng browser state sạch hoặc được kiểm soát khi cookie, consent hoặc SPA state có thể ảnh hưởng kết quả.
+### 5.3 Scenario execution summary
 
-Preview interface phụ thuộc vào session. Không mặc định rằng colleague đang xem cùng draft nếu chưa tạo shared preview session.
+| Test ID      | Scenario                       | Kết quả quan sát                                             | Evidence                               | Status |
+| ------------ | ------------------------------ | ------------------------------------------------------------ | -------------------------------------- | ------ |
+| `TC-REG-001` | Form ready                     | Một `registration_start`; không có PII                       | `[application + Data Layer]`           | Pass   |
+| `TC-REG-002` | Invalid input                  | Validation error; không có `sign_up`                         | `[Preview + request]`                  | Pass   |
+| `TC-REG-003` | Server failure                 | Server error; không có `sign_up`                             | `[application + request]`              | Pass   |
+| `TC-REG-004` | Account creation được xác nhận | Backend success; một `sign_up` đã approve                    | `[application + Data Layer + Preview]` | Pass   |
+| `TC-REG-005` | Rapid double submit/retry      | Một confirmed account; một request                           | `[timeline + Network]`                 | Pass   |
+| `TC-REG-006` | Refresh/back/SPA remount       | Không duplicate `sign_up`                                    | `[navigation timeline]`                | Pass   |
+| `TC-REG-007` | Consent denied                 | Behavior đúng denied-state; không có prohibited data         | `[consent + storage + Network]`        | Pass   |
+| `TC-REG-008` | Sai environment/destination    | Chỉ QA Measurement ID                                        | `[redacted request]`                   | Pass   |
+| `TC-REG-009` | User-ID ngoài scope            | Không email, phone, raw account ID hoặc User-ID chưa approve | `[redacted payload]`                   | Pass   |
+| `TC-REG-010` | Collection-source ownership    | Chỉ canonical GTM path gửi `sign_up`                         | `[source map + timeline]`              | Pass   |
 
-### Bước 3 — Thực hiện một action
+### 5.4 Evidence Template chi tiết — `TC-REG-004`
 
-Thực hiện đúng một test action rồi dừng. Không click thêm trước khi capture event liên quan. Chỉ lặp lại sau khi reset test state.
+| Test ID      | Layer             | Expected                                    | Actual               | Evidence               | Result  | Defect |
+| ------------ | ----------------- | ------------------------------------------- | -------------------- | ---------------------- | ------- | ------ |
+| `TC-REG-004` | Application       | Backend xác nhận account creation           | `[success response]` | `[application log]`    | Pass    | `—`    |
+| `TC-REG-004` | Data Layer        | Một `sign_up` với parameter đã approve      | `[payload]`          | `[Data Layer capture]` | Pass    | `—`    |
+| `TC-REG-004` | GTM               | Trigger/tag đúng fire một lần               | `[timeline]`         | `[Tag Assistant]`      | Pass    | `—`    |
+| `TC-REG-004` | Collection source | Một canonical source                        | `[source map]`       | `[source timeline]`    | Pass    | `—`    |
+| `TC-REG-004` | Network           | Một request tới QA Measurement ID           | `[count/payload]`    | `[redacted request]`   | Pass    | `—`    |
+| `TC-REG-004` | Consent           | Analytics behavior đã approve               | `[state/signals]`    | `[consent evidence]`   | Pass    | `—`    |
+| `TC-REG-004` | DebugView         | Một debuggable event với required parameter | `[event]`            | `[DebugView capture]`  | Pass    | `—`    |
+| `TC-REG-004` | Report            | Processed result reconcile với test         | `[chưa có]`          | `[follow-up record]`   | Pending | `—`    |
 
-Kiểm tra:
+### 5.5 Frontend contract example
 
-- Application có đạt business state mong đợi không?
-- Data Layer event có xảy ra một lần không?
-- Event có xảy ra đúng thời điểm không?
-- Event name, parameter name, type và value có đúng không?
-- Optional value có được omit đúng thiết kế không?
-- Có dữ liệu bị cấm nào xuất hiện không?
+```typescript
+window.dataLayer = [];
 
-Ví dụ Data Layer message:
+await completeConfirmedRegistration();
 
-```javascript
-{
-  event: 'sign_up',
-  method: 'email',
-  form_id: 'registration'
-}
+expect(window.dataLayer).toEqual([
+  expect.objectContaining({
+    event: "sign_up",
+    event_schema_version: "1.0",
+    method: "email",
+    form_id: "registration",
+  }),
+]);
 ```
 
-Nếu business outcome chưa xảy ra, không được xem button click là success event.
+Application test cũng cần cover API failure, duplicate callback, invalid required value và SPA remount. Event chỉ được emit sau authoritative account-creation result.
 
-### Bước 4 — Inspect GTM evaluation
+### 5.6 Kết luận
 
-Tại đúng event trong Tag Assistant:
+Runtime collection QA đã pass: backend xác nhận account creation, application emit một `sign_up` self-contained, GTM chọn đúng tag một lần, consent khớp approved design và một request đi tới QA Measurement ID. Processed reporting vẫn là follow-up cho đến khi documented GA4 processing window hoàn tất.
 
-1. Xác nhận Custom Event name khớp contract, kể cả case.
-2. Inspect mọi variable được trigger và tag sử dụng.
-3. Xác nhận trigger mong đợi đã match.
-4. Xác nhận tag cần fire đã fire một lần.
-5. Xác nhận tag không cần fire đang ở not-fired state và hiểu lý do.
-6. Kiểm tra blocking trigger, exception, consent requirement, additional consent, sequencing và tag setting.
-7. Tìm tag khác có thể gửi cùng event.
-8. Xác định canonical collection source của event. Kiểm tra event business này có thể đồng thời được gửi bởi hardcoded `gtag`, Enhanced Measurement, CMS/plugin, server-side tagging, Measurement Protocol hoặc GTM tag khác hay không.
-9. Xác nhận Google tag và GA4 Event tag trỏ tới destination đúng.
-
-Một business occurrence nên có một canonical collection source. Nếu nhiều source là chủ ý, phải document ownership, cơ chế deduplication và expected request count. Một source thứ hai không được document là duplicate-collection defect, dù event name và parameter trông vẫn đúng.
-
-Nhớ rằng:
-
-```text
-Nhiều firing trigger trên một tag → điều kiện thay thế (OR)
-Nhiều condition trong một trigger → tất cả phải match (AND)
-Exception/blocking condition match → tag bị block
-```
-
-“Tag Fired” chỉ có nghĩa GTM đã chọn tag để execute. Nó không chứng minh network request thành công hoặc GA4 đã process payload đúng.
-
-### Bước 5 — Inspect network request
-
-Dùng Browser Developer Tools và filter GA4 collection request, thường có chứa `collect`. Hãy inspect request thật thay vì chỉ dựa vào GTM UI.
-
-Xác nhận:
-
-- request count bằng expected count;
-- destination Measurement ID là QA/test ID;
-- event name đúng;
-- required parameter có mặt với value và type đúng;
-- không có field thừa hoặc bị cấm;
-- consent signal khớp approved design;
-- request không bị extension, browser privacy setting, CSP hoặc network error block;
-- redirect/navigation không làm mất linker hoặc campaign information cần thiết.
-
-Không copy live identifier hoặc sensitive payload vào public ticket. Redact identifier và value nhưng giữ đủ context để chứng minh kết quả.
-
-### Bước 6 — Kiểm tra GA4 DebugView
-
-DebugView hiển thị event và user property từ debug-enabled device gần như theo thời gian thực. Với website, Tag Assistant hoặc GTM Preview có thể bật device debug signal; cũng có thể cấu hình `debug_mode` cho test scope đã được phê duyệt. Chọn đúng property và debug device, sau đó xác nhận event xuất hiện một lần với parameter mong đợi.
-
-Google lưu ý event có thể không xuất hiện trong DebugView khi client-side privacy control hoặc consent mode ngăn Analytics storage/collection. DebugView và Realtime cũng có attribution behavior giới hạn, vì vậy không dùng chúng làm nguồn cuối cùng cho historical acquisition conclusion. Xem [Monitor events in DebugView](https://support.google.com/analytics/answer/7201382).
-
-Sau test, bảo đảm debug traffic được tách hoặc filter theo data-quality design đã phê duyệt. Không để `debug_mode` áp dụng cho toàn bộ user trong production.
-
-### Bước 7 — Validate processed reporting data
-
-Sau khi hết processing window thông thường:
-
-- chọn đúng property, stream, timezone và date range;
-- xác nhận event xuất hiện trong Events report;
-- xác nhận custom definition chỉ available sau registration/processing delay đã document;
-- kiểm tra metric và dimension scope;
-- so sánh count dự kiến với test evidence;
-- kiểm tra `(other)`, thresholding, sampling, field không tương thích và recent date chưa hoàn chỉnh;
-- ghi nhận discrepancy thay vì âm thầm đổi conclusion.
-
-DebugView là collection diagnostic, không phải bằng chứng rằng standard report đã populate ngay lập tức.
-
-## Decision tree cho lỗi phổ biến
-
-```text
-Expected event bị thiếu
-  ├─ Business state đã xảy ra chưa?
-  │   ├─ Chưa → sửa test precondition/application flow
-  │   └─ Rồi
-  ├─ Data Layer event có được push một lần không?
-  │   ├─ Không → sửa application/Data Layer contract
-  │   └─ Có
-  ├─ GTM custom event name/variable có khớp không?
-  │   ├─ Không → sửa trigger/variable mapping
-  │   └─ Có
-  ├─ Tag đã fire và consent có cho phép không?
-  │   ├─ Không → inspect trigger, exception, consent, sequencing
-  │   └─ Có
-  ├─ Network request có tồn tại và destination có đúng không?
-  │   ├─ Không → inspect tag config, Google tag, blocker, CSP, network
-  │   └─ Có
-  ├─ DebugView device/property/debug mode có đúng không?
-  │   ├─ Không → sửa debug selection hoặc test configuration
-  │   └─ Có
-  └─ Processed report bị thiếu?
-      → chờ processing, sau đó kiểm tra registration, scope, filter, threshold và date range
-```
-
-### Failure diagnosis matrix
-
-| Symptom                             | First checks                                                  | Likely layer           | Evidence cần capture                    |
-| ----------------------------------- | ------------------------------------------------------------- | ---------------------- | --------------------------------------- |
-| Không có Data Layer event           | Business success, app callback, event push                    | Application/Data Layer | Console/app log và test state           |
-| Data Layer event có, tag không fire | Exact event name, trigger filter, variable, exception         | GTM                    | Tag Assistant event và not-fired reason |
-| Tag fire nhưng không có request     | Google tag/config, consent, blocker, tag error                | GTM/browser            | Tag detail, console, network log        |
-| Request sai ID                      | Environment lookup, Google tag, stream selection              | Routing                | Redacted request URL/payload            |
-| Request sai parameter               | DLV path, variable timing, type conversion                    | Data contract/GTM      | Data Layer và request comparison        |
-| Một action tạo hai request          | Duplicate push, overlapping tag, SPA remount, retry           | Application/GTM        | Timeline và request count               |
-| Request có nhưng DebugView trống    | Sai property/device, debug mode, consent/privacy, delay       | GA4/debug setup        | Property, device, consent, timestamp    |
-| DebugView đúng nhưng report sai     | Processing, custom-definition delay, filter, scope, threshold | GA4 reporting          | Report setting và date range            |
-| QA data vào production              | Environment routing hoặc sai stream                           | Release/routing        | Request destination, version, hostname  |
-
-## Required Test Matrix
-
-Dùng test ID ổn định qua các release.
-
-| ID    | Case               | Action                                                       | Expected                                                                    |
-| ----- | ------------------ | ------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| TC-01 | Happy path         | Hoàn thành flow hợp lệ                                       | Một canonical event, mọi required parameter hợp lệ                          |
-| TC-02 | Validation failure | Submit input không hợp lệ                                    | Không có success/key event                                                  |
-| TC-03 | Server failure     | Tạo response lỗi                                             | Không có success/key event                                                  |
-| TC-04 | Double submit      | Click/submit nhanh                                           | Một event cho một business occurrence                                       |
-| TC-05 | Refresh/back       | Refresh hoặc quay lại confirmation                           | Không duplicate ngoài ý muốn                                                |
-| TC-06 | SPA route          | Vào, rời và quay lại route                                   | Page/route event theo plan; không duplicate business event                  |
-| TC-07 | Missing optional   | Bỏ optional value                                            | Omit hoặc fallback đúng document                                            |
-| TC-08 | Missing required   | Ép required value bị thiếu                                   | QA fail; không có success payload gây hiểu nhầm                             |
-| TC-09 | Consent denied     | Deny consent liên quan                                       | Behavior đúng consent design; không có prohibited request                   |
-| TC-10 | Consent granted    | Grant consent liên quan                                      | Collection bắt đầu/update đúng                                              |
-| TC-11 | Routing            | Chạy trên QA hostname                                        | Request chỉ đi tới QA destination                                           |
-| TC-12 | Privacy            | Inspect Data Layer và request                                | Không PII, secret, raw form value hoặc unsafe URL                           |
-| TC-13 | Browser            | Test browser/device được hỗ trợ                              | Không có khác biệt implementation đáng kể                                   |
-| TC-14 | Regression         | Chạy journey liên quan                                       | Event cũ vẫn đúng và không duplicate                                        |
-| TC-15 | Collection source  | Thực hiện một action và kiểm tra mọi collection path đã biết | Một canonical source, hoặc deduplication đã document với request count đúng |
-
-## Consent Debugging
-
-Consent là runtime condition và là một debugging dimension. Tối thiểu phải test:
-
-1. default state trước khi user tương tác với banner;
-2. analytics denied;
-3. analytics granted;
-4. advertising denied/granted khi liên quan;
-5. consent update sau khi page load;
-6. navigation và SPA transition sau mỗi state;
-7. returning user có stored consent;
-8. CMP state unresolved hoặc failed.
-
-Với mỗi case, ghi nhận:
-
-- consent default và update timing;
-- tag nào được expected fire hoặc remain blocked;
-- request có được gửi không và mang signal nào;
-- behavior có khớp approved privacy design không;
-- DebugView visibility có được expected trong state đó không.
-
-Không tạo ad hoc trigger logic để bypass consent model đã phê duyệt. Nếu tag bị block ngoài dự kiến, inspect consent requirement và additional consent check trong Tag Assistant. Xem [unblock Google tags when using consent mode](https://support.google.com/tagmanager/answer/12962079).
-
-## Evidence Template
-
-| Test ID | Layer             | Expected                                            | Actual     | Evidence                    | Result    | Defect |
-| ------- | ----------------- | --------------------------------------------------- | ---------- | --------------------------- | --------- | ------ |
-| TC-01   | Application       | Confirmed success                                   | `[actual]` | `[link]`                    | Pass/Fail | `[ID]` |
-| TC-01   | Data Layer        | Một `sign_up` với value hợp lệ                      | `[actual]` | `[screenshot/log]`          | Pass/Fail | `[ID]` |
-| TC-01   | GTM               | Tag đúng fire một lần                               | `[actual]` | `[Tag Assistant]`           | Pass/Fail | `[ID]` |
-| TC-01   | Collection source | Một canonical source hoặc deduplication đã document | `[actual]` | `[source map/timeline]`     | Pass/Fail | `[ID]` |
-| TC-01   | Network           | Một request tới QA ID                               | `[actual]` | `[redacted HAR/screenshot]` | Pass/Fail | `[ID]` |
-| TC-01   | Consent           | Approved state                                      | `[actual]` | `[screenshot]`              | Pass/Fail | `[ID]` |
-| TC-01   | DebugView         | Event hiển thị một lần                              | `[actual]` | `[screenshot]`              | Pass/Fail | `[ID]` |
-| TC-01   | Report            | Processed field/count hợp lý                        | `[actual]` | `[report link/screenshot]`  | Pass/Fail | `[ID]` |
-
-Evidence phải xác định date, environment, version, property/stream, tester, browser, result và known limitation. Redact sensitive value và không lưu credential trong evidence.
-
-## Ví dụ hoàn chỉnh — QA Report cho Registration Journey
-
-Đây là một QA report mẫu ở non-production, dựa trên contract của Registration Journey trong [Section 07](07-measurement-plan-answer.md). Nó cho thấy một test run kết nối application outcome, Data Layer, GTM, collection source, consent, network request, DebugView và processed reporting như thế nào. Thay sample ID và evidence placeholder bằng giá trị của project; đây không phải production evidence thực tế.
-
-### Context của test run
-
-| Field                        | Giá trị ghi nhận                                                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| QA report ID                 | `QA-REG-001`                                                                                                                      |
-| Measurement Plan             | `MP-REG-001 / v1.0`                                                                                                               |
-| Journey                      | `J-REG-001` — Registration                                                                                                        |
-| Environment                  | Chỉ QA/staging                                                                                                                    |
-| Application/GTM/GA4          | `[build]` / `[GTM version]` / `[QA property và stream]`                                                                           |
-| Browser và data              | Clean browser profile; synthetic account; safe test value                                                                         |
-| Consent state                | Analytics consent granted; test này không cần advertising consent                                                                 |
-| Canonical source             | Backend xác nhận account creation → application Data Layer → GTM → GA4                                                            |
-| Duplicate source đã kiểm tra | Không có hardcoded `gtag`, Enhanced Measurement, CMS/plugin, server-side, Measurement Protocol hoặc GTM tag thứ hai cho `sign_up` |
-| Expected result              | Một `sign_up` với `method=email` và `form_id=registration`                                                                        |
-
-### Kết quả đã thực hiện
-
-| Test ID      | Scenario                         | Kết quả quan sát                                                      | Evidence                                 | Status |
-| ------------ | -------------------------------- | --------------------------------------------------------------------- | ---------------------------------------- | ------ |
-| `TC-REG-001` | Form mở và sẵn sàng              | Một `registration_start`; không có PII                                | `[application + Data Layer evidence]`    | Pass   |
-| `TC-REG-002` | Input không hợp lệ               | `registration_error` với `error_type=validation`; không có `sign_up`  | `[Preview + request evidence]`           | Pass   |
-| `TC-REG-003` | Server failure                   | `registration_error` có `error_type=server_error`; không có `sign_up` | `[application + request evidence]`       | Pass   |
-| `TC-REG-004` | Account creation được xác nhận   | Backend success; một `sign_up` với value đã approve                   | `[application + Data Layer + Preview]`   | Pass   |
-| `TC-REG-005` | Rapid double submit/retry        | Một confirmed account; một `sign_up` request                          | `[timeline + network evidence]`          | Pass   |
-| `TC-REG-006` | Refresh/back/SPA remount         | Không duplicate `sign_up`; không có start ngoài ý muốn                | `[navigation timeline]`                  | Pass   |
-| `TC-REG-007` | Consent denied                   | Behavior khớp approved consent design; không có prohibited data       | `[consent + storage + network evidence]` | Pass   |
-| `TC-REG-008` | Sai environment hoặc destination | Chỉ có QA Measurement ID; không dùng production destination           | `[redacted request evidence]`            | Pass   |
-| `TC-REG-009` | User-ID ngoài scope              | Không có email, phone, raw account ID hoặc User-ID chưa approve       | `[redacted payload evidence]`            | Pass   |
-| `TC-REG-010` | Collection source ownership      | Chỉ canonical GTM path gửi `sign_up`; không tìm thấy source thứ hai   | `[source map + request timeline]`        | Pass   |
-
-### Kết luận theo từng layer
-
-| Layer               | Kết luận                                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Application         | Account creation đã được backend xác nhận trước khi gửi `sign_up`.                                           |
-| Data Layer          | Một message `sign_up` self-contained với name, value và type đã approve.                                     |
-| GTM                 | Custom Event trigger và GA4 Event tag đúng đã fire một lần; không có consumer trùng match.                   |
-| Consent             | Behavior quan sát được khớp approved analytics-consent design.                                               |
-| Collection source   | Một canonical client-side path; không có duplicate source chưa được document.                                |
-| Network             | Một request tới QA Measurement ID, chỉ chứa parameter đã approve.                                            |
-| DebugView           | Một `sign_up` có thể debug với `method` và `form_id`.                                                        |
-| Processed reporting | Chờ đến documented GA4 processing window; đây là reporting follow-up, không phải runtime collection failure. |
-
-**Decision:** Runtime collection QA đã pass. Report đã sẵn sàng cho production review, nhưng phải hoàn tất processed-report check trước khi kết luận reporting validation nếu Section 09 nằm trong scope. Không mở defect; follow-up là kiểm tra processed data `R-REG-002` trước `[date]`.
-
-## Bộ Template Debug/QA
-
-Các template này biến một debug session thành record có thể lặp lại. Dùng Evidence Template để chứng minh theo từng layer, Debug Session Record để ghi context tổng thể, và Defect and Retest Record khi expected result không đạt. Giữ release approval và monitoring record trong [Release & Monitoring](10-release-monitoring-answer.md).
-
-| Template                 | Mục đích                                                                                       | Dùng khi                                            |
-| ------------------------ | ---------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Required Test Matrix     | Xác định các scenario bắt buộc phải test.                                                      | Lập coverage trước implementation hoặc release.     |
-| Evidence Template        | Kết nối một test case qua application, Data Layer, GTM, Network, consent, DebugView và report. | Ghi bằng chứng cho kết quả Pass/Fail.               |
-| Debug Session Record     | Ghi test context, expected behavior, các layer đã kiểm tra và conclusion.                      | Chạy focused investigation hoặc release smoke test. |
-| Defect and Retest Record | Ghi first failing layer, impact, containment, fix và retest result.                            | Khi test fail hoặc production behavior đáng nghi.   |
-
-### Debug session record template
-
-**Mục đích:** Dùng một record cho một debug session tập trung. Nó ngăn evidence bị mất property, version, consent state hoặc expected request count làm cho kết quả có ý nghĩa.
-
-```text
-Debug session ID:
-Test case/journey ID:
-Business question hoặc release:
-Environment và URL:
-Application/build version:
-GTM container/workspace/version:
-GA4 property/stream/Measurement ID:
-Browser/device:
-Consent state:
-Expected business moment:
-Expected Data Layer event và count:
-Canonical collection source và duplicate source đã kiểm tra:
-Expected tag/request và destination:
-Các layer đã kiểm tra:
-Observed result:
-First failing layer:
-Evidence links:
-Tester/date:
-Reviewer/status:
-Follow-up defect hoặc decision:
-```
-
-### Defect and retest record template
-
-**Mục đích:** Dùng record này để biến test fail thành defect có thể xử lý. Nó giữ original evidence và affected period đi cùng fix thay vì phụ thuộc vào một tin nhắn không chính thức.
-
-| Field                     | Cần ghi nhận                                                               |
-| ------------------------- | -------------------------------------------------------------------------- |
-| Defect ID và severity     | ID ổn định và phân loại Critical/High/Medium/Low.                          |
-| First failing layer       | Application, Data Layer, GTM, Network, consent, GA4 setup hoặc reporting.  |
-| Expected versus actual    | Contract expectation và behavior quan sát được.                            |
-| Reproduction              | Test ID, URL, browser/device, consent state, steps và frequency.           |
-| Impact và affected period | Event/user/report/environment bị ảnh hưởng và first/last known time.       |
-| Evidence                  | Preview, Network, DebugView, report hoặc application evidence đã sanitize. |
-| Containment               | Tạm block, sửa routing, quyết định filter hoặc monitoring action.          |
-| Root cause và fix         | Cause đã xác nhận, change/ticket, owner và target version.                 |
-| Retest result             | Test ID, date, evidence, residual impact và reviewer decision.             |
-
-Không đóng defect chỉ vì tag hiện ở **Tags Fired**. Chỉ đóng sau khi downstream evidence và affected-period assessment liên quan đã được ghi nhận.
-
-## Defect Triage và Retest Protocol
-
-Khi test fail, thực hiện theo thứ tự sau:
-
-1. Giữ nguyên failing state và lưu evidence gốc; không lập tức refresh hoặc thay đổi nhiều setting cùng lúc.
-2. Xác định **first failing layer** trong assertion chain: application, Data Layer, GTM, consent, browser/network, GA4 setup hoặc processed reporting.
-3. Ghi impact, environment/period bị ảnh hưởng, expected so với actual behavior, và phân loại lỗi là missing, duplicate, misnamed, mistimed, blocked, misrouted hoặc privacy-related.
-4. Thực hiện containment khi production data hoặc privacy có risk: block tag, sửa routing, tạm dừng change không an toàn hoặc mở incident.
-5. Sửa nhỏ nhất tại first failing layer, sau đó chạy lại cùng test case với timestamp của attempt mới.
-6. So sánh retest với evidence gốc và chạy các regression case bị ảnh hưởng.
-7. Chỉ đóng defect sau khi downstream evidence và affected-period assessment liên quan đã được ghi nhận.
-
-First failing layer là diagnosis anchor. Các layer phía sau có thể cũng trông như bị lỗi, nhưng sửa symptom downstream có thể che mất nguyên nhân thật.
-
-## Defect Severity
-
-| Severity | Definition                                                             | Ví dụ                                                       |
-| -------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Critical | Privacy/security breach hoặc production corruption trên diện rộng      | Gửi PII; production route tới test/unauthorized destination |
-| High     | Business outcome quan trọng bị thiếu, duplicate hoặc sai đáng kể       | Purchase bị đếm đôi; sign-up thiếu trên diện rộng           |
-| Medium   | Context quan trọng sai hoặc scenario/browser bị ảnh hưởng đáng kể      | Sai method; SPA route bỏ sót event                          |
-| Low      | Documentation hoặc maintainability issue với data impact hiện tại thấp | Thiếu description; naming không nhất quán                   |
-
-Severity cần xét impact, volume bị ảnh hưởng, duration, privacy risk, detectability và recoverability. PII leak volume thấp vẫn là high/critical vì privacy risk không chỉ phụ thuộc event volume.
-
-## Release Decision Matrix
-
-Dùng matrix này thay vì xem checklist như một approval tự động. Release owner ghi decision, evidence và exception trong release record.
-
-| Decision point              | Evidence tối thiểu                                                                                                       | Quy tắc quyết định                                                            |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Ready for QA implementation | Contract, test environment, expected payload và test ID đã rõ                                                            | Chỉ bắt đầu khi target property/stream và GTM version không mơ hồ             |
-| Ready for production review | Positive/negative/duplicate/consent/privacy/routing case pass; không còn Critical/High defect chưa xử lý                 | Chỉ tiếp tục khi risk còn lại đã được ghi nhận và accountable owner chấp nhận |
-| Go to production            | Published version, destination, smoke test, consent behavior và rollback/containment owner đã rõ                         | Activate change nhỏ nhất đã approve trong đúng environment                    |
-| Hold release                | Business moment chưa rõ, chưa biết first failing layer, destination sai, có PII hoặc duplicate key event chưa giải quyết | Không publish; quay lại contract hoặc defect liên quan                        |
-| Roll back hoặc contain      | Production collection missing, duplicate, misroute, privacy-unsafe hoặc làm thay đổi key metric đáng kể                  | Dùng containment/rollback path đã approve và ghi affected dates/scope         |
-| Accept exception            | Issue có phạm vi giới hạn, không blocking và có mitigation, owner, due date, reviewer                                    | Ghi exception rõ ràng; không ẩn trong test comment                            |
-
-“Ready for production review” không đồng nghĩa với “Go to production”. Production decision còn phụ thuộc change scope, risk, approval và khả năng observe/contain kết quả.
-
-## Post-Release Observation Plan
-
-Sau activation, theo dõi observation window đã thống nhất thay vì chỉ dựa vào smoke test ban đầu. Ghi các thông tin sau trong release hoặc monitoring record:
-
-| Observation                   | So sánh điều gì                                                            | Vì sao quan trọng                                   |
-| ----------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------- |
-| Destination và request count  | Published version, Measurement ID, event count trên controlled action      | Phát hiện sai environment routing và duplicate      |
-| Event volume và missingness   | Current period so với baseline tương đương, kèm release time/timezone      | Phát hiện collection loss hoặc spike bất thường     |
-| Parameter quality             | Required-field coverage, allowed-value distribution, invalid/unknown value | Phát hiện schema drift và application mapping error |
-| Key event và business outcome | Confirmed business source so với GA4 result sau processing                 | Ngăn kết luận business/advertising quá sớm          |
-| Consent/privacy behavior      | Denied/granted path và incident signal                                     | Phát hiện collection không an toàn sau activation   |
-| Report và export              | Freshness, scope, filter, `(other)`, thresholding, sampling và discrepancy | Phân biệt reporting issue với collection defect     |
-
-Gán owner, observation end date, escalation threshold và next action. Liên kết kết quả tới [Release & Monitoring](10-release-monitoring-answer.md); không để production monitoring chỉ tồn tại trong một tin nhắn follow-up.
-
-## Tài liệu tham khảo
+## Tài liệu tham khảo chính thức
 
 - [Preview and debug GTM containers](https://support.google.com/tagmanager/answer/6107056)
 - [Tag Assistant](https://support.google.com/tagmanager/answer/13355721)

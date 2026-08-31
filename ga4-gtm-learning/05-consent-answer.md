@@ -352,10 +352,10 @@ Consent: Built-in analytics_storage behavior
 3. The user completes the FD calculation and the Data Layer event is pushed.
 4. The `calculation_action` trigger matches.
 5. GTM evaluates the GA4 tag and its built-in consent behavior.
-6. If analytics consent is granted, the event can be sent according to the GA4 configuration.
+6. If analytics consent is granted, the event can be sent according to the approved Google tag and GA4 event configuration.
 7. If analytics consent is denied, behavior depends on the selected basic or advanced Consent Mode implementation: the tag may be blocked, or limited cookieless signals may be sent without analytics storage.
 
-Do not blindly replay an event that occurred before consent after the user grants consent. Decide whether the business event is still valid, whether replay is allowed by policy, and how to prevent duplicate conversion or calculation records.
+Do not blindly replay an event that occurred before consent after the user grants consent. Decide whether the business event is still valid, whether replay is allowed by policy, and how to prevent duplicate key events, Ads conversions, or calculation records.
 
 ### QA acceptance criteria for the example
 

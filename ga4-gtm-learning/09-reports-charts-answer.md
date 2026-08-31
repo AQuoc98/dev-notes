@@ -4,6 +4,8 @@
 
 A report is not a collection of attractive charts. It is a repeatable answer to a business question. Build the question and decision first, then choose the GA4 surface, dimensions, metrics, filters, segments, chart, validation method, and owner.
 
+For a frontend/GTM change, the minimum handoff is narrower than full report design: confirm that the intended GA4 property receives the event once, required parameters become available at the correct scope, existing reports or Explorations are not broken, and processing or data-quality limitations are recorded. Dashboard and chart design can remain with the analytics/report owner.
+
 Use this chain:
 
 ```text

@@ -1,6 +1,8 @@
-# GA4/GTM Advanced Tracking — Learning Spike and Standardization
+# GTM Management and GA4 Validation — Learning and Standardization
 
 This folder separates Jira-ready task descriptions from their detailed answers/instructions. Each numbered item has two files: the base `.md` file is suitable for Jira, while the matching `-answer.md` file contains theory, examples, templates, execution steps, and completion checklists.
+
+This curriculum is written for frontend developers who manage GTM across team projects. It focuses on stable, maintainable web practices: clean Data Layer contracts, governed Variables/Triggers/Tags, consent, templates, QA, release, and monitoring. GA4 is the downstream validation layer when a GTM change affects collection, custom definitions, key events, DebugView, reports, or Explorations. Google Ads is mentioned only when it is a downstream consumer or affects consent and measurement integrity; media buying, campaign optimization, and Ads operations are outside scope. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation are also outside the core scope unless a project explicitly adds them.
 
 ## Document Structure
 
@@ -16,35 +18,37 @@ This folder separates Jira-ready task descriptions from their detailed answers/i
 | `07` | `07-measurement-plan.md` | `07-measurement-plan-answer.md` |
 | `08` | `08-debug-qa.md` | `08-debug-qa-answer.md` |
 | `09` | `09-reports-charts.md` | `09-reports-charts-answer.md` |
-| `10` | `10-ga4-operations.md` | `10-ga4-operations-answer.md` |
-| `11` | `11-release-monitoring.md` | `11-release-monitoring-answer.md` |
+| `10` | `10-release-monitoring.md` | `10-release-monitoring-answer.md` |
 
-Vietnamese counterparts for the current advanced sections:
+Vietnamese counterparts are available for Sections `01`–`10` using the `-answer-vn.md` suffix. Section `00` currently has an English answer only.
 
-- `07`: `07-measurement-plan-answer-vn.md`
-- `08`: `08-debug-qa-answer-vn.md`
-- `09`: `09-reports-charts-answer-vn.md`
-- `10`: `10-ga4-operations-answer-vn.md`
+## Recommended Sequences
 
-## Recommended Sequence
+### Learning order for frontend developers
 
-1. Data Layer design.
-2. Variable management best practices.
-3. Trigger design and lifecycle management.
-4. Tag design and lifecycle management.
-5. Consent management and governance.
-6. Template selection and governance.
-7. Measurement plan, event taxonomy, and parameter contract.
-8. Debugging workflow and analytics QA.
-9. GA4 report readiness, Reports, Explorations, charts, and interpretation.
-10. GA4 property operations and common scenarios.
-11. Release management and analytics monitoring.
+1. Start with `00` for the operating model.
+2. Learn the application-owned Data Layer and frontend adapter pattern in `01`.
+3. Learn GTM Variables, Triggers, and Tags in `02`–`04`.
+4. Practice application tests, GTM Preview, Network inspection, and GA4 verification in `08`.
+5. Add Consent and Template Governance from `05`–`06` when the container uses those capabilities.
+6. Learn workspace, version, release, rollback, and monitoring practices in `10`.
+7. Use `07` and `09` as supporting GA4 references for event contracts, custom definitions, reporting readiness, and downstream impact.
+
+### Execution order for a real tracking change
+
+1. Define a lightweight requirement/event contract using `07`.
+2. Implement the application signal and Data Layer contract using `01`.
+3. Configure or reuse Variables, Triggers, and Tags using `02`–`04`.
+4. Apply Consent or Template controls from `05`–`06` when relevant.
+5. Test from application code through Data Layer, GTM, Network, and GA4 using `08`.
+6. Confirm reporting impact with the relevant parts of `09`.
+7. Release and monitor through `10`.
 
 ## How to Use These Files
 
 - Copy the base file for each prefix into the corresponding Jira task or subtask.
 - Use its matching `-answer.md` file while completing the work.
-- Start with `00`; use `01`–`06` for the GTM implementation foundation; use `07` to define the measurement contract; use `08` to validate collection; use `09` to build reports and Explorations; use `10` for property operations; and use `11` to release and monitor changes.
+- Start with `00`, then use the detailed source answer for the GTM or GA4 area being implemented.
 - Replace bracketed placeholders and complete each answer checklist with links to sanitized evidence.
 - Re-check linked official Google documentation during implementation because platform limits and interfaces can change.
 

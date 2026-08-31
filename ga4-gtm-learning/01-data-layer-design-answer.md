@@ -207,6 +207,70 @@ user_comment: inputValue // Unrestricted input ❌
    Together, these principles make the Data Layer business-oriented, reliable, consistent, self-contained, and privacy-safe.
 ```
 
+## Frontend implementation pattern
+
+### Use one typed analytics adapter
+
+Do not scatter raw `dataLayer.push()` calls across UI components. Keep a small application-owned adapter so event names and payload types can be reviewed, searched, mocked, and changed in one place.
+
+```typescript
+type AnalyticsEvent =
+  | {
+      event: "sign_up";
+      event_schema_version: "1.0";
+      method: "email" | "google" | "apple";
+      form_id: string;
+    }
+  | {
+      event: "calculation_action";
+      event_schema_version: "1.0";
+      solution_found: boolean;
+      inputs: {
+        connection_type: string;
+        unit_system: "metric" | "imperial";
+      };
+    };
+
+export function track(event: AnalyticsEvent): void {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(event);
+}
+```
+
+The adapter is a transport boundary, not a place for product business logic. The application service or confirmed response decides that an outcome is true; the adapter only publishes the approved snapshot.
+
+```typescript
+const result = await accountService.createAccount(input);
+
+if (result.ok) {
+  track({
+    event: "sign_up",
+    event_schema_version: "1.0",
+    method: result.method,
+    form_id: "registration",
+  });
+}
+```
+
+### SPA and component-lifecycle safeguards
+
+- Do not emit a success event from component mount, render, or a generic button handler. React Strict Mode, remounts, retries, or route restoration can execute those paths more than once.
+- Emit after the authoritative async result. Define idempotency at the source when the same callback, retry, or websocket message can be delivered more than once.
+- For SPA page views, choose one canonical source: GA4 Enhanced Measurement, GTM History Change, or an application/router event. Do not enable overlapping sources.
+- Push route events only after the router has committed the new route and the approved page metadata is available.
+- Keep analytics transport non-blocking for the user journey. A tracking failure must be observable in development/QA without breaking the product action.
+- Never place PII, credentials, unrestricted text, or entire application state in a generic adapter payload.
+
+### Frontend contract tests
+
+At minimum, automate these checks where the application test stack allows it:
+
+1. A confirmed success emits one event with the exact name, schema version, types, and allowed values.
+2. Validation failure, API failure, cancellation, or abandoned UI emits no success event.
+3. Double click, retry, Strict Mode, remount, and duplicate callback do not create duplicate business outcomes.
+4. SPA navigation emits the expected page/route event once and does not overlap another collection source.
+5. The payload contains no prohibited field and optional values are omitted rather than invented.
+
 ## Example review: FD Calculation Action
 
 The original FD payload is a useful starting point, but it does not fully satisfy the principles because it uses a generic UI-oriented event name, display labels as values, mixed naming conventions, and strings for numeric and Boolean concepts. The corrected example below makes the business fact, timing, types, and contract explicit while retaining the complete calculation snapshot needed by the approved reporting questions.
@@ -313,8 +377,44 @@ This design follows the Data Layer principles:
 - **Self-contained message:** `solution_found` and the complete input snapshot are sent together.
 - **Safe and useful data:** irrelevant UI text and GTM-owned metadata are omitted, and the payload contains no PII, credentials, or unrestricted user text.
 
+## Ecommerce Data Layer addendum
+
+Ecommerce uses the same principles, but the message must preserve both event-level and item-level scope. The commerce application or backend owns transaction truth and should push the event only when the matching business state is confirmed.
+
+```javascript
+window.dataLayer.push({
+  event: "purchase",
+  ecommerce: {
+    transaction_id: "T_12345",
+    value: 30.03,
+    currency: "USD",
+    tax: 1.11,
+    shipping: 3.33,
+    items: [
+      {
+        item_id: "SKU_12345",
+        item_name: "Example product",
+        price: 10.01,
+        quantity: 3,
+      },
+    ],
+  },
+});
+```
+
+Rules:
+
+- Keep `items` as an array and preserve numbers as numbers.
+- Supply at least `item_id` or `item_name` for each item.
+- When `value` is sent, send `currency`; purchase `value` is the sum of `price × quantity` and excludes tax and shipping.
+- Use an authoritative `transaction_id` and define retry/replay deduplication. Do not rely on a thank-you-page view alone when refresh or revisit can resend the purchase.
+- Do not depend on values left by a previous ecommerce event. Push the complete snapshot needed for the current occurrence and verify stale-value behavior in QA.
+
+The planning record and custom item-definition decision live in [Section 07](./07-measurement-plan-answer.md); payload and duplicate evidence live in [Section 08](./08-debug-qa-answer.md); reconciliation lives in [Sections 09–10](./09-reports-charts-answer.md).
+
 ## References
 
 - [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer): data layer structure, `dataLayer.push()`, event processing order, persistence, naming, and troubleshooting.
 - [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en): how tags, triggers, variables, and the data layer work together.
 - [Google Analytics — Set up events](https://developers.google.com/analytics/devguides/collection/ga4/events): GA4 event names, parameters, custom events, and validation in Realtime and DebugView.
+- [Google Analytics — Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce): recommended ecommerce events, event-level values, and the `items` array.

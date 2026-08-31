@@ -54,7 +54,7 @@ User clicks Submit
 → GTM fires the GA4 signup tag
 ```
 
-The Submit click is not the right trigger for the conversion. The user may click the button and then fail validation, receive a server error, or abandon the process. The successful server response is the authoritative business moment.
+The Submit click is not the right trigger for the confirmed business outcome or GA4 key event. The user may click the button and then fail validation, receive a server error, or abandon the process. The successful server response is the authoritative business moment.
 
 Use an application-owned Custom Event:
 
@@ -75,7 +75,7 @@ Conditions:   All Custom Events for the exact event name
 Expected:     one firing for each confirmed account creation
 ```
 
-Do not use a click trigger for this conversion. A click trigger may still be useful for measuring signup intent, but it should send a separate event such as `sign_up_start` and should not share the successful `sign_up` tag.
+Do not use a click trigger for this confirmed outcome. A click trigger may still be useful for measuring signup intent, but it should send a separate event such as `sign_up_start` and should not share the successful `sign_up` tag.
 
 ### Trigger decision matrix
 
@@ -219,10 +219,10 @@ Expected count:
 One sign_up event per successful account creation
 
 Trigger:
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 
 Consumer tag:
-GA4 Event - sign_up
+REG - GA4 Event - sign_up
 
 Environment:
 Production and approved QA/staging environments
@@ -249,15 +249,15 @@ Check for:
 For example, before creating:
 
 ```text
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 ```
 
 check whether similar triggers already exist:
 
 ```text
-CE - sign_up
-CE - signup
-CE - account_created
+REG - CE - sign_up
+REG - CE - signup
+REG - CE - account_created
 ```
 
 Also check their consumers:
@@ -448,19 +448,19 @@ method = google
         ↓
 
 Variable:
-DLV - method
+REG - DLV - method
 → google
 
         ↓
 
 Trigger:
-CE - sign_up - Confirmed
+REG - CE - sign_up - Confirmed
 → matched
 
         ↓
 
 Tag:
-GA4 Event - sign_up
+REG - GA4 Event - sign_up
 → fired
 ```
 
@@ -566,7 +566,7 @@ Container version:
 v128
 
 Change:
-Add CE - sign_up - Confirmed
+Add REG - CE - sign_up - Confirmed
 
 Expected behavior:
 One sign_up event per server-confirmed account creation
@@ -611,25 +611,25 @@ Last review date
 Use:
 
 ```text
-[TYPE] - [business event or purpose] - [scope/qualifier]
+[SCOPE] - [TYPE] - [BUSINESS EVENT OR PURPOSE] - [QUALIFIER]
 ```
 
-| Prefix | Meaning                    | Example                                      |
-| ------ | -------------------------- | -------------------------------------------- |
-| `CI`   | Consent Initialization     | `CI - Consent Defaults - All Pages`          |
-| `INIT` | Initialization             | `INIT - Google Tag - All Pages`              |
-| `PV`   | Page View                  | `PV - Product Detail - /products/*`          |
-| `DOM`  | DOM Ready                  | `DOM - Pricing Widget - /pricing`            |
-| `WL`   | Window Loaded              | `WL - Full Resource Load - Campaign Landing` |
-| `CE`   | Custom Event               | `CE - sign_up - Confirmed`                   |
-| `CLK`  | All Elements click         | `CLK - Calculator - Submit`                  |
-| `LINK` | Just Links                 | `LINK - Documentation - External`            |
-| `FORM` | Form Submission            | `FORM - Contact - Lead Form`                 |
-| `HC`   | History Change             | `HC - SPA Route - Virtual Pageview`          |
-| `VIS`  | Element Visibility         | `VIS - Pricing CTA - Once Per Page`          |
-| `TMR`  | Timer                      | `TMR - Chat Widget - Loaded`                 |
-| `GRP`  | Trigger Group              | `GRP - Checkout - Payment + Confirmation`    |
-| `EXC`  | Exception/blocking trigger | `EXC - Internal Traffic - QA`                |
+| Type | Meaning                    | Example                                             |
+| ---- | -------------------------- | --------------------------------------------------- |
+| `CI`   | Consent Initialization     | `SHARED - CI - Consent Defaults - All Pages`        |
+| `INIT` | Initialization             | `SHARED - INIT - Google tag - All Pages`            |
+| `PV`   | Page View                  | `WEB - PV - Product Detail - /products/*`           |
+| `DOM`  | DOM Ready                  | `WEB - DOM - Pricing Widget - /pricing`             |
+| `WL`   | Window Loaded              | `WEB - WL - Full Resource Load - Campaign Landing`  |
+| `CE`   | Custom Event               | `REG - CE - sign_up - Confirmed`                    |
+| `CLK`  | All Elements click         | `CALC - CLK - Calculator - Submit`                  |
+| `LINK` | Just Links                 | `DOCS - LINK - Documentation - External`            |
+| `FORM` | Form Submission            | `CONTACT - FORM - Lead Form`                        |
+| `HC`   | History Change             | `WEB - HC - SPA Route - Virtual Pageview`           |
+| `VIS`  | Element Visibility         | `WEB - VIS - Pricing CTA - Once Per Page`           |
+| `TMR`  | Timer                      | `SUPPORT - TMR - Chat Widget - Loaded`              |
+| `GRP`  | Trigger Group              | `CHECKOUT - GRP - Payment + Confirmation`           |
+| `EXC`  | Exception/blocking trigger | `SHARED - EXC - Internal Traffic - QA`              |
 
 Never use `Trigger 1`, `New Trigger`, `Test`, or `Temp` for a live item.
 
@@ -716,10 +716,10 @@ Test at the application/Data Layer, GTM, browser Network, and GA4 DebugView laye
 | ID  | Test case                                 | Expected trigger behavior                             | Expected downstream behavior                        |
 | --- | ----------------------------------------- | ----------------------------------------------------- | --------------------------------------------------- |
 | T01 | Valid expected event                      | Trigger matches once                                  | Correct tag and one correct request                 |
-| T02 | Wrong event name or case                  | Trigger does not match                                | No conversion request                               |
+| T02 | Wrong event name or case                  | Trigger does not match                                | No key-event/business-outcome request               |
 | T03 | Similar URL, selector, or action          | Trigger does not match                                | No unrelated event                                  |
-| T04 | Missing or malformed required value       | Tag is blocked or follows the documented rule         | No misleading conversion                            |
-| T05 | Invalid form or failed server response    | No success trigger                                    | No success/conversion request                       |
+| T04 | Missing or malformed required value       | Tag is blocked or follows the documented rule         | No misleading business outcome                      |
+| T05 | Invalid form or failed server response    | No success trigger                                    | No successful-outcome request                       |
 | T06 | Double click, retry, repeated submit      | No unintended duplicate                               | Request count matches the tracking plan             |
 | T07 | SPA route, revisit, back/forward, reload  | Route behavior matches the contract                   | No duplicate virtual pageview                       |
 | T08 | Consent denied, granted, and updated      | Consent rules allow/block as designed                 | Request has correct consent behavior                |

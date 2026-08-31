@@ -1,4 +1,4 @@
-# 00 — GA4/GTM Tracking Standardization Guide
+# 00 — GTM Tracking Standardization with GA4 Validation
 
 ## Goal
 
@@ -17,6 +17,8 @@ Business question
 
 The numbered guides explain the theory and work required to operate the supporting GTM/GA4 configuration, define a verified measurement contract, validate collection, handle common scenarios, release changes safely, and turn validated data into useful GA4 reports and charts.
 
+The core scope is stable web client-side GTM implementation and governance for frontend teams. GA4 is used to validate downstream collection and reporting impact. This guide does not teach media buying, campaign optimization, or Google Ads operations. Ads-related settings appear only when they affect consent, destination governance, key-event use, or measurement quality. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation require a separate project addendum.
+
 ## Core Theory
 
 ### What are GA4 and GTM?
@@ -33,7 +35,7 @@ These are areas of a **GTM container**, not sections of a GA4 property:
 - **Folders** are an organizational aid. They group tags, triggers, and user-defined variables without changing runtime behavior.
 - **Templates** define reusable tag or variable types. GTM supplies built-in templates; additional templates may come from the Community Template Gallery or be created as custom templates.
 
-See the dedicated guides for [tag management](./04-tag-management-answer.md), [template governance](./06-template-governance-answer.md), [measurement planning](./07-measurement-plan-answer.md), and [release monitoring](./11-release-monitoring-answer.md).
+See the dedicated guides for [tag management](./04-tag-management-answer.md), [template governance](./06-template-governance-answer.md), [measurement planning](./07-measurement-plan-answer.md), and [release monitoring](./10-release-monitoring-answer.md).
 
 ### What is a tracking plan?
 
@@ -85,14 +87,13 @@ Required access:
 
 ### Phase 2 — Specify
 
+- [ ] Complete [07-measurement-plan-answer.md](./07-measurement-plan-answer.md) first to approve the business meaning, event taxonomy, parameters, consent classification, reporting requirement, and QA acceptance criteria.
 - [ ] Complete [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).
 - [ ] Complete [02-variable-management-answer.md](./02-variable-management-answer.md).
 - [ ] Complete [03-trigger-management-answer.md](./03-trigger-management-answer.md).
 - [ ] Complete [04-tag-management-answer.md](./04-tag-management-answer.md).
 - [ ] Complete [05-consent-answer.md](./05-consent-answer.md).
 - [ ] Complete [06-template-governance-answer.md](./06-template-governance-answer.md).
-- [ ] Complete [07-measurement-plan-answer.md](./07-measurement-plan-answer.md).
-- [ ] Complete [10-ga4-operations-answer.md](./10-ga4-operations-answer.md).
 - [ ] Obtain development, analytics, and QA review before implementation.
 
 ### Phase 3 — Validate the existing state
@@ -107,14 +108,14 @@ Required access:
 - [ ] Capture Data Layer, GTM, network, DebugView, consent, and negative-test evidence.
 - [ ] Allow for GA4 processing, then confirm that the required dimensions and metrics are reportable.
 - [ ] Complete [09-reports-charts-answer.md](./09-reports-charts-answer.md) using the validated POC data.
-- [ ] Complete [11-release-monitoring-answer.md](./11-release-monitoring-answer.md) before production rollout.
+- [ ] Complete [10-release-monitoring-answer.md](./10-release-monitoring-answer.md) before production rollout.
 - [ ] Create and QA one reusable detail report and one analysis-oriented Exploration.
 - [ ] Record reviewer sign-off and an explicit adopt/revise/reject decision.
 - [ ] Create the rollout backlog, owners, dependencies, and rollback approach.
 
 ## Definition of Done
 
-- [ ] All available `01`–`11` checklists are complete or exceptions are documented.
+- [ ] All available `01`–`10` checklists are complete or exceptions are documented.
 - [ ] Every event has a business definition, trigger point, source, owner, and test.
 - [ ] The POC is traceable from application action to GA4 DebugView.
 - [ ] No missing or duplicate event is observed in the agreed test cases.

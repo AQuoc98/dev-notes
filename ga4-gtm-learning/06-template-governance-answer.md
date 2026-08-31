@@ -230,7 +230,7 @@ Approve the exact version and record consumers, owner, and rollback plan
 | Permissions      | Only the sandboxed capabilities required to read approved values and send the request                                                                        |
 | Consent          | Send only when the approved analytics/marketing consent requirement is satisfied; denied or unresolved consent prevents the request                          |
 | Success/failure  | Record or expose the documented success path; do not retry in a way that creates duplicate purchases unless retry behavior is explicitly designed and tested |
-| Consumers        | `Vendor X — Purchase Completed` tag and the Vendor X conversion workflow                                                                                     |
+| Consumers        | `Vendor X — Purchase Completed` tag and the downstream Vendor X conversion workflow                                                                          |
 | Decision         | Approve only the reviewed version; reject if permissions are broader than necessary or maintenance is unclear                                                |
 
 ## 10. Inventory & Ownership

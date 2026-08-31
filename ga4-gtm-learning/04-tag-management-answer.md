@@ -92,7 +92,7 @@ If any of these cannot be answered, the tag is not ready for production.
 ## Design Standard
 
 - **Create a tag only for a documented measurement or operational requirement.** Every production tag must have a clear purpose and owner.  
-  **Example:** Create `GA4 Event - FD - calculation_action` only when `calculation_action` is defined in the approved FD measurement plan.
+  **Example:** Create `FD - GA4 Event - calculation_action` only when `calculation_action` is defined in the approved FD measurement plan.
 
 - **Prefer built-in GTM tag types or reviewed templates.** Use Custom HTML only when no suitable supported option exists and the implementation has been reviewed.  
   **Example:** Use a GA4 Event tag to send `calculation_action` instead of writing a custom `gtag()` call in a Custom HTML tag.
@@ -125,7 +125,7 @@ If any of these cannot be answered, the tag is not ready for production.
   **Example:** An unknown hostname returns no Measurement ID or blocks the tag instead of falling back to production.
 
 - **Review a tag’s triggers, exceptions, variables, consent settings, sequencing, destination, and consumers before modifying or retiring it.**  
-  **Example:** Before removing `GA4 Event - FD - calculation_action`, check every reference, downstream consumer, replacement, and production dependency.
+  **Example:** Before removing `FD - GA4 Event - calculation_action`, check every reference, downstream consumer, replacement, and production dependency.
 
 ## Tag Decision Guide
 
@@ -157,18 +157,18 @@ Before creating a tag, answer these questions in order:
 Use a predictable format:
 
 ```text
-[TYPE] - [SCOPE] - [EVENT OR PURPOSE] - [QUALIFIER]
+[SCOPE] - [TYPE] - [EVENT OR PURPOSE] - [QUALIFIER]
 ```
 
 Examples:
 
 ```text
-Google tag - FD - Primary
-GA4 Event - FD - calculation_action
-Google Ads - Web - purchase
-CE - FD - calculation_action
-DLV - FD - solution_found
-LUT - Shared - GA4 Measurement ID by Environment
+FD - Google tag - Primary
+FD - GA4 Event - calculation_action
+WEB - Google Ads - purchase
+FD - CE - calculation_action
+FD - DLV - solution_found
+SHARED - LUT - GA4 Measurement ID by Environment
 ```
 
 Naming rules:
@@ -252,8 +252,8 @@ Environment routing must be centralized, reviewable, and fail-safe.
 
 ### Required controls
 
-- Keep the Google tag/GA4 configuration in a shared, reviewed location where practical.
-- Route environment-dependent values through a reviewed configuration variable or lookup table, for example `{{LUT - Shared - GA4 Measurement ID by Environment}}`.
+- Keep the Google tag and its shared configuration settings in a reviewed location where practical.
+- Route environment-dependent values through a reviewed configuration variable or lookup table, for example `{{SHARED - LUT - GA4 Measurement ID by Environment}}`.
 - Map known environments explicitly, such as local, QA, staging, and production.
 - Do not hard-code a production Measurement ID in an event tag when a controlled shared configuration is available.
 - Do not create duplicate tags solely because the destination differs by environment.
@@ -424,7 +424,7 @@ Example variables:
 | `FD - DLV - solution_found`                        | Data Layer Variable           | `solution_found` on the `calculation_action` event  | Must be boolean and present for a valid event |
 | `FD - DLV - connection_type`                       | Data Layer Variable           | `connection_type` on the `calculation_action` event | Must match the approved enum                  |
 | `FD - DLV - product_category`                      | Data Layer Variable           | `product_category` on the event                     | Optional; omit when absent                    |
-| `LUT - Shared - GA4 Measurement ID by Environment` | Lookup/configuration variable | Approved environment mapping                        | Unknown environment returns no production ID  |
+| `SHARED - LUT - GA4 Measurement ID by Environment` | Lookup/configuration variable | Approved environment mapping                        | Unknown environment returns no production ID  |
 
 For each variable, verify:
 
@@ -464,7 +464,7 @@ Create or reuse a built-in GA4 Event tag:
 
 ```text
 Tag type: GA4 Event
-Name:     GA4 Event - FD - calculation_action
+Name:     FD - GA4 Event - calculation_action
 Google tag / configuration: approved FD shared Google tag
 Event name: calculation_action
 ```
@@ -490,7 +490,7 @@ If GTM’s configuration would send an empty or undefined value contrary to the 
 Create or reuse:
 
 ```text
-Name:       CE - FD - calculation_action
+Name:       FD - CE - calculation_action
 Trigger:    Custom Event
 Event name: calculation_action
 Condition:  All Custom Events, unless the approved contract requires an explicit FD scope filter
@@ -537,8 +537,8 @@ If the organization uses Consent Mode with approved cookieless behavior, documen
 Use:
 
 ```text
-Tag:     GA4 Event - FD - calculation_action
-Trigger: CE - FD - calculation_action
+Tag:     FD - GA4 Event - calculation_action
+Trigger: FD - CE - calculation_action
 ```
 
 Example tag description:
@@ -570,7 +570,7 @@ Use GTM Preview/Tag Assistant to inspect the event timeline, Data Layer values, 
 | `solution_found = false`             | Tag still follows the contract; boolean is sent as the approved value                      |
 | Missing required `connection_type`   | Tag does not produce an invalid production request; QA fails and release is blocked        |
 | Missing optional `product_category`  | Event is sent without `product_category` if consent and other required values permit       |
-| Different application event          | `CE - FD - calculation_action` does not match                                              |
+| Different application event          | `FD - CE - calculation_action` does not match                                              |
 | Click without completed calculation  | Tag does not fire                                                                          |
 | Similar/legacy `webApps` event       | Preferred tag does not fire unless an explicit migration design says it should             |
 | Repeated identical push              | Request count follows the contract; duplicate behavior is investigated, not ignored        |
@@ -646,10 +646,10 @@ Do not declare success from the publish confirmation alone. A published containe
 Add the tag and its dependencies to the inventory:
 
 ```text
-Tag:              GA4 Event - FD - calculation_action
+Tag:              FD - GA4 Event - calculation_action
 Type:             GA4 Event
 Purpose:          One event per completed FD calculation
-Trigger:          CE - FD - calculation_action
+Trigger:          FD - CE - calculation_action
 Parameters:       solution_found, connection_type, product_category (optional)
 Consent:          Approved analytics consent behavior
 Destination:       Environment-safe FD Google tag / GA4 destination

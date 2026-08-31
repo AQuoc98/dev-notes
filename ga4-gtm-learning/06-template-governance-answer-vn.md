@@ -1,6 +1,6 @@
 # 06 — Tài liệu Quản trị & Quản lý Template trong GTM
 
-## 1. Lý thuyết (Theory)
+## Lý thuyết (Theory)
 
 ### GTM template là gì?
 
@@ -44,7 +44,7 @@ Template cung cấp một cách có kiểm soát để đóng gói chức năng 
 
 Template giúp tăng tính nhất quán và giảm các rủi ro implementation có thể tránh được. Tuy nhiên, template không loại bỏ nhu cầu review về security, privacy, consent hoặc vận hành.
 
-## 2. Các loại Template (Template Types)
+## Các loại Template (Template Types)
 
 GTM custom template chủ yếu được dùng để định nghĩa hai loại sau:
 
@@ -62,7 +62,7 @@ Variable Template → trả về một giá trị
 
 Sự khác biệt này quan trọng trong quá trình review. Tag template phải mô tả execution, destination, consent và success/failure behavior. Variable template phải mô tả source của input, transformation rule, validation và giá trị trả về khi input bị thiếu hoặc không hợp lệ.
 
-## 3. Nguồn của Template (Template Sources)
+## Nguồn của Template (Template Sources)
 
 | Nguồn                          | Ý nghĩa                                            | Yêu cầu quản trị                                                                                  |
 | ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -81,7 +81,7 @@ Sử dụng phương án được hỗ trợ và an toàn nhất nhưng vẫn đ
 
 Lựa chọn cuối cùng là exception path, không phải shortcut để bỏ qua template governance.
 
-## 4. Cấu trúc của một Template (Anatomy of a Template)
+## Cấu trúc của một Template (Anatomy of a Template)
 
 Một template dùng trong production phải có thể được giải thích thông qua các thành phần dưới đây. Nếu một thành phần không áp dụng, hãy ghi rõ `None` hoặc `Not applicable` thay vì để hành vi của nó không rõ ràng.
 
@@ -116,7 +116,7 @@ Template
 Các tag hoặc variable instance phụ thuộc
 ```
 
-## 5. Sandboxing và Permissions
+## Sandboxing và Permissions
 
 Custom template chạy trong GTM sandboxed JavaScript environment thay vì unrestricted page JavaScript. Sandbox giới hạn những gì template code có thể trực tiếp thực hiện. Quyền truy cập đến các capability nhạy cảm được cung cấp thông qua sandboxed API đã được phê duyệt và template permission.
 
@@ -146,7 +146,7 @@ Sandboxed ≠ tự động an toàn
 
 Sandbox làm giảm phạm vi truy cập của implementation, nhưng template vẫn có thể không an toàn hoặc không phù hợp nếu có permission quá rộng, gửi data đến endpoint không rõ ràng, xử lý data sai, có source độc hại hoặc không được maintain, hoặc tự thay đổi behavior mà không qua review. Vì vậy, Community Template phải được review như third-party code.
 
-## 6. Hướng dẫn quyết định về Template (Template Decision Guide)
+## Hướng dẫn quyết định về Template (Template Decision Guide)
 
 Trước khi import, approve hoặc tạo template, hãy sử dụng production gate sau:
 
@@ -171,7 +171,7 @@ Trước khi import, approve hoặc tạo template, hãy sử dụng production 
 10. **Đã có owner, version record và kế hoạch update/rollback chưa?**  
     Nếu chưa, phải phân công ownership và định nghĩa quy trình vận hành trước.
 
-## 7. Tiêu chuẩn thiết kế (Design Standards)
+## Tiêu chuẩn thiết kế (Design Standards)
 
 Mọi template được approve phải tuân theo các tiêu chuẩn sau:
 
@@ -189,7 +189,7 @@ Mọi template được approve phải tuân theo các tiêu chuẩn sau:
 - Lưu trữ source, version, change history, test, owner và dependent consumer ở nơi có thể tra cứu.
 - Mọi update phải có thể review và rollback.
 
-## 9. Ví dụ thực tế — Đánh giá một Community Tag Template
+## Ví dụ thực tế — Đánh giá một Community Tag Template
 
 ### Tình huống
 
@@ -230,7 +230,7 @@ Approve đúng version và ghi nhận consumer, owner cùng rollback plan
 | Permission       | Chỉ dùng sandboxed capability cần thiết để đọc approved value và gửi request                                                              |
 | Consent          | Chỉ gửi khi đáp ứng analytics/marketing consent requirement đã được phê duyệt; denied hoặc unresolved consent sẽ ngăn request             |
 | Success/failure  | Xử lý theo success path đã được mô tả; không retry theo cách tạo duplicate purchase nếu retry behavior chưa được thiết kế và test rõ ràng |
-| Consumer         | Tag `Vendor X — Purchase Completed` và Vendor X conversion workflow                                                                       |
+| Consumer         | Tag `Vendor X — Purchase Completed` và downstream Vendor X conversion workflow                                                            |
 | Decision         | Chỉ approve version đã review; reject nếu permission rộng hơn mức cần thiết hoặc maintenance không rõ ràng                                |
 
 ## Inventory & Ownership
@@ -243,7 +243,7 @@ Hãy duy trì một inventory tập trung cho mọi non-built-in template và c�
 
 Ownership không chỉ là người đã import template. Owner chịu trách nhiệm về maintenance, review cadence, consumer impact analysis, quyết định update, incident response và retirement. Template không có owner cụ thể không nên được active trong production.
 
-## 11. Quy trình Test (Test Workflow)
+## Quy trình Test (Test Workflow)
 
 1. Chỉ import hoặc edit template trong dedicated non-production workspace.
 2. Review field, validation, implementation, API, permission, endpoint, data handling, consent và test trước khi tạo consumer.
@@ -254,7 +254,7 @@ Ownership không chỉ là người đã import template. Owner chịu trách nh
 7. Lưu evidence, defect, approved version, owner và rollback/export information.
 8. Chỉ publish thông qua version control thông thường sau khi được review và approve.
 
-## 12. Ảnh hưởng của Template Update (Template Update Impact)
+## Ảnh hưởng của Template Update (Template Update Impact)
 
 Template update là một code change và dependency change, không chỉ là thay đổi metadata. Một template có thể được nhiều tag hoặc variable instance sử dụng:
 
@@ -280,7 +280,7 @@ Update có thể ảnh hưởng đến mọi dependent instance thông qua thay 
 
 Hãy coi Gallery update là một code change mới, ngay cả khi update được cung cấp dưới dạng automatic hoặc routine update.
 
-## 15. Các Anti-pattern Thường gặp (Common Anti-patterns)
+## Các Anti-pattern Thường gặp (Common Anti-patterns)
 
 | Anti-pattern                                  | Vấn đề                                                              | Cách tiếp cận nên dùng                                                       |
 | --------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |

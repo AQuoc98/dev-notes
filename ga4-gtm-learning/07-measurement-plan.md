@@ -1,39 +1,34 @@
-# Subtask 07: Define the GA4/GTM Measurement Plan
+# 07 — Measurement Plan for GA4/GTM
 
 ## Objective
 
-Create a versioned measurement contract that turns business questions and user journeys into approved GA4 events, parameters, Data Layer signals, GTM routing, consent behavior, reporting references, and QA criteria.
+Create a practical Measurement Plan that connects a business question to a maintainable event contract, Data Layer signal, GTM mapping, consent/privacy behavior, QA evidence, and reporting requirement.
 
-## Scope — Included Items
+The answer should help frontend developers and GTM owners decide what to measure, when an event is true, which parameters are allowed, and how the change will be reviewed and maintained.
 
-- Business question, decision, source of truth, authoritative business moment, owners, and project context.
-- Event taxonomy, naming, parameters, scope, allowed values, deduplication, cardinality, and privacy rules.
-- Journey coverage matrix, Event contracts, Parameter dictionary, Traceability matrix, Consent matrix, and lifecycle decisions.
-- Key-event and custom-definition decisions; Google Ads use must be decided separately.
-- Registration example showing the minimum, conditional, derived, and out-of-scope templates.
-- Handoffs to Debug/QA, Reports/Charts, and Release/Monitoring using IDs instead of duplicating their full templates.
+## Scope
 
-## Scope — Excluded Items
+### Included
 
-- Full GTM implementation, production deployment, or defect fixing.
-- Complete tracking of every product interaction.
-- Full reporting suite, external BI dashboard, or legal/privacy approval.
-- Ecommerce, server/offline, User-ID, or GA4 Operations templates when they are not relevant to the selected journey.
+- Stable web client-side collection through GTM and GA4.
+- Business decision, authoritative business moment, event naming/type, parameters, schema, occurrence, deduplication, and ownership.
+- Data Layer, variables, triggers, tags, Google tag routing, environment destination, consent, privacy, cardinality, and custom-definition decisions.
+- Canonical records: Project Context/Baseline, Journey/Event Coverage Matrix, Event Contract, Parameter Dictionary, Traceability Matrix, Consent/Data Classification Matrix, Key-Event/Custom-Definition Decision Record, and Schema Lifecycle Register.
+- Practical frontend/GTM handoff, ecommerce addendum, anti-patterns, and links to Section 08 QA and Section 09 reporting.
+- A single completed Registration Journey example placed at the end of the answer documents.
+- Matching English and Vietnamese structure and terminology.
 
-## Deliverables / Outputs
+### Excluded
 
-- Measurement-plan guideline from business question to event contract.
-- Project context, journey coverage, event-contract, parameter, traceability, consent, and lifecycle records.
-- Key-event/custom-definition decision record.
-- Completed Registration Journey example with template selection and implementation handoffs.
+- Media buying, campaign optimization, attribution strategy, and Google Ads operations.
+- Building or operating a complete automated analytics framework.
+- Redefining the product Measurement Plan, consent policy, or reporting requirements outside this section.
+- Treating a GA4 report as the source of truth for transactional accounting.
+- Release approval and post-release monitoring, which remain in Section 10.
 
-## Dependencies
+## Outputs
 
-- Agreed business objectives, user journey, decision, and source of truth.
-- GA4 property/stream, Measurement ID, Google tag, GTM container, and test environment.
-- Application/Data Layer support and existing naming, consent, privacy, reporting, and template standards.
-- Relevant reviewers from product, development, analytics, QA, reporting, GTM, and privacy.
-
-## Instructions / Answer
-
-See [07-measurement-plan-answer.md](./07-measurement-plan-answer.md).
+- [English answer](./07-measurement-plan-answer.md): cleaned and reordered as Overview → Measurement-Plan workflow → Canonical records/templates → Implementation handoff/practical notes → Registration Journey example → Official references; the Journey instantiates the canonical records in Section 3.
+- [Vietnamese answer](./07-measurement-plan-answer-vn.md): same structure, scope, canonical-record coverage, and GA4/GTM terminology.
+- A lean set of canonical planning records, with derived views clearly separated from source-of-truth records.
+- A worked Registration Journey showing how business meaning, event contracts, parameters, consent, mapping, reporting, traceability, and approval connect without adding ad-focused content.

@@ -4,6 +4,8 @@
 
 Report không phải là một tập hợp chart đẹp mắt. Report là câu trả lời có thể lặp lại cho một business question. Hãy xác định question và decision trước, sau đó mới chọn GA4 surface, dimension, metric, filter, segment, chart, phương pháp validation và owner.
 
+Với thay đổi frontend/GTM, minimum handoff hẹp hơn full report design: xác nhận đúng GA4 property nhận event một lần, required parameters trở nên available ở đúng scope, report hoặc Exploration hiện có không bị hỏng, và processing hoặc data-quality limitation đã được ghi nhận. Dashboard và chart design có thể để analytics/report owner phụ trách.
+
 Dùng chuỗi sau:
 
 ```text

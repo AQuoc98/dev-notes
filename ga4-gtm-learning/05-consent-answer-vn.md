@@ -1,4 +1,4 @@
-# Quản lý Consent và Governance trong Google Tag Manager
+# 05 — Quản lý Consent và Governance trong Google Tag Manager
 
 ## Consent trong GTM là gì? (What consent means in GTM)
 
@@ -352,10 +352,10 @@ Consent: Built-in analytics_storage behavior
 3. Người dùng hoàn tất FD calculation và Data Layer event được push.
 4. Trigger `calculation_action` match.
 5. GTM evaluate GA4 tag và built-in consent behavior của tag.
-6. Nếu analytics consent là `granted`, event có thể được gửi theo GA4 configuration.
+6. Nếu analytics consent là `granted`, event có thể được gửi theo Google tag và GA4 event configuration đã approve.
 7. Nếu analytics consent là `denied`, behavior phụ thuộc vào Basic hoặc Advanced Consent Mode đã chọn: tag có thể bị block hoặc có thể gửi limited cookieless signal mà không dùng analytics storage.
 
-Không được tự động replay một event đã xảy ra trước consent sau khi người dùng grant consent. Cần quyết định business event đó còn hợp lệ hay không, policy có cho phép replay hay không và phải ngăn duplicate conversion hoặc calculation record như thế nào.
+Không được tự động replay một event đã xảy ra trước consent sau khi người dùng grant consent. Cần quyết định business event đó còn hợp lệ hay không, policy có cho phép replay hay không và phải ngăn duplicate key event, Ads conversion hoặc calculation record như thế nào.
 
 ### Tiêu chí QA cho ví dụ
 

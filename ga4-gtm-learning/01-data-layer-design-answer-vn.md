@@ -205,6 +205,70 @@ Cùng nhau, các nguyên tắc này giúp Data Layer hướng về nghiệp vụ
 đáng tin cậy, nhất quán, tự chứa đủ thông tin và an toàn về quyền riêng tư.
 ```
 
+## Pattern triển khai dành cho frontend
+
+### Dùng một analytics adapter có type
+
+Không đặt raw `dataLayer.push()` rải rác trong UI component. Dùng một application-owned adapter nhỏ để event name và payload type có thể được review, search, mock và thay đổi tại một nơi.
+
+```typescript
+type AnalyticsEvent =
+  | {
+      event: "sign_up";
+      event_schema_version: "1.0";
+      method: "email" | "google" | "apple";
+      form_id: string;
+    }
+  | {
+      event: "calculation_action";
+      event_schema_version: "1.0";
+      solution_found: boolean;
+      inputs: {
+        connection_type: string;
+        unit_system: "metric" | "imperial";
+      };
+    };
+
+export function track(event: AnalyticsEvent): void {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(event);
+}
+```
+
+Adapter là transport boundary, không phải nơi chứa product business logic. Application service hoặc confirmed response quyết định outcome đã trở thành true; adapter chỉ publish snapshot đã approve.
+
+```typescript
+const result = await accountService.createAccount(input);
+
+if (result.ok) {
+  track({
+    event: "sign_up",
+    event_schema_version: "1.0",
+    method: result.method,
+    form_id: "registration",
+  });
+}
+```
+
+### Safeguard cho SPA và component lifecycle
+
+- Không emit success event từ component mount, render hoặc generic button handler. React Strict Mode, remount, retry hoặc route restoration có thể chạy các path này nhiều lần.
+- Emit sau authoritative async result. Định nghĩa idempotency tại source nếu cùng callback, retry hoặc websocket message có thể được deliver nhiều lần.
+- Với SPA page view, chọn một canonical source: GA4 Enhanced Measurement, GTM History Change hoặc application/router event. Không enable các source overlap.
+- Chỉ push route event sau khi router đã commit route mới và approved page metadata đã sẵn sàng.
+- Giữ analytics transport non-blocking với user journey. Tracking failure phải observable trong development/QA nhưng không được làm hỏng product action.
+- Không đưa PII, credential, unrestricted text hoặc toàn bộ application state vào generic adapter payload.
+
+### Frontend contract test
+
+Tối thiểu hãy tự động hóa các check sau nếu test stack của application cho phép:
+
+1. Confirmed success emit đúng một event với exact name, schema version, type và allowed values.
+2. Validation failure, API failure, cancellation hoặc abandoned UI không emit success event.
+3. Double click, retry, Strict Mode, remount và duplicate callback không tạo duplicate business outcome.
+4. SPA navigation emit page/route event đúng một lần và không overlap collection source khác.
+5. Payload không chứa prohibited field; optional value được omit thay vì tự tạo fallback.
+
 ## Ví dụ review: FD Calculation Action
 
 Payload FD ban đầu là điểm khởi đầu hữu ích, nhưng chưa đáp ứng đầy đủ các nguyên tắc vì sử dụng tên event mang tính UI chung chung, dùng nhãn hiển thị làm giá trị, trộn nhiều quy ước đặt tên, và dùng string cho các khái niệm số và Boolean. Ví dụ đã chỉnh sửa dưới đây làm rõ business fact, thời điểm, kiểu dữ liệu và contract, đồng thời giữ lại snapshot đầy đủ của calculation cần cho các câu hỏi báo cáo đã được phê duyệt.
@@ -311,8 +375,44 @@ Thiết kế này tuân theo các nguyên tắc Data Layer:
 - **Message tự chứa đủ thông tin:** `solution_found` và snapshot đầy đủ của input được gửi cùng nhau.
 - **Dữ liệu an toàn và hữu ích:** loại bỏ UI text không liên quan và metadata do GTM sở hữu; payload không chứa PII, credential hoặc user text không giới hạn.
 
+## Phụ lục Ecommerce Data Layer
+
+Ecommerce dùng cùng các nguyên tắc trên, nhưng message phải giữ đúng event-level và item-level scope. Commerce application hoặc backend sở hữu transaction truth và chỉ push event khi matching business state đã được xác nhận.
+
+```javascript
+window.dataLayer.push({
+  event: "purchase",
+  ecommerce: {
+    transaction_id: "T_12345",
+    value: 30.03,
+    currency: "USD",
+    tax: 1.11,
+    shipping: 3.33,
+    items: [
+      {
+        item_id: "SKU_12345",
+        item_name: "Example product",
+        price: 10.01,
+        quantity: 3,
+      },
+    ],
+  },
+});
+```
+
+Quy tắc:
+
+- Giữ `items` ở dạng array và giữ number đúng type number.
+- Cung cấp ít nhất `item_id` hoặc `item_name` cho mỗi item.
+- Khi gửi `value`, phải gửi `currency`; purchase `value` là tổng `price × quantity` và không gồm tax hoặc shipping.
+- Dùng `transaction_id` có thẩm quyền và định nghĩa retry/replay deduplication. Không chỉ dựa vào thank-you-page view nếu refresh hoặc revisit có thể gửi lại purchase.
+- Không phụ thuộc value còn sót từ ecommerce event trước. Push complete snapshot cần cho occurrence hiện tại và kiểm tra stale-value behavior trong QA.
+
+Planning record và custom item-definition decision nằm tại [Section 07](./07-measurement-plan-answer-vn.md); payload và duplicate evidence nằm tại [Section 08](./08-debug-qa-answer-vn.md); reconciliation nằm tại [Sections 09–10](./09-reports-charts-answer-vn.md).
+
 ## Tài liệu tham khảo
 
 - [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer): cấu trúc data layer, `dataLayer.push()`, thứ tự xử lý event, persistence, quy tắc đặt tên và xử lý lỗi.
 - [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en): mối quan hệ giữa tag, trigger, variable và data layer.
 - [Google Analytics — Set up events](https://developers.google.com/analytics/devguides/collection/ga4/events): tên event GA4, parameter, custom event và kiểm tra trong Realtime/DebugView.
+- [Google Analytics — Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce): recommended ecommerce events, event-level values và `items` array.
