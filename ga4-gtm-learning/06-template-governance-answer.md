@@ -1,306 +1,262 @@
-# 06 — GTM Template Governance & Management Reference
+# 06 — GTM Template Governance
 
-## Theory
+## 1. Objective, scope, and outputs
 
-### What is a GTM template?
+### Objective
 
-A template defines the configuration UI and sandboxed implementation for a GTM **tag type** or **variable type**. It determines which fields a user can configure, how those fields are validated, what the implementation can do, and which permissions it requires.
+Provide a lightweight control for deciding when a GTM custom template is needed, reviewing its code and permissions, testing its consumers, and retiring it safely.
 
-The Templates area contains custom and imported tag and variable templates in the container. It is not a list of every configured tag or variable.
+### Scope
 
-### Template vs Tag vs Variable
+- Custom tag templates and custom variable templates in a web GTM container.
+- Built-in, Community Template Gallery, and organization-owned templates.
+- Template fields, validation, sandboxed JavaScript, APIs, permissions, endpoints, consent, tests, versions, and ownership.
+- Dependency impact on configured Tags and Variables.
+- FD calculation_action as the reference decision pattern.
 
-A template defines **how a type works**. A tag or variable is a configured **instance** created from that template.
+Detailed Data Layer, Variable, Trigger, Tag, and Consent behavior belongs to Sections 01–05. This section governs the reusable template layer, not every configuration created from a template.
 
-```text
-Template: "Vendor Analytics Tag"
-        ↓ defines
-Configuration fields, validation, permissions, and sandboxed implementation
-        ↓ creates
-Tag instances
+### Outputs
+
+Every production-active template should have:
+
+1. An approved requirement and a documented decision to use a template.
+2. A template contract covering fields, validation, data, endpoints, consent, permissions, and completion behavior.
+3. An owner, source/version record, consumer inventory, tests, and rollback/export record.
+4. A review result for each update and its dependent Tag/Variable instances.
+
+## 2. Overview: what a GTM template is
+
+### 2.1 Template versus configured instance
+
+A template defines how a reusable tag type or variable type works. A Tag or Variable is a configured instance created from that template.
+
+| Object | Practical meaning |
+| --- | --- |
+| **Template** | Defines the configuration fields, validation, sandboxed code, APIs, and permissions. |
+| **Tag instance** | Performs an action when its Trigger and consent settings allow it. |
+| **Variable instance** | Returns a value for a Trigger or Tag. |
+
+Changing one Tag instance normally affects only that Tag. Changing the underlying template can affect every dependent instance, so it is a code and dependency change.
+
+Custom templates are useful when an approved requirement cannot be met by a supported built-in Tag, Variable, or a simple configuration. Google describes them as a safer, permission-based alternative to unrestricted Custom HTML or Custom JavaScript.
+
+### 2.2 Template types
+
+| Type | What it must do |
+| --- | --- |
+| **Tag template** | Execute an approved action, send only to approved endpoints, and call the documented success/failure path. |
+| **Variable template** | Read approved input, validate or transform it, and return a value; it does not send a request. |
+
+### 2.3 Source selection order
+
+Use the least complex supported option:
+
+1. Google-provided built-in option.
+2. Reviewed Community Template Gallery template.
+3. Organization-owned custom template with source and security review.
+4. Custom HTML or Custom JavaScript only as a documented exception.
+
+Do not import or build a template merely because it is available. Start with an approved business or measurement requirement.
+
+## 3. Template contract and review
+
+### 3.1 Required contract
+
+Record these items before approval:
+
+| Item | Decision to record |
+| --- | --- |
+| Purpose and type | Why it exists and whether it is a Tag or Variable template. |
+| Fields and defaults | Inputs shown in GTM, required/optional status, help text, and safe defaults. |
+| Validation | Accepted types, allowed values, normalization, and invalid-input behavior. |
+| Data handling | Values read, transformed, stored, or sent; prohibited data is excluded. |
+| Endpoints | Exact HTTPS destinations and environment-specific URLs. |
+| APIs and permissions | Each sandbox API and the reason it is needed. |
+| Consent | Required consent, denied/unknown behavior, and update behavior. |
+| Completion behavior | Tag success/failure, timeout, retry, and duplicate handling; Variable return on missing/invalid input. |
+| Consumers | Dependent Tags/Variables and criticality. |
+| Ownership and lifecycle | Owner, reviewer, version, status, review date, and retirement condition. |
+
+### 3.2 Sandbox and permissions
+
+Custom template code runs in GTM’s sandboxed JavaScript environment, not as unrestricted page JavaScript. It uses approved sandbox APIs through the template’s declared permissions.
+
+Sandboxing reduces access; it does not make a template automatically safe. Apply least privilege:
+
+- Request only the APIs and permissions required by the documented purpose.
+- Restrict network permissions to exact approved HTTPS URL match patterns.
+- Do not request page, cookie, storage, or Data Layer access when the template does not need it.
+- Do not place credentials, secrets, or unrestricted user input in fields or code.
+- Review a Community Template as third-party code, including its source, publisher, maintenance, license, endpoints, and update history.
+
+### 3.3 Review gate
+
+Approve a template only when all answers are “yes”:
+
+1. Is the requirement approved and still unsatisfied by a built-in option?
+2. Is the source trustworthy, maintained, and versioned?
+3. Are fields, validation, code behavior, endpoints, consent, and permissions understood?
+4. Are consumers, owner, tests, and rollback/export records known?
+5. Can the template be tested in a non-production workspace?
+
+If any answer is “no”, keep the template out of production.
+
+## 4. Implementation workflow
+
+### 4.1 Build or import
+
+1. Create an inventory record before importing or coding.
+2. Use the Template Editor’s Info, Fields, Code, and Permissions areas.
+3. Give each field a clear label, help text, type, required/optional rule, and safe default.
+4. Validate inputs at the template boundary.
+5. Keep the implementation limited to the approved action or value.
+6. Declare exact endpoint and permission requirements.
+7. Export or commit the approved source/version so it can be restored.
+
+For a tag template, use the GTM success/failure callbacks to report completion. For a variable template, return a deterministic value or an explicitly documented undefined result.
+
+### 4.2 Test before publish
+
+Use the template’s unit tests where available, then test representative consumers:
+
+1. Normal valid input.
+2. Missing and invalid input.
+3. Denied or unknown consent.
+4. Duplicate invocation, timeout, and network failure.
+5. Correct endpoint, environment, payload, and request count.
+6. GTM Preview behavior of each critical dependent Tag or Variable.
+
+Google template unit tests can run code with sample inputs and assertions. They do not replace validation checks or real permission/network testing.
+
+### 4.3 Inventory and ownership
+
+Maintain one record for every non-built-in template:
+
+~~~text
+name | type | purpose | source/repository | approved version
+permissions | endpoints | consent | consumers
+owner | reviewer | last review | status | replacement/retirement condition
+~~~
+
+The owner is accountable for maintenance, security/privacy review, consumer impact analysis, incident response, updates, and retirement. A template without an owner should not be production-active.
+
+### 4.4 Update and dependency impact
+
+Treat every template update as a code change:
+
+1. Identify all dependent Tags and Variables.
+2. Review the source diff, exact version, fields, defaults, validation, permissions, endpoints, and consent behavior.
+3. Retest critical and high-volume consumers.
+4. Record the approved version, change owner, evidence, and rollback/export path.
+5. Publish only after the same review standard as a new template.
+
+Never accept an automatic Gallery update without checking its impact.
+
+### 4.5 Retirement
+
+Before deleting a template:
+
+1. Find every dependent Tag and Variable.
+2. Migrate or remove those consumers.
+3. Confirm no approved requirement still depends on the template.
+4. Retain the final version, decision, evidence, and rollback record.
+5. Mark the template Deprecated or Retired according to the repository policy.
+
+## 5. Operational notes and anti-patterns
+
+| Anti-pattern | Risk | Preferred action |
+| --- | --- | --- |
+| Importing without a requirement or review | Unknown code and permissions become production-active. | Apply the review gate first. |
+| Using Custom HTML when a supported option exists | Unnecessary maintenance and access risk. | Prefer built-in or reviewed custom templates. |
+| Broad permissions or wildcard endpoints | The template can read or send more than intended. | Apply least privilege and exact HTTPS allowlists. |
+| No consumer inventory | Updates or deletion break dependent Tags/Variables. | Inventory consumers before approval, update, or retirement. |
+| No owner/version/rollback | Incidents and updates cannot be controlled. | Record an accountable owner and recoverable version. |
+| Template reads DOM to infer a business result | UI changes silently change measurement. | Keep business truth in the Application/Data Layer (Section 01). |
+| Template sends PII, secrets, or raw inputs | Privacy and security exposure. | Enforce the approved data contract and payload allowlist. |
+
+Template governance does not replace the controls in Sections 01–05: the Application still owns business truth, Variables map values, Triggers select the business moment, Tags send approved data, and Consent controls permission.
+
+## 6. Cross-reference with the other sections
+
+- **Section 01 — Data Layer Design:** approved event contract and privacy-safe payload.
+- **Section 02 — Variable Management:** prefer native Variables; document consumers of a Variable Template.
+- **Section 03 — Trigger Management:** use the authoritative application event; a template must not infer success from a broad UI rule.
+- **Section 04 — Tag Management:** Tag type, parameter allowlist, destination, request count, and validation.
+- **Section 05 — Consent:** Consent Initialization and consent behavior for a template or dependent Tag.
+- **Section 07 — Measurement Plan:** the approved requirement that justifies the template.
+- **Section 08 — Debug and QA:** evidence and pass/fail record.
+- **Section 10 — Release Monitoring:** production monitoring after a template or dependency update.
+
+## 7. Worked Journey: FD calculation_action
+
+### Requirement
+
+Send the approved FD calculation_action event to GA4 with the Google tag and GA4 Event tag.
+
+### Governance decision
+
+No custom Tag Template is needed. The built-in Google tag and GA4 Event tag already provide the required destination, event configuration, consent behavior, and Preview/GA4 validation. Use the native Data Layer Variables from Section 02 and the authoritative Custom Event Trigger from Section 03.
+
+~~~text
+Approved FD event contract
         ↓
-Vendor Analytics — Purchase
-Vendor Analytics — Sign Up
-```
-
-| Object       | Role                                                                     | Example                      |
-| ------------ | ------------------------------------------------------------------------ | ---------------------------- |
-| **Template** | Defines a reusable tag or variable type                                  | A vendor event template      |
-| **Tag**      | Configured instance that performs an action when eligible to run         | Send `purchase` to a vendor  |
-| **Variable** | Configured instance that returns or transforms a value for use elsewhere | Normalize a product category |
-
-Changing a tag instance normally affects only that instance. Changing the underlying template can affect every dependent tag or variable instance, so template changes require dependency analysis and regression testing.
-
-### Why templates exist
-
-Templates provide a controlled way to package functionality for GTM users. They can:
-
-- expose a clear configuration UI instead of requiring users to edit implementation code;
-- validate inputs before a tag or variable is used;
-- run implementation logic in GTM's sandboxed environment;
-- declare the APIs and permissions they need;
-- standardize vendor integrations and internal patterns;
-- make review, testing, ownership, versioning, and retirement possible.
-
-Templates improve consistency and reduce avoidable implementation risk, but they do not remove the need for security, privacy, consent, or operational review.
-
-## Template Types
-
-GTM custom templates are primarily used to define two types:
-
-| Type                  | Purpose                                                                      | Example                                     |
-| --------------------- | ---------------------------------------------------------------------------- | ------------------------------------------- |
-| **Tag Template**      | Defines an action a configured tag can perform                               | Send an approved event to a vendor endpoint |
-| **Variable Template** | Defines how a configured variable calculates, normalizes, or returns a value | Return a normalized campaign value          |
-
-A useful mental model is:
-
-```text
-Tag Template      → performs an action
-Variable Template → returns a value
-```
-
-The distinction matters during review. A tag template must document execution, destination, consent, and success/failure behavior. A variable template must document input sources, transformation rules, validation, and what it returns when input is missing or invalid.
-
-## Template Sources
-
-| Source                         | Meaning                                                   | Governance expectation                                                                                       |
-| ------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Built-in**                   | A Google-provided template or supported GTM option        | Preferred when it meets the requirement; follow normal configuration and testing controls                    |
-| **Community Template Gallery** | A template published by a third party through the Gallery | Review publisher, source, license, maintenance, code, permissions, endpoints, consent, and updates           |
-| **Custom**                     | A template developed and maintained by the organization   | Requires an owner, source history, security/privacy review, tests, version control, and lifecycle management |
-
-### Preferred selection order
-
-Use the safest supported option that satisfies the approved requirement:
-
-1. A Google-provided built-in template that meets the requirement.
-2. A carefully reviewed Community Template Gallery template.
-3. A custom template with a named maintainer, code/security review, and tests.
-4. Custom HTML or Custom JavaScript only as a documented exception when safer supported options cannot meet the requirement.
-
-The last option is an exception path, not a shortcut around template governance.
-
-## Anatomy of a Template
-
-A production template should be understandable through the following components. If a component does not apply, record `None` or `Not applicable` rather than leaving its behavior unclear.
-
-| Component                    | Question to answer                                                                                                            |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Purpose**                  | Why does this template exist, and what approved business or measurement requirement does it satisfy?                          |
-| **Type**                     | Is it a tag template or a variable template?                                                                                  |
-| **Fields**                   | What configuration does the user provide? Are labels, help text, and defaults clear?                                          |
-| **Validation**               | Which values are accepted, rejected, required, or normalized?                                                                 |
-| **Sandboxed implementation** | What does the template code do, step by step?                                                                                 |
-| **APIs**                     | Which GTM sandboxed APIs does it use, and why?                                                                                |
-| **Permissions**              | What resources or capabilities may the implementation access?                                                                 |
-| **Endpoints**                | Where can a tag send data? Are destinations explicit and approved?                                                            |
-| **Data handling**            | What data can it read, transform, store, or send? Is prohibited personal data excluded?                                       |
-| **Consent**                  | What consent state is required, and what happens when consent is denied, unknown, or changes?                                 |
-| **Success/failure**          | How does a tag report or handle success, timeout, invalid input, and network failure? What does a variable return on failure? |
-| **Consumers**                | Which configured tags, variables, teams, reports, or downstream systems depend on it?                                         |
-| **Owner**                    | Who maintains it, approves changes, answers questions, and confirms retirement?                                               |
-| **Version**                  | Which imported, released, or source commit version is approved?                                                               |
-| **Lifecycle**                | Is it Proposed, Under Review, Approved, Active, Deprecated, or Retired?                                                       |
-
-```text
-Template
-├── Configuration UI and fields
-├── Validation
-├── Sandboxed implementation
-├── APIs and permissions
-├── Data, endpoints, and consent behavior
-├── Tests
-└── Ownership, version, and lifecycle metadata
+Built-in Google tag + GA4 Event tag satisfy the requirement
         ↓
-Dependent tag or variable instances
-```
-
-## Sandboxing and Permissions
-
-Custom templates run in GTM's sandboxed JavaScript environment rather than unrestricted page JavaScript. The sandbox limits what template code can do directly. Access to sensitive capabilities is provided through approved sandboxed APIs and template permissions.
-
-Conceptually:
-
-```text
-Template code
-      ↓
-Sandboxed API
-      ↓
-Permission check
-      ↓
-Allowed resource or action
-```
-
-### Least privilege
-
-> A template should receive only the permissions required to perform its documented purpose.
-
-For example, a template that only needs to send an approved request to `analytics.vendor.example` should not request unrelated storage, cookie, page, or network capabilities. Each permission should have a documented business and technical justification.
-
-### Important security principle
-
-```text
-Sandboxed ≠ automatically safe
-```
-
-Sandboxing reduces the implementation's access, but a template can still be unsafe or unsuitable if it has overly broad permissions, sends data to an unknown endpoint, handles data incorrectly, has a malicious or unmaintained source, or changes behavior without review. Community templates must therefore be reviewed as third-party code.
-
-## Template Decision Guide
-
-Before importing, approving, or creating a template, use this production gate:
-
-1. **Is there an approved requirement?**  
-   If no, do not import or build the template.
-2. **Can a built-in template satisfy it?**  
-   If yes, use the built-in option.
-3. **Is a reviewed Community Template available?**  
-   If yes, evaluate it before building custom code.
-4. **Is the source trustworthy and maintained?**  
-   If no, reject it or investigate a safer alternative.
-5. **Are all requested permissions necessary?**  
-   If no, reduce them or reject the template.
-6. **Are endpoints and data handling understood and approved?**  
-   If no, do not approve it.
-7. **Is consent behavior defined?**  
-   If no, define it before production use.
-8. **Are dependent tags and variables known?**  
-   If no, inventory consumers before release or update.
-9. **Can the template and representative consumers be tested?**  
-   If no, do not publish it.
-10. **Is there an owner, version record, and update/rollback plan?**  
-    If no, assign ownership and define the operating process first.
-
-## Design Standards
-
-Every approved template should follow these standards:
-
-- Start with a documented business or measurement requirement.
-- Prefer the least powerful supported implementation that meets the requirement.
-- Use clear field labels, help text, safe defaults, and explicit required/optional behavior.
-- Validate inputs at the template boundary; do not rely only on downstream systems to reject bad values.
-- Keep permissions narrowly scoped and explain each one.
-- Make endpoints explicit, environment-aware, and approved.
-- Document what data is read, transformed, stored, and sent.
-- Define consent behavior before implementation is made production-active.
-- Define deterministic behavior for missing, invalid, denied-consent, duplicate, timeout, and network-failure cases.
-- Avoid secrets in template code, fields, examples, or configuration.
-- Never approve collection or transmission of prohibited personal data.
-- Keep source, version, change history, tests, owner, and dependent consumers discoverable.
-- Make updates reviewable and reversible.
-
-## Practical Example — Evaluate a Community Tag Template
-
-### Scenario
-
-The team needs to send a `purchase_completed` event to **Vendor X Analytics** when an approved purchase is completed. GTM has no built-in tag that supports Vendor X's required request format.
-
-### Evaluation
-
-```text
-Requirement:
-Send one approved purchase_completed event to Vendor X
+No custom template is imported or built
         ↓
-Built-in template available?
-No
-        ↓
-Community Template Gallery template available?
-Yes — Vendor X Analytics Tag
-        ↓
-Review publisher, repository, license, maintenance, and documentation
-        ↓
-Review fields, code, permissions, endpoint, data handling, and consent
-        ↓
-Import into a non-production workspace
-        ↓
-Test normal, invalid, duplicate, denied-consent, and network-failure cases
-        ↓
-Approve the exact version and record consumers, owner, and rollback plan
-```
+Validate one event, one request, approved parameters, consent, and destination
+~~~
 
-### Concrete review record
+If a future requirement cannot use built-in options, use the custom-template deployment flow in subsection 8 below.
 
-| Review area      | Evidence or decision                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Purpose          | Send one `purchase_completed` event after the application confirms a completed purchase                                                                      |
-| Type             | Tag Template                                                                                                                                                 |
-| Data inputs      | `transaction_id`, `currency`, `value`, and approved item summary from the data layer                                                                         |
-| Trigger contract | Authoritative `purchase_completed` event; not a generic button click                                                                                         |
-| Endpoint         | `https://collect.vendor-x.example/events`; production and staging destinations are explicitly separated                                                      |
-| Permissions      | Only the sandboxed capabilities required to read approved values and send the request                                                                        |
-| Consent          | Send only when the approved analytics/marketing consent requirement is satisfied; denied or unresolved consent prevents the request                          |
-| Success/failure  | Record or expose the documented success path; do not retry in a way that creates duplicate purchases unless retry behavior is explicitly designed and tested |
-| Consumers        | `Vendor X — Purchase Completed` tag and the downstream Vendor X conversion workflow                                                                          |
-| Decision         | Approve only the reviewed version; reject if permissions are broader than necessary or maintenance is unclear                                                |
+## 8. Worked Journey: when a custom template is genuinely required
 
-## 10. Inventory & Ownership
+### Scenario and gap
 
-Maintain a central inventory for every non-built-in template and its dependent instances.
+The team must send an approved calculation_action summary to an approved non-GA4 endpoint as part of an internal measurement workflow. The built-in Google tag and GA4 Event tag can send to GA4, but they cannot target this endpoint or use its reviewed request envelope. A custom Tag Template is therefore justified for this separate destination.
 
-| Template | Type           | Purpose              | Origin/source      | Version         | Permissions | Endpoints                 | Consent               | Consumers          | Owner           | Last review  | Status | Replacement             |
-| -------- | -------------- | -------------------- | ------------------ | --------------- | ----------- | ------------------------- | --------------------- | ------------------ | --------------- | ------------ | ------ | ----------------------- |
-| `[name]` | Tag / Variable | `[approved purpose]` | Gallery / `[repo]` | `[SHA/version]` | `[summary]` | `[approved destinations]` | `[required behavior]` | `[tags/variables]` | `[team/person]` | `YYYY-MM-DD` | Active | `[replacement or None]` |
+The template must not calculate the FD result. The Application remains responsible for solution_found and the Data Layer contract; the template only maps and sends approved scalar fields.
 
-Ownership must cover more than the person who imported the template. The owner is accountable for maintenance, review cadence, consumer impact analysis, update decisions, incident response, and retirement. A template without a named owner should not become production-active.
+### Deployment record
 
-## Test Workflow
+> This is a team governance template, not a form provided by Google. Its fields are derived from the template contract and review gate above, the Tag/Consent contracts in Sections 04–05, and the QA evidence sequence in Section 08.
 
-1. Import or edit the template only in a dedicated non-production workspace.
-2. Review fields, validation, implementation, APIs, permissions, endpoints, data handling, consent, and tests before creating consumers.
-3. Test the template directly where supported, including normal, missing, invalid, denied-consent, and failure cases.
-4. Test representative dependent tags or variables in GTM Preview.
-5. Inspect the resulting network behavior: destination, payload, request count, and environment.
-6. Test negative and duplicate cases so one business occurrence does not create unintended duplicate requests.
-7. Record evidence, defects, approved version, owner, and rollback/export information.
-8. Publish through normal version controls only after review approval.
+~~~text
+Requirement:       one approved calculation_action summary → approved endpoint
+Built-in gap:      GA4 tags cannot target the required endpoint/envelope
+Source:            reviewed Community Template or organization-owned source
+Input allowlist:   calculation_action, calculation_type, solution_found
+Consent:           required analytics/measurement consent; denied or unknown blocks
+Endpoint:          exact HTTPS staging and production URLs
+Permissions:       only read approved values and send to the allowlisted endpoint
+Owner/version:     named owner, source revision, review date, rollback export
+~~~
 
-## Template Update Impact
+### Deployment steps
 
-A template update is a code and dependency change, not merely a metadata change. One template can be used by many configured tag or variable instances:
+1. Record the requirement, destination, payload allowlist, expected count, consent rule, owner, and environment.
+2. Confirm that a built-in Tag, Variable, or simple configuration cannot meet the requirement.
+3. Prefer a reviewed Community Template; otherwise create an organization-owned template with source history.
+4. In the Template Editor, define clear fields, validation, safe defaults, sandbox code, exact endpoint permissions, and success/failure behavior.
+5. Configure the dependent Tag with the authoritative application Trigger and the approved Additional Consent Check. Do not use a broad click or DOM Trigger.
+6. Run template unit tests for valid, missing, invalid, and duplicate input. Add timeout, denied-consent, and network-failure coverage where the template supports those paths.
+7. Test the dependent Tag in a non-production container: GTM Preview → request payload/count → endpoint receipt.
+8. Review source/version, permissions, endpoints, data handling, consent, consumer inventory, and evidence with the owner.
+9. Publish a version with a rollback/export record, then monitor the first production release.
 
-```text
-Community Template v1
-        ↓
-Tag A   Tag B   Tag C
+### Acceptance evidence
 
-Template updated to v2
-        ↓
-Potential behavior change for A, B, and C
-```
-
-An update can affect every dependent instance through changed implementation code, fields, defaults, validation, permissions, endpoints, data handling, consent behavior, or success/failure behavior. Before accepting an update:
-
-1. Identify all dependent tags and variables.
-2. Review the change details, source diff, and exact version.
-3. Review added, removed, or changed permissions and endpoints.
-4. Review fields, defaults, validation, and consent behavior.
-5. Retest representative consumers, including critical and high-volume ones.
-6. Record the approved version and rollback path.
-7. Publish the update only after the same approval standard is met.
-
-Treat a Gallery update as a new code change even when it is offered as an automatic or routine update.
-
-## Common Anti-patterns
-
-| Anti-pattern                                             | Problem                                                         | Preferred approach                                                               |
-| -------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Importing a Gallery template without review              | Third-party code and permissions are trusted implicitly         | Review publisher, source, permissions, endpoints, data, consent, and maintenance |
-| Using custom code when a supported template exists       | More implementation and maintenance risk than necessary         | Follow the preferred selection order                                             |
-| Broad permissions                                        | The template can access more than its purpose requires          | Apply least privilege and justify every permission                               |
-| Unknown network endpoints                                | Data destination cannot be governed or validated                | Document and approve exact endpoints and environments                            |
-| Automatic updates without review                         | Dependent instances may change behavior unexpectedly            | Treat every update as a new code change                                          |
-| No consumer inventory                                    | Updates or retirement can break dependent tags/variables        | Inventory consumers before approval, update, or removal                          |
-| No owner                                                 | Security, maintenance, and retirement decisions become orphaned | Assign a named accountable owner                                                 |
-| Production editing                                       | Changes are harder to test, review, and roll back               | Use a non-production workspace and normal version controls                       |
-| Secrets in template code or fields                       | Credentials can be exposed and are difficult to rotate safely   | Never include secrets; use approved server-side or platform mechanisms           |
-| Reading the DOM to compensate for missing data contracts | UI changes can silently break measurement                       | Prefer an authoritative data-layer contract                                      |
-| Removing a template before its consumers                 | Dependent tags or variables can fail or become unmanaged        | Migrate consumers first and retain a rollback record                             |
+- The requirement and built-in gap are documented.
+- The template sends only the approved scalar fields to the correct environment endpoint.
+- Denied or unknown consent prevents the request according to the contract.
+- One valid calculation occurrence produces one template execution and one request.
+- Invalid, no-output, duplicate, timeout, and network-failure behavior is documented and tested.
+- GTM Preview, Network, endpoint receipt, owner approval, version, and rollback evidence are stored.
 
 ## References
 
-- [Google for Developers — Custom templates quick start guide](https://developers.google.com/tag-platform/tag-manager/templates): custom tag and variable templates, fields, code, permissions, preview/testing, and import/export.
-- [Google for Developers — Sandboxed JavaScript](https://developers.google.com/tag-platform/tag-manager/templates/sandboxed-javascript): the restricted execution model and available `require`-based functionality.
-- [Google for Developers — Custom template permissions](https://developers.google.com/tag-platform/tag-manager/templates/permissions): permission detection, configuration, specificity, and `queryPermission`.
-- [Google for Developers — Custom template APIs](https://developers.google.com/tag-platform/tag-manager/templates/api): sandboxed APIs for tags, variables, data layer, consent, storage, networking, and testing.
-- [Google for Developers — Tests](https://developers.google.com/tag-platform/tag-manager/templates/tests): unit testing custom template behavior before deployment.
-- [Tag Manager Help — Publishing, versions, and approvals](https://support.google.com/tagmanager/answer/6107163?hl=en): version history, publishing, rollback, and approval workflows where available.
+- [Google for Developers — Custom templates quick start guide](https://developers.google.com/tag-platform/tag-manager/templates)
+- [Google for Developers — Sandboxed JavaScript](https://developers.google.com/tag-platform/tag-manager/templates/sandboxed-javascript)
+- [Google for Developers — Custom template permissions](https://developers.google.com/tag-platform/tag-manager/templates/permissions)
+- [Google for Developers — Custom template tests](https://developers.google.com/tag-platform/tag-manager/templates/tests)

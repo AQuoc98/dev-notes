@@ -1,22 +1,37 @@
-# Subtask 04: Standardize GTM Tag Management
+# 04 — GTM Tag Management
 
 ## Objective
 
-Define how GTM tags are selected, configured, named, tested, approved, monitored, and retired so data is sent once, to the correct destination, under the correct consent state.
+Define how GTM Tags are selected, configured, tested, approved, published, monitored, and retired so approved data is sent once to the correct GA4 destination.
 
-## Scope — Included Items
+## Scope
 
-- Google tag, GA4 Event tags, and other tags used by the selected flow/POC.
-- Firing triggers, exceptions, sequencing, consent settings, parameters, and destinations.
-- Native templates versus Custom HTML, ownership, descriptions, and lifecycle.
-- A scoped inventory rather than a full production-container refactor.
+- Shared Google tag and focused GA4 Event tags.
+- Parameter allowlist, Variable mapping, authoritative Trigger, consent, exceptions, sequencing, environment routing, and expected request count.
+- Native templates versus reviewed Custom HTML, naming, descriptions, ownership, inventory, and lifecycle.
+- Preview, browser Network, GA4 DebugView, and downstream validation.
+- FD calculation_action as the reference Tag flow.
 
-## Deliverables / Outputs
+## Outputs
 
-- One GTM tag management guideline containing tag-type selection, naming, descriptions, ownership, parameters, triggers/exceptions, sequencing, consent, Custom HTML policy, testing, approval, monitoring, and retirement rules.
-- One scoped tag inventory and dependency map containing purpose, template/type, variables, triggers, exceptions, consent, destination, owner, status, and linked requirements.
-- One tag decision matrix and sanitized POC tag test record demonstrating expected and prohibited firing behavior through Preview, network, and destination evidence.
+1. A Tag decision workflow and readiness checklist: purpose → event → parameters → Trigger → consent → destination → count → QA.
+2. A Tag contract/inventory containing purpose, type, event, parameters and sources, Trigger, consent, destination, owner, environment, status, and retirement condition.
+3. Rules for one shared Google tag per environment, one focused Event tag per approved event, native templates first, and no business-logic inference in GTM.
+4. A validation record proving Trigger match, Tag status, request payload, approved destination, and downstream receipt.
+5. An FD calculation_action Journey with valid/no-output and failure expectations.
 
-## Instructions / Answer
+## Acceptance criteria
 
-See [04-tag-management-answer.md](./04-tag-management-answer.md).
+- The Application decides the business result; the Tag only maps and sends approved fields.
+- The parameter allowlist is explicit, typed, privacy-safe, and handles missing values.
+- The Tag has one authoritative Trigger and a documented expected count.
+- Built-in Google consent behavior is the primary control; exceptions and sequencing are not redundant workarounds.
+- Preview, Network, and downstream evidence agree before publish.
+
+## Out of scope
+
+Detailed Data Layer, Variable, Trigger, consent, measurement-plan, Debug/QA, report, or release design; use Sections 01–03 and 05–10. Advertising-specific Tags are excluded.
+
+## Source
+
+Detailed implementation: [04-tag-management-answer.md](./04-tag-management-answer.md).

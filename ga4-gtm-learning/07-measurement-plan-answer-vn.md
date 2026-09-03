@@ -1,522 +1,416 @@
 # 07 — Measurement Plan cho GA4/GTM
 
-## 1. Tổng quan
+## 1. Mục tiêu, phạm vi và đầu ra
 
-### Mục tiêu
+### 1.1 Mục tiêu
 
-Measurement Plan là contract giữa business question và dữ liệu team sẽ thu thập, định tuyến, kiểm tra và đưa vào report. Plan xác định cần đo gì, khi nào event được xem là đúng, field nào được phép gửi, ai sở hữu signal và người khác sẽ kiểm tra nó như thế nào.
+Measurement Plan (kế hoạch đo lường) quy định team sẽ đo điều gì, đo để làm gì, khi nào một event được xem là hợp lệ và bàn giao cho việc triển khai ra sao. Tài liệu biến yêu cầu nghiệp vụ thành một Event Contract (hợp đồng event) và Parameter Dictionary (từ điển tham số) đã được phê duyệt, để Application, Data Layer, GTM, consent và GA4 dùng cùng một cách hiểu.
 
-Bắt đầu từ business outcome, không bắt đầu từ GTM tag hoặc danh sách mọi click.
+Đây là tài liệu thiết kế và phê duyệt. Nó không phải nhật ký debug lúc chạy thật và cũng không phải hướng dẫn dựng GA4 Report, Exploration hay chart.
 
-Với một tracking change thông thường ở frontend/GTM, contract tối thiểu cần có:
+### 1.2 Phạm vi
 
-- requirement ID và journey ID;
-- business meaning và authoritative moment;
-- event name, required/optional parameter, type và allowed value;
-- occurrence rule và deduplication rule;
-- Data Layer source và GTM mapping;
-- consent/privacy behavior và destination;
-- reporting/custom-definition decision;
-- QA, owner, version và review date.
+- Thu thập dữ liệu web ổn định ở phía client bằng Google Tag Manager (GTM) và Google Analytics 4 (GA4).
+- Business question, business moment chuẩn, tên event, parameter, quy tắc occurrence, chống trùng, consent, privacy, destination, owner và version của schema.
+- Quyết định về key event, custom definition, identity, cardinality và data minimization khi yêu cầu có liên quan.
+- Các record chuẩn và phần bàn giao cho Sections 01–06.
+- Một Registration Journey mẫu ở cuối tài liệu.
 
-### Phạm vi
+### 1.3 Ngoài phạm vi
 
-Section này tập trung vào web client-side collection qua GTM và GA4 theo các pattern ổn định. Đối tượng sử dụng là frontend developer, GTM owner, analytics reviewer và QA. Advertising activation, campaign optimization, attribution strategy và Google Ads operations nằm ngoài measurement plan cốt lõi.
+- Chạy test, thu thập evidence và quyết định pass/fail: xem Section 08 — Debug/QA.
+- Phân tích dữ liệu đã được GA4 xử lý, GA4 Reports, Explorations và thiết kế chart: xem Section 09 — Reports/Charts.
+- Theo dõi sau khi release production và rollback: xem Section 10 — Release Monitoring.
+- Thiết lập ads, campaign, attribution hoặc vận hành Google Ads.
 
-### Chuỗi đo lường
+### 1.4 Đầu ra cần có
 
-```text
-Business question
-  → authoritative business moment
-  → event và parameter contract
-  → application/Data Layer signal
-  → GTM mapping và destination
-  → consent/privacy decision
-  → QA evidence
-  → report hoặc downstream consumer
-```
+1. Một plan đã được duyệt cho từng Journey hoặc yêu cầu đo lường.
+2. Một Event Contract và Parameter Dictionary cho mỗi event chuẩn.
+3. Tham chiếu rõ đến Data Layer, GTM, consent, destination, owner và vòng đời schema.
+4. Quyết định về key event, custom definition, identity và phân loại dữ liệu khi cần.
+5. Bản bàn giao có version để Sections 08–10 sử dụng mà không tự định nghĩa lại ý nghĩa event.
 
-### Thuật ngữ cốt lõi
+## 2. Tổng quan: plan kiểm soát điều gì
 
-| Thuật ngữ | Ý nghĩa thực tế | Quyết định cần ghi trong plan |
-| --- | --- | --- |
-| Event | Business action hoặc outcome | Khi nào event trở thành đúng và được phép xuất hiện bao nhiêu lần |
-| Event parameter | Chi tiết gắn với một event occurrence | Meaning, type, allowed value, scope và missing-value behavior |
-| User property | Attribute tương đối ổn định của user | Source, update/unset behavior, consent và scope |
-| Dimension | Field dùng để group hoặc filter data | Controlled value set và có cần đăng ký report hay không |
-| Metric | Con số có thể count, sum hoặc calculate | Unit, source, aggregation và cách validation |
-| Key event | Event được đánh dấu là quan trọng trong GA4 | Chỉ đánh dấu sau khi contract và collection QA đúng |
+### 2.1 Chuỗi đo lường
 
-Collection và reporting là hai việc khác nhau. Một parameter có thể được collect nhưng không cần đăng ký custom definition; custom definition cũng không sửa được payload sai.
+~~~text
+Câu hỏi nghiệp vụ
+→ business moment chuẩn
+→ hợp đồng event và parameter
+→ Application push một message Data Layer đầy đủ
+→ GTM map field đã duyệt, kiểm tra consent và chọn destination
+→ GA4 nhận và xử lý event
+→ Debug/QA và Reports/Charts dùng đúng contract đã duyệt
+~~~
 
-### Chọn event type
+Application chịu trách nhiệm về sự thật nghiệp vụ. Data Layer mang dữ liệu có cấu trúc để GTM đọc. GTM định tuyến và map những field đã được duyệt. GA4 nhận và xử lý request. Plan ghi lại các quyết định và cách bàn giao; nó không thay thế việc kiểm tra runtime ở Section 08 hay công việc phân tích ở Section 09.
 
-Trước khi tạo event mới trong GTM, đi theo thứ tự:
+### 2.2 Thuật ngữ cốt lõi
 
-1. Kiểm tra GA4 đã tự động thu thập interaction đó chưa.
-2. Kiểm tra Enhanced Measurement của web stream hiện tại có bao phủ không.
-3. Kiểm tra recommended event của GA4 có đúng business meaning không.
-4. Chỉ tạo custom event khi ba lựa chọn trên không phù hợp.
+| Thuật ngữ | Ý nghĩa thực tế |
+|---|---|
+| Event | Một tương tác hoặc trạng thái nghiệp vụ có tên, được gửi đến GA4. |
+| Event parameter | Field mô tả event, ví dụ method hoặc form_id. |
+| Occurrence | Một lần phát sinh nghiệp vụ được tính là hợp lệ theo rule của event; click hoặc retry không tự động là occurrence mới. |
+| Contract | Bộ quy tắc thống nhất cho event và các field: ý nghĩa, kiểu dữ liệu, giá trị được phép, cách xử lý khi thiếu, privacy, owner và version. |
+| User property | Thuộc tính tương đối ổn định của user, không phải giá trị phát sinh cho từng event. |
+| Key event | Event mà business xác định là một kết quả quan trọng. |
+| Custom definition | Đăng ký một parameter thành dimension hoặc metric trong GA4 để có thể phân tích. |
+| Schema version | Version của contract event và parameter; chỉ đổi sau khi được review. |
 
-Dùng [event naming rules](https://support.google.com/analytics/answer/13316687), [recommended events](https://support.google.com/analytics/answer/9267735) và [collection limits](https://support.google.com/analytics/answer/9267744) làm nguồn chuẩn hiện tại. Giữ event name ở dạng lowercase `snake_case`, ổn định và không phụ thuộc vào business value thay đổi.
+### 2.3 Chọn loại và tên event
 
-### Collection truth và reporting truth
+Chọn giải pháp ít tùy biến nhất nhưng vẫn mô tả đúng yêu cầu:
 
-| Checkpoint | Chứng minh | Không chứng minh |
-| --- | --- | --- |
-| Application | Product biết business state đã xảy ra | Analytics đã nhận data |
-| Data Layer | State và payload đã expose cho GTM | GTM gửi request đúng |
-| GTM | Trigger/tag đã evaluate và thử collection | GA4 đã process mọi field cho report |
-| DebugView/Realtime | GA4 nhận diagnostic signal gần đây | Historical processing hoặc report đã sẵn sàng |
-| Report/Exploration | GA4 process data thành view dùng được | Implementation ban đầu đúng nếu thiếu upstream evidence |
+1. Dùng event tự động thu thập nếu GA4 đã ghi nhận hành vi đó.
+2. Kiểm tra Enhanced Measurement cho những tương tác web được hỗ trợ.
+3. Dùng recommended event của Google nếu nó khớp với business moment.
+4. Chỉ tạo custom event khi ba lựa chọn trên không mô tả đúng yêu cầu.
 
-## 2. Quy trình xây dựng Measurement Plan
+Tên event nên viết thường, ổn định và dễ hiểu, ví dụ sign_up hoặc calculation_action. Không nhét giá trị vào tên event, ví dụ sign_up_email; giá trị thay đổi phải nằm trong parameter. Trước khi duyệt, kiểm tra quy tắc đặt tên, tên dành riêng và giới hạn thu thập của Google.
 
-Thực hiện theo thứ tự. Mỗi bước phải tạo ra một quyết định mà owner tiếp theo có thể dùng mà không cần đoán.
+## 3. Quy trình lập Measurement Plan
 
-### Bước 1 — Xác định decision
+### 3.1 Xác định quyết định cần hỗ trợ
 
-Viết question có thể dẫn đến hành động product, technical hoặc operational. Ghi decision owner, population, success criterion và cách dùng kết quả. Không tạo event chỉ để có vanity count.
+Ghi lại:
 
-### Bước 2 — Xác định authoritative business moment
+- Câu hỏi hoặc quyết định nghiệp vụ mà việc đo lường phải trả lời.
+- Hành động của user hoặc trạng thái nghiệp vụ cần đo.
+- Đối tượng hoặc Journey nằm trong phạm vi.
+- Điều kiện thành công và người sẽ sử dụng dữ liệu.
+- Business owner và technical owner.
 
-Mô tả state transition làm cho event trở thành đúng. Ưu tiên application/backend result thay vì click, DOM label, route hoặc visual confirmation. Ghi success condition, invalid/failure behavior, retry, refresh và deduplication rule.
+Nếu không ai nói rõ event hỗ trợ quyết định nào, chưa nên thêm event.
 
-### Bước 3 — Chọn event name và type
+### 3.2 Xác định business moment chuẩn
 
-Dùng automatic, Enhanced Measurement hoặc recommended event nếu meaning phù hợp. Nếu không, định nghĩa một custom event có business definition ổn định. Không encode business value thay đổi vào event name; giữ value đó ở parameter có kiểm soát.
+Business moment chuẩn là trạng thái của Application hoặc backend chứng minh hành động đã xảy ra. Ưu tiên application event hoặc kết quả server đã xác nhận thay vì click, page view, DOM selector hoặc route change.
 
-### Bước 4 — Định nghĩa parameter và schema
+Với mỗi event, phải nêu:
 
-Với mỗi parameter, ghi:
+- State transition nào tạo ra event.
+- Nguồn nào là authoritative: Application hay server.
+- Thế nào là một occurrence hợp lệ.
+- Retry, refresh, remount, double-submit, cancellation, timeout và server failure được xử lý thế nào.
+- Quy tắc idempotency hoặc deduplication nào ngăn một occurrence nghiệp vụ bị gửi lặp.
 
-- canonical name và meaning;
-- source of truth và owner;
-- type và scope;
-- required/optional;
-- allowed value và normalization;
-- missing/invalid behavior;
-- consent/privacy classification;
-- cardinality và volume dự kiến;
-- reporting hoặc export destination.
+Phải tách “không có kết quả” hợp lệ khỏi validation failure, timeout, cancellation hoặc server failure. Thiếu state bắt buộc không được coi là occurrence hợp lệ.
 
-Thiếu required value phải làm QA fail. Với optional value, ghi rõ omit hay fallback nào được approve. Không dùng giá trị chung chung `unknown` để che giấu source bị hỏng.
+### 3.3 Định nghĩa Event Contract và parameter
 
-Kiểm tra reserved name, prefix, length, số lượng parameter, item limit và primitive type theo [event naming rules](https://support.google.com/analytics/answer/13316687) và [collection limits](https://support.google.com/analytics/answer/9267744). Kiểm tra lại trước implementation vì giới hạn nền tảng có thể thay đổi.
+Với mỗi event, thống nhất:
 
-Chỉ thêm schema version khi team có thể vận hành và diễn giải nó. Nếu không, version hóa Measurement Plan và inventory thay vì thêm metadata không được dùng vào mọi event.
+- Tên chuẩn và loại event.
+- Ý nghĩa bằng ngôn ngữ dễ hiểu và occurrence hợp lệ.
+- Parameter bắt buộc và không bắt buộc.
+- Ý nghĩa, kiểu dữ liệu, scope, giá trị được phép, nguồn và volume dự kiến.
+- Cách xử lý khi thiếu, sai hoặc không áp dụng.
+- Consent category, privacy classification, destination, owner và schema version.
 
-### Bước 5 — Định nghĩa Data Layer và GTM mapping
+Field bắt buộc phải có trước khi bàn giao. Field tùy chọn chỉ được bỏ qua khi contract cho phép. Không dùng một giá trị chung như unknown để che giấu lỗi triển khai.
 
-Ghi rõ application signal, Data Layer path, GTM variable/trigger/tag, Google tag configuration, environment routing và destination. Application nên publish event cùng các value trong một message khi có thể. GTM chỉ route signal đã approve, không suy đoán business success từ DOM state mong manh hoặc raw form field.
+### 3.4 Định nghĩa bàn giao Data Layer và GTM
 
-### Bước 6 — Quyết định key-event và custom-definition
+Plan phải chỉ rõ application event, field trong Data Layer, GTM Variable, Trigger, Tag, environment, consent behavior và destination.
 
-Với key event hoặc custom dimension/metric, ghi business reason, owner, success condition, consent/privacy impact, expected volume và consumer. Phải validate collection trước khi đánh dấu key event. Chỉ đăng ký custom definition sau khi parameter đã pass QA và recurring report thực sự cần nó.
+Application push một message hoàn chỉnh tại business moment chuẩn. GTM đọc message đó và chỉ chuyển những scalar field đã được duyệt. Application có thể giữ snapshot nội bộ hoặc request token trong log để correlation; không gửi chúng đến GA4 nếu chưa có phê duyệt riêng.
 
-### Bước 7 — Định nghĩa identity và user property khi cần
+### 3.5 Quyết định key event, custom definition và identity
 
-Identity của user đã authenticated phải được xử lý riêng với event parameter. Ghi approved non-PII identifier, source, thời điểm có giá trị, behavior trước sign-in/sau logout/account switch, consent, access, retention và deletion implication. Với user property, ghi name, meaning, allowed value, update/unset behavior, scope và reportability. Xem [send User-IDs](https://developers.google.com/analytics/devguides/collection/ga4/user-id).
+Ghi lại quyết định và lý do, không chỉ ghi kết quả mong muốn:
 
-### Bước 8 — Xác định reporting readiness
+- Vì sao event là hoặc không là key event.
+- Field chuẩn hoặc recommended của GA4 đã đáp ứng nhu cầu chưa.
+- Có cần custom definition cho câu hỏi phân tích lặp lại hay không.
+- Parameter có phù hợp để đăng ký không: giá trị được kiểm soát, scope hữu ích và cardinality chấp nhận được.
+- Có cần User-ID theo một identity contract riêng hay không.
+- Owner, người duyệt, trạng thái và ngày hiệu lực.
 
-Với mọi collected field, chọn một outcome:
+Không đăng ký tất cả parameter theo mặc định. Một parameter vẫn có thể được thu thập mà không cần đăng ký thành custom definition.
 
-| Outcome | Khi dùng |
-| --- | --- |
-| Standard field/metric | GA4 đã có meaning và scope cần thiết |
-| Recommended parameter | Prescribed parameter hỗ trợ reporting cần thiết |
-| Event-scoped custom dimension | Cần field mô tả có kiểm soát trong recurring report |
-| Event-scoped custom metric | Cần numeric quantity và không có standard metric phù hợp |
-| Collected nhưng không reportable | Hữu ích cho QA/routing/export nhưng không đáng tạo custom definition |
-| Do not collect | Không có use case được approve, risk cao, PII hoặc cardinality không kiểm soát |
+### 3.6 Áp dụng privacy và data minimization
 
-Ghi processing delay, scope, cardinality và report/export sử dụng field. Xem [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153) và Section 09 về report readiness.
+Phân loại từng event và parameter trước khi triển khai. Xác định destination được phép và hành vi khi user từ chối consent.
 
-### Bước 9 — Review, approve và version
+Không gửi email, số điện thoại, password, dữ liệu thanh toán, free text, input form không giới hạn, request token nội bộ hoặc raw account identifier đến GA4 nếu chưa có contract riêng được duyệt. Ưu tiên category có kiểm soát và ID ổn định không nhận diện cá nhân.
 
-Trước implementation, xác nhận business owner, technical owner, analytics reviewer, privacy/consent reviewer, target environment, version, effective date, next review date và consumer bị ảnh hưởng. Schema change phải cập nhật event contract, parameter dictionary, Data Layer/GTM mapping, QA case, report và handoff record cùng lúc.
+### 3.7 Review, phê duyệt và versioning
 
-## 3. Record và template chuẩn của plan
+Trước khi triển khai hoặc thay đổi có thể phá vỡ contract, cần review với business owner, application/frontend owner, analytics owner, privacy/consent reviewer và GTM owner.
 
-Giữ các record dưới đây làm source of truth. Derived summary hoặc routing view chỉ giúp đọc dễ hơn, không được định nghĩa lại contract.
+Ghi lại:
 
-### 3.1 Project Context và Baseline
+- Version của plan và schema.
+- Event, parameter bị ảnh hưởng.
+- Environment và stream đích.
+- Ngày hiệu lực, ngày review tiếp theo và trạng thái.
+- Những consumer cần migration.
 
-Dùng một lần cho mỗi plan/version:
+Mọi thay đổi về ý nghĩa phải cập nhật Event Contract, Parameter Dictionary, Data Layer/GTM mapping, consent decision và handoff. Field cũ phải được retire có chủ đích; không âm thầm dùng lại với ý nghĩa mới.
 
-| Field | Value |
-| --- | --- |
-| Plan ID/version | `[plan ID] / [version]` |
-| Product/business area | `[product hoặc journey]` |
-| GA4 account/property/stream | `[account] / [property] / [stream]` |
-| Google tag/Measurement ID | `[tag hoặc sanitized ID]` |
-| GTM account/container | `[container]` |
-| Platform/source | Web client-side qua GTM; ghi rõ mọi source khác nếu có |
-| Environments | Local, QA/staging, production |
-| Timezone/currency | `[timezone] / [currency nếu liên quan]` |
-| Business/analytics/technical owner | `[teams]` |
-| Privacy/consent reviewer | `[team hoặc N/A]` |
-| Effective/next review date | `[YYYY-MM-DD] / [YYYY-MM-DD]` |
-| Status | Proposed, approved, QA, active, deprecated hoặc retired |
+## 4. Các record chuẩn của plan
 
-### 3.2 Journey và Event Coverage Matrix
+Các record dưới đây là nguồn sự thật cho giai đoạn planning. Section 08 tham chiếu chúng khi chạy test; Section 09 dùng chúng để suy ra yêu cầu phân tích. Hai section đó không được tự định nghĩa lại Event Contract.
 
-Dùng cho flow nhiều event. Matrix xác định coverage, không thay thế payload detail:
+### Thứ tự ưu tiên và thời điểm sử dụng record
 
-| Journey ID | Journey | Business question | Planned event sequence | Primary outcome | Report ID | QA ID | Owner | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[ID]` | `[journey]` | `[question]` | `[event A] → [event B] → [event C]` | `[outcome event]` | `[report]` | `[QA]` | `[owner]` | `[status]` |
+Không cần điền tất cả record cùng một lúc. Hãy dùng bộ record nhỏ nhất để phê duyệt yêu cầu trước, sau đó bổ sung record triển khai và lifecycle khi công việc tiến triển.
 
-### 3.3 Event Contract
+| Ưu tiên | Record | Dùng khi nào? | Bắt buộc? |
+|---|---|---|---|
+| P0 | Project Context / Baseline | Bắt đầu product, Journey, environment hoặc phạm vi đo lường mới. | Luôn luôn |
+| P0 | Journey / Event Coverage Matrix | Chuyển business question thành danh sách event cần cân nhắc. | Luôn luôn |
+| P0 | Event Contract | Phê duyệt ý nghĩa, business moment authoritative, occurrence và destination của event. | Luôn có cho mỗi event |
+| P0 | Parameter Dictionary | Phê duyệt field, type, giá trị, nguồn, privacy và cách xử lý khi thiếu. | Luôn có nếu event có parameter |
+| P1 | Consent / Data Classification | Trước khi field được expose cho GTM hoặc gửi tới destination. | Luôn có cho dữ liệu được thu thập |
+| P1 | Key-Event / Custom-Definition Decision Record | Khi event có thể là key event hoặc parameter có thể cần đăng ký trong GA4. | Theo điều kiện; nếu không cần vẫn ghi “Not required” |
+| P1 | Traceability Matrix | Sau khi đã biết mapping Application/Data Layer/GTM và trước khi handoff. | Bắt buộc trước handoff triển khai |
+| P2 | Schema Lifecycle Register | Khi thêm, sửa, deprecate hoặc retire event/parameter. | Bắt buộc cho mọi thay đổi schema |
 
-Dùng một record cho mỗi canonical event:
+Thứ tự khuyến nghị khi tạo event mới:
 
-| Field | Value |
-| --- | --- |
-| Requirement/journey ID | `[requirement] / [journey]` |
-| Business question/decision | `[question và action]` |
-| Event name/type | `[event_name] / automatic, enhanced, recommended hoặc custom` |
-| Business definition | `[event có ý nghĩa gì]` |
-| Authoritative moment/source | `[application/backend state]` |
-| Expected occurrence/deduplication | `[count, retry, refresh, idempotency rule]` |
-| Data Layer signal | `[event path và payload owner]` |
-| GTM trigger/tag | `[trigger] / [tag]` |
-| Environment/destination | `[QA và production routing]` |
-| Required/optional parameters | `[names] / [names]` |
-| Consent/privacy behavior | `[approved state và denied behavior]` |
-| Key event status | `[yes/no/pending và reason]` |
-| Reporting/custom-definition status | `[standard/custom/not reportable]` |
-| QA/evidence ID | `[test IDs/evidence link]` |
-| Owner/reviewer/version | `[teams] / [version/date]` |
+~~~text
+Project Context
+→ Journey/Event Coverage
+→ Event Contract
+→ Parameter Dictionary
+→ Consent/Data Classification
+→ Quyết định Key-Event/Custom-Definition (nếu có)
+→ Traceability
+→ Ghi Schema Lifecycle
+~~~
 
-### 3.4 Parameter Dictionary
+Khi sửa event đã có, mở Schema Lifecycle hiện tại trước, đánh giá consumer bị ảnh hưởng, sau đó cập nhật Event Contract, Parameter Dictionary, consent decision và Traceability Matrix trước khi duyệt version mới. Nếu yêu cầu bị từ chối, dừng sau khi ghi quyết định; không tạo GTM asset.
 
-Dùng một dòng cho mỗi event parameter được approve:
+### 4.1 Project Context / Baseline
 
-| Event | Parameter | Meaning | Type | Scope | Required? | Allowed values | Missing/invalid behavior | Source | Privacy/consent | Cardinality/volume | Report field |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[event_name]` | `[parameter]` | `[meaning]` | `[string/number]` | `[event/item/user]` | `[yes/no]` | `[controlled list]` | `[omit/fail/fallback]` | `[application/system]` | `[classification/state]` | `[estimate]` | `[standard/custom/N/A]` |
+| Field | Nội dung cần ghi |
+|---|---|
+| Plan ID / version | Mã ổn định và version hiện tại. |
+| Product / Journey | Khu vực sản phẩm và Journey được bao phủ. |
+| GA4 property / stream | Property và web stream dùng cho environment. |
+| Google tag / Measurement ID | Destination thu thập đã cấu hình. |
+| GTM container | Container và workspace dùng để triển khai. |
+| Platform / source | Ứng dụng web và nguồn dữ liệu. |
+| Environments | Quy tắc cho local, QA, staging và production. |
+| Timezone / currency | Mặc định của ngữ cảnh đo lường. |
+| Owners | Business, application, analytics, GTM và privacy owner. |
+| Effective / next review | Ngày phê duyệt và ngày cần xem xét lại. |
+| Status | Draft, approved, deprecated hoặc retired. |
 
-### 3.5 Traceability Matrix
+### 4.2 Journey / Event Coverage Matrix
 
-Dùng làm index từ requirement tới implementation và evidence:
+| Journey ID | Journey | Câu hỏi nghiệp vụ | Chuỗi event dự kiến | Kết quả chính | Owner | Status |
+|---|---|---|---|---|---|---|
+| J-… | … | … | … → … | … | … | Draft/Approved |
 
-| Requirement/event | Application state | Data Layer | GTM | Consent | Request/destination | GA4/report field | QA/evidence | Release | Owner/status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[requirement] / [event]` | `[state]` | `[signal]` | `[trigger/tag]` | `[behavior]` | `[request]` | `[field/report]` | `[IDs]` | `[release]` | `[owner/status]` |
+Mỗi dòng đại diện cho một Journey hoặc một yêu cầu. Chỉ thêm event khi có câu hỏi cụ thể cần trả lời.
 
-### 3.6 Key-Event và Custom-Definition Decision Record
+### 4.3 Event Contract
 
-Chỉ dùng khi đề xuất key event hoặc custom definition:
+| Field | Quyết định bắt buộc |
+|---|---|
+| Requirement / Journey ID | Yêu cầu làm căn cứ cho event. |
+| Business question / decision | Event sẽ trả lời điều gì. |
+| Event name / type | Tên chuẩn và loại automatic, Enhanced Measurement, recommended hoặc custom. |
+| Definition | Ý nghĩa bằng ngôn ngữ dễ hiểu. |
+| Authoritative moment / source | State của Application hoặc server chứng minh occurrence. |
+| Valid occurrence / deduplication | Quy tắc count, retry, refresh, cancellation và idempotency. |
+| Data Layer signal | Tên event và đường dẫn payload chính xác. |
+| GTM mapping | Variable, Trigger authoritative và Tag đã duyệt. |
+| Environment / destination | Stream và quy tắc routing. |
+| Required / optional parameters | Danh sách field theo contract. |
+| Consent / privacy | Hành vi được phép và phân loại dữ liệu. |
+| Key-event status | Yes, No hoặc Pending kèm lý do. |
+| Custom-definition status | Required, Not required hoặc Pending kèm lý do. |
+| Owner / reviewer / version | Người chịu trách nhiệm và kiểm soát thay đổi. |
 
-```text
+### 4.4 Parameter Dictionary
+
+| Event | Parameter | Ý nghĩa | Type / scope | Bắt buộc? | Giá trị được phép | Khi thiếu hoặc sai | Nguồn | Privacy / consent | Cardinality / volume | GA4 registration |
+|---|---|---|---|---|---|---|---|---|---|---|
+| … | … | … | … | Yes/No | Danh sách kiểm soát | Bỏ qua, reject hoặc handoff fail | Application/Data Layer | … | Low/Medium/High | Standard/Custom/Not registered |
+
+“GA4 registration” là quyết định trong planning; nó không mô tả cách dựng report.
+
+### 4.5 Traceability Matrix
+
+| Requirement / event | Application state | Data Layer | GTM | Consent | Destination | Owner / status |
+|---|---|---|---|---|---|---|
+| … | … | … | … | … | … | … |
+
+### 4.6 Key-Event / Custom-Definition Decision Record
+
+~~~text
 Decision ID:
-Event/parameter:
-Requirement/journey ID:
-Business question và decision:
-Success condition và expected occurrence:
-Deduplication rule:
-Mark as GA4 key event? [Yes/No/Pending]
-Standard field checked:
-Custom dimension/metric required? [Yes/No]
-Cardinality/quota review:
-Consent/privacy impact:
-Report/export consumers:
-QA/evidence ID:
-Owner, approval, effective date:
-```
+Event hoặc parameter:
+Requirement / Journey ID:
+Business question:
+Điều kiện thành công và occurrence hợp lệ:
+Quy tắc deduplication:
+Key event: Yes / No / Pending
+Đã kiểm tra field standard hoặc recommended:
+Custom definition: Required / Not required / Pending
+Đã xem xét cardinality và quota:
+Ảnh hưởng consent và privacy:
+Owner / approver:
+Ngày hiệu lực và status:
+~~~
 
-Record này quản lý classification, không thay thế collection QA.
+Record này dùng để phân loại và phê duyệt. Kiểm tra runtime thuộc Section 08; thiết kế report hoặc Exploration thuộc Section 09.
 
-### 3.7 Consent và Data Classification Matrix
+### 4.7 Consent / Data Classification
 
-Dùng trước production collection:
+| Event / parameter | Classification | Consent requirement | Hành vi khi bị từ chối | Destination | Owner / status |
+|---|---|---|---|---|---|
+| … | Analytics / Sensitive / Restricted | … | Suppress, giảm dữ liệu hoặc alternative đã duyệt | QA/Production stream | … |
 
-| Event/parameter | Classification | Consent requirement | Denied behavior | Destination | Retention/owner | Evidence/status |
-| --- | --- | --- | --- | --- | --- | --- |
-| `[event/parameter]` | `[internal/sensitive/prohibited]` | `[category]` | `[block/omit/approved Consent Mode behavior]` | `[stream/none]` | `[policy/owner]` | `[link/status]` |
+Chi tiết triển khai consent xem Section 05.
 
-Giữ implementation detail và test case trong [Consent Management](05-consent-answer.md). Không gửi PII, secret, password, payment data, raw form value hoặc free text không kiểm soát đến GA4.
+### 4.8 Schema Lifecycle Register
 
-### 3.8 Schema Lifecycle Register
+| Change ID | Event / parameter | Version hiện tại | Version đề xuất | Loại thay đổi | Consumer bị ảnh hưởng | Hành động migration / handoff | Approval / ngày hiệu lực | Status |
+|---|---|---|---|---|---|---|---|---|
+| … | … | v… | v… | Add/Modify/Deprecate | Application, GTM, GA4, analysis | … | … | Proposed/Approved/Retired |
 
-Dùng khi event meaning, parameter type/scope, allowed value hoặc downstream interpretation thay đổi:
+## 5. Bàn giao triển khai và lưu ý thực tế
 
-| Trường | Giá trị template | Cách sử dụng |
-| --- | --- | --- |
-| Change ID | `[change ID]` | Mã ổn định cho schema change |
-| Event/parameter | `[event.parameter]` | Event hoặc parameter bị ảnh hưởng |
-| Current version | `[v1]` | Version đang được implementation và document |
-| Proposed version | `[v2]` | Version mới sẽ đưa vào sau approval |
-| Change type | `[type/value/meaning]` | Thay đổi type, allowed value, meaning, scope hoặc schema khác |
-| Affected consumers | `[reports/GTM/app]` | Report, export, GTM object, application code hoặc consumer liên quan |
-| Migration/QA action | `[migration và test plan]` | Migration, compatibility và QA cần thực hiện |
-| Approval owner | `[owner]` | Người hoặc team chịu trách nhiệm approval |
-| Effective date | `[date]` | Ngày version mới bắt đầu có hiệu lực |
-| Status | `[status]` | Proposed, approved, migrating, active, deprecated hoặc retired |
+### 5.1 Bàn giao tối thiểu
 
-## 4. Handoff implementation và lưu ý thực chiến
+| Hạng mục plan | Application / Data Layer | GTM object | Destination |
+|---|---|---|---|
+| Event name | Push message hoàn chỉnh đã duyệt | Một Custom Event Trigger authoritative và một GA4 Event Tag | QA hoặc production stream được duyệt |
+| Parameter | Dùng đúng type và value set | Data Layer Variable chỉ map field đã duyệt | Event parameter trong GA4 |
+| Consent | Không lộ dữ liệu restricted khi bị từ chối | Consent check theo Section 05 | Hành vi thu thập được phép |
+| Version | Theo contract đang active | Workspace/change tham chiếu đúng version plan | Cùng semantic version ở handoff |
 
-### Handoff Data Layer và GTM
+### 5.2 Cardinality và data minimization
 
-Implementation handoff phải có mapping chính xác, không chỉ là screenshot thiếu tên:
+Cardinality là số lượng giá trị khác nhau mà một field có thể tạo ra. Free text có cardinality cao thường khó phân tích và làm dữ liệu GA4 nhiễu. Ưu tiên category ngắn, được kiểm soát; bỏ qua giá trị không bắt buộc. Chỉ tạo custom definition khi business có nhu cầu phân tích lặp lại và tập giá trị ổn định.
 
-| Plan field | Application/Data Layer | GTM object | GA4 destination |
-| --- | --- | --- | --- |
-| Event | `[event value]` | Custom Event trigger | Event name |
-| Parameter | `[path và type]` | Data Layer Variable | Event parameter |
-| Consent | `[approved state]` | Consent settings/variables | Approved collection behavior |
-| Destination | `[environment]` | Google tag/stream mapping | QA hoặc production stream |
+### 5.3 Bổ sung cho ecommerce
 
-Link plan với [Debug/QA](08-debug-qa-answer.md) cho test ID/evidence và [Reports and Charts](09-reports-charts-answer.md) cho field readiness. Không duy trì một event contract thứ hai mâu thuẫn trong GTM.
+Với ecommerce, cần định nghĩa business moment, transaction ID authoritative, quy tắc retry và deduplication, value số, currency, schema của item và owner đối soát. Ngữ nghĩa ecommerce nằm trong Event Contract; Data Layer dùng schema đã duyệt ở Section 01.
 
-### Cardinality và data minimization
+### 5.4 Tách riêng planning, QA và reporting
 
-Cardinality là số lượng value khác nhau trong một dimension. Controlled category thường phù hợp cho recurring report; value duy nhất cho user, session, request hoặc occurrence thường không phù hợp. Trước khi collect hoặc register high-cardinality field, hỏi:
+| Tài liệu | Câu hỏi chính | Đầu ra |
+|---|---|---|
+| Measurement Plan (Section 07) | Cần đo gì và ý nghĩa là gì? | Contract và handoff đã duyệt. |
+| Debug/QA (Section 08) | Runtime có tạo đúng event, payload, consent, destination và count không? | Evidence và kết quả pass/fail. |
+| Reports/Charts (Section 09) | Dữ liệu GA4 đã xử lý được dùng thế nào để trả lời câu hỏi? | Report, Exploration hoặc chart specification. |
 
-1. Decision nào được document cần field này?
-2. Có thể rút gọn thành controlled category không?
-3. Standard field, ecommerce field, User-ID mechanism, export hoặc source-system report có phù hợp hơn không?
-4. Daily value, privacy risk, retention và access policy dự kiến là gì?
+Plan có thể ghi trạng thái reportability hoặc custom definition, nhưng không nên chứa quy trình QA hay công thức chart. Tách ba tài liệu giúp test scenario hoặc visualization không trở thành một định nghĩa event thứ hai và mâu thuẫn với contract.
 
-Ưu tiên error category có kiểm soát thay cho raw error text, route group thay cho full URL value và report dimension thay cho operational identifier duy nhất. Nếu raw detail thực sự cần, document destination và governance thay vì biến nó thành GA4 custom dimension thông thường.
+### 5.5 Anti-pattern cần từ chối
 
-### Ecommerce addendum
+| Anti-pattern | Quy tắc thay thế |
+|---|---|
+| Track mọi click hoặc thay đổi DOM | Track business moment đã được duyệt. |
+| Bắn success ngay khi click, trước khi confirm | Chờ state của Application hoặc server chứng minh thành công. |
+| Nhét giá trị vào tên event | Giữ một tên event ổn định và dùng parameter. |
+| Gửi raw form input hoặc PII | Phân loại, tối thiểu hóa và suppress nếu chưa được duyệt riêng. |
+| Đăng ký mọi parameter thành custom definition | Chỉ đăng ký field phục vụ phân tích lặp lại và đã duyệt. |
+| Thu thập trùng automatic, Enhanced Measurement và custom | Chọn một nguồn authoritative và ghi rõ ngoại lệ. |
+| Đổi tên hoặc dùng lại field một cách âm thầm | Version, migration và retire qua lifecycle register. |
 
-Với ecommerce, mở rộng contract thông thường bằng:
+## 6. Bản đồ tham chiếu chéo
 
-| Area | Quyết định bắt buộc |
-| --- | --- |
-| Business moment | Khi product/cart/transaction state trở thành đúng |
-| Transaction identity | Authoritative transaction ID, retry/replay behavior và deduplication owner |
-| Monetary values | Numeric value, ISO currency, tax/shipping treatment và source of truth |
-| Items | Item array đầy đủ, item identity ổn định, price/quantity dạng số và taxonomy được approve |
-| Reporting | Dùng standard ecommerce field trước; custom item definition chỉ cho analysis recurring đã approve |
-| Reconciliation | So sánh với commerce/order system; GA4 không phải accounting ledger |
+| Section | Dùng cho |
+|---|---|
+| 01 — Data Layer Design | Cấu trúc message, payload và ranh giới Application–GTM. |
+| 02 — Variable Management | Đặt tên, scope, tái sử dụng và kiểm tra giá trị của Variable. |
+| 03 — Trigger Management | Một Trigger hẹp và authoritative cho event đã duyệt. |
+| 04 — Tag Management | GA4 Event Tag, configuration, sequencing và destination mapping. |
+| 05 — Consent | Consent state, hành vi khi bị từ chối và consent check. |
+| 06 — Template Governance | Template dùng lại, owner, review và deployment record. |
+| 08 — Debug/QA | Chạy test và thu evidence theo contract này. |
+| 09 — Reports/Charts | Dựng view phân tích từ event và parameter đã xử lý. |
+| 10 — Release Monitoring | Theo dõi production sau deployment được duyệt. |
 
-Section 01 định nghĩa Data Layer payload, Sections 02–04 mapping và gửi, Section 08 test payload/duplicate, Sections 09–10 reconcile và monitor.
+## 7. Journey mẫu: Registration
 
-### Anti-pattern thường gặp
+Ví dụ này chỉ minh họa quyết định trong plan. Dùng Section 08 để kiểm tra implementation và Section 09 để thiết kế view phân tích.
 
-| Anti-pattern | Vì sao sai | Cách làm tốt hơn |
-| --- | --- | --- |
-| Track mọi click không có decision | Tạo noise và maintenance cost | Bắt đầu từ measurable outcome |
-| Fire success khi click | Click không chứng minh business success | Dùng authoritative application/backend state |
-| Encode value vào event name | Chia nhỏ report và schema không ổn định | Một event với controlled parameter |
-| Gửi raw form field hoặc free text | Privacy và data-quality risk | Allowlist field và normalize value |
-| Đăng ký mọi parameter thành custom dimension | Tốn quota và làm report rối | Chỉ đăng ký report field recurring đã approve |
-| Duplicate automatic/enhanced collection trong GTM | Một interaction bị count nhiều lần | Kiểm tra collection có sẵn trước khi thêm tag |
-| Đổi live event name tùy tiện | Làm hỏng report, QA baseline và consumer | Version hóa contract và review impact |
+### 7.1 Project context
 
-## 5. Ví dụ hoàn chỉnh — Registration Journey
+~~~text
+Plan ID: REG-MP-001
+Version: 1.0
+Product: Web registration
+Platform: Client-side web application
+Environments: QA stream trước; production sau khi được duyệt
+Status: Approved for implementation
+~~~
 
-Đây là Journey example duy nhất trong tài liệu. Đây là minh họa non-production; thay sample ID, owner, value, destination và evidence bằng dữ liệu đã được project approve. Mỗi subsection bên dưới tuân theo canonical record tương ứng ở Section 3.
+### 7.2 Journey / Event Coverage
 
-### 5.1 Project Context và Baseline
+| Journey ID | Câu hỏi nghiệp vụ | Chuỗi event dự kiến | Kết quả chính | Owner / status |
+|---|---|---|---|---|
+| J-REG-001 | Phương thức đăng ký nào hoàn tất thành công? | registration_start → registration_error (khi có) → sign_up | sign_up | Product + Analytics / Approved |
 
-| Field | Giá trị ghi nhận |
-| --- | --- |
-| Plan ID/version | `MP-REG-001 / v1.0` |
-| Product/business area | Account registration |
-| GA4 account/property/stream | `[project account] / [project property] / QA và production web stream` |
-| Google tag/Measurement ID | `[project Google tag / Measurement ID]` |
-| GTM account/container | `[project GTM account / container]` |
-| Platform/source | Web client-side qua application Data Layer → GTM → GA4 |
-| Environments | Local, QA/staging, production |
-| Timezone/currency | `[project timezone] / N/A` |
-| Business/analytics/technical owner | Product team / Analytics QA / Frontend và GTM owner |
-| Privacy/consent reviewer | Privacy owner |
-| Effective/next review date | `[YYYY-MM-DD] / [YYYY-MM-DD]` |
-| Status | Proposed — pending QA và approval |
+### 7.3 Tóm tắt Event Contract
 
-### 5.2 Journey và Event Coverage Matrix
+| Event | Type | Business moment authoritative | Occurrence hợp lệ | Parameter bắt buộc |
+|---|---|---|---|---|
+| registration_start | Custom | Application đã nhận method đăng ký và form sẵn sàng | Một lần cho mỗi attempt dự kiến; không lặp do remount | form_id, method |
+| registration_error | Custom | Application phân loại và hiển thị lỗi đăng ký đã được duyệt | Một lần cho mỗi lỗi đang hiển thị; retry có thể là occurrence mới | form_id, method, error_type |
+| sign_up | Recommended | Backend xác nhận tạo account cho lần đăng ký đó | Một lần cho mỗi account được tạo; không lặp do retry hoặc refresh | form_id, method |
 
-| Journey ID | Journey | Business question | Planned event sequence | Primary outcome | Report ID | QA ID | Owner | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `J-REG-001` | Registration | User bỏ cuộc ở bước nào? | `registration_start` → `[registration_error]*` → `sign_up` | `sign_up` | `R-REG-001` | `TC-REG-001` | Product team | Proposed |
+### 7.4 Parameter Dictionary
 
-`registration_error` là nhánh failure tùy chọn và có thể lặp lại. Đây không phải bước bắt buộc trước `sign_up`.
+| Event | Parameter | Type | Giá trị được phép | Khi thiếu hoặc sai | GA4 registration |
+|---|---|---|---|---|---|
+| registration_start | form_id | String | Form ID đã duyệt | Handoff fail; không tự bịa giá trị | Chưa đăng ký nếu chưa cần |
+| registration_start | method | String | email, google, apple | Handoff fail | Custom dimension chỉ khi được duyệt |
+| registration_error | form_id | String | Form ID đã duyệt | Handoff fail | Chưa đăng ký nếu chưa cần |
+| registration_error | method | String | email, google, apple | Handoff fail | Custom dimension chỉ khi được duyệt |
+| registration_error | error_type | String | validation, server_error, category đã duyệt khác | Bỏ qua hoặc reject theo contract | Custom dimension chỉ khi phân tích lặp lại |
+| sign_up | form_id | String | Form ID đã duyệt | Handoff fail | Chưa đăng ký nếu chưa cần |
+| sign_up | method | String | email, google, apple | Handoff fail | Custom dimension chỉ khi được duyệt |
 
-### 5.3 Event Contract
+Không gửi email, phone, password, raw form content, request token hoặc raw account identifier đến GA4.
 
-#### `registration_start`
+### 7.5 Mapping, consent và destination
 
-| Field | Giá trị ghi nhận |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | User bỏ cuộc ở đâu trong registration? / cải thiện funnel từ entry đến completion |
-| Event name/type | `registration_start` / custom |
-| Business definition | User đã chọn registration method và form sẵn sàng để bắt đầu |
-| Authoritative moment/source | Application xác nhận method đã chọn và form ready |
-| Expected occurrence/deduplication | Một lần cho mỗi entry hợp lệ; không duplicate khi remount nếu plan không định nghĩa entry mới |
-| Data Layer signal | `event: registration_start` cùng `form_id` và `method`; payload do application sở hữu |
-| GTM trigger/tag | `CE - Web - registration_start` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production sau approval → production stream |
-| Required/optional parameters | `form_id`, `method` / none |
-| Consent/privacy behavior | Approved analytics consent; khi bị từ chối thì block, omit hoặc dùng Consent Mode behavior đã approve |
-| Key event status | No — chỉ là funnel entry |
-| Reporting/custom-definition status | Event name và users; chỉ đăng ký `method` khi recurring report cần; `form_id` được collect nhưng không reportable |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend và GTM owner / Analytics QA / `v1.0` |
+| Hạng mục plan | Quyết định đã duyệt |
+|---|---|
+| Data Layer | Application push một message đầy đủ cho mỗi event authoritative. |
+| GTM | Một Custom Event Trigger cho mỗi event và một GA4 Event Tag; chỉ map form_id, method và error_type đã duyệt. |
+| Consent | Theo analytics behavior đã duyệt ở Section 05; suppress hoặc giảm dữ liệu khi bị từ chối. |
+| Destination | QA stream trong giai đoạn validation; chỉ chuyển production sau khi được duyệt. |
+| Key event | sign_up: Pending cho đến khi business owner duyệt định nghĩa thành công. |
+| Custom definition | method: Pending; chỉ đăng ký nếu có nhu cầu phân tích lặp lại. |
+| Identity | Không dùng User-ID nếu chưa có identity contract riêng. |
 
-#### `registration_error`
+### 7.6 Registration schema lifecycle
 
-| Field | Giá trị ghi nhận |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | Failure nào trong registration cần xử lý? / tách remediation cho validation và server error |
-| Event name/type | `registration_error` / custom |
-| Business definition | Hiển thị validation error hoặc server error đã approve cho user |
-| Authoritative moment/source | Application phân loại và hiển thị error category đã approve |
-| Expected occurrence/deduplication | Một lần cho mỗi visible error occurrence; không lặp lại cùng display nếu chưa có occurrence mới |
-| Data Layer signal | `event: registration_error` cùng `form_id`, `method` và `error_type`; payload do application sở hữu |
-| GTM trigger/tag | `CE - Web - registration_error` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production sau approval → production stream |
-| Required/optional parameters | `form_id`, `method`, `error_type` / none |
-| Consent/privacy behavior | Approved analytics consent; khi bị từ chối thì block, omit hoặc dùng Consent Mode behavior đã approve |
-| Key event status | No — diagnostic journey event |
-| Reporting/custom-definition status | `error_type` được collect; chỉ đăng ký event-scoped custom dimension khi recurring error analysis được approve |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend và GTM owner / Analytics QA / `v1.0` |
-
-#### `sign_up`
-
-| Field | Giá trị ghi nhận |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | Method nào hoàn tất registration? / đo completion đã được confirm và phân loại thành key event |
-| Event name/type | `sign_up` / recommended |
-| Business definition | Backend xác nhận account creation |
-| Authoritative moment/source | Application nhận account-creation result thành công |
-| Expected occurrence/deduplication | Một lần cho mỗi confirmed account; không duplicate do retry hoặc refresh; application/backend sở hữu deduplication |
-| Data Layer signal | `event: sign_up` cùng `form_id` và `method`; payload do application sở hữu |
-| GTM trigger/tag | `CE - Web - sign_up` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production sau approval → production stream |
-| Required/optional parameters | `method`, `form_id` / none |
-| Consent/privacy behavior | Approved analytics consent; khi bị từ chối thì block, omit hoặc dùng Consent Mode behavior đã approve |
-| Key event status | Pending — chỉ chuyển thành Yes sau collection QA và Product approval |
-| Reporting/custom-definition status | Dùng recommended `sign_up`; đăng ký `method` thành event-scoped custom dimension sau QA nếu recurring report cần; `form_id` được collect nhưng không reportable |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend và GTM owner / Analytics QA / `v1.0` |
-
-### 5.4 Parameter Dictionary
-
-| Event | Parameter | Meaning | Type | Scope | Required? | Allowed values | Missing/invalid behavior | Source | Privacy/consent | Cardinality/volume | Report field |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `registration_start` | `form_id` | Stable form identifier | string | Event | Yes | Approved form IDs | Fail QA; không gửi event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `registration_start` | `method` | Registration method đã chọn | string | Event | Yes | `email`, `google`, `apple` | Fail QA; không gửi event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension nếu recurring report được approve |
-| `registration_error` | `form_id` | Form hiển thị error | string | Event | Yes | Approved form IDs | Fail QA; không gửi event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `registration_error` | `method` | Registration method tại thời điểm failure | string | Event | Yes | `email`, `google`, `apple` | Fail QA; không gửi event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension nếu recurring report được approve |
-| `registration_error` | `error_type` | Error category có kiểm soát | string | Event | Yes | `validation`, `server_error` | Fail QA; không gửi event | Application error classification | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension chỉ khi recurring error analysis được approve |
-| `sign_up` | `form_id` | Form dùng cho account creation đã confirm | string | Event | Yes | Approved form IDs | Fail QA; không gửi event | Application/backend registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `sign_up` | `method` | Registration method dùng cho account đã confirm | string | Event | Yes | `email`, `google`, `apple` | Fail QA; không gửi event | Application/backend registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension sau QA nếu recurring report được approve |
-
-Không collect email, phone, password, raw account ID, raw error text hoặc free-form form value trong contract này.
-
-### 5.5 Data Layer, GTM và destination mapping
-
-Handoff cụ thể này tuân theo các dòng chuẩn `Event` / `Parameter` / `Consent` / `Destination`. Application sở hữu business truth; GTM route signal đã approve và chỉ map parameter nằm trong allowlist.
-
-| Plan field | Application/Data Layer | GTM object | GA4 destination |
-| --- | --- | --- | --- |
-| Event | `event: registration_start`, `event: registration_error` hoặc `event: sign_up` | Custom Event trigger tương ứng → GA4 Event tag | Event name trên QA hoặc production web stream |
-| Parameter | `form_id`, `method` và `error_type` từ application payload; type và allowlist rõ ràng | Data Layer Variable map theo tên; không forward toàn bộ object | Event parameters |
-| Consent | Analytics-consent state đã approve được expose cho tag configuration | Consent settings và trigger/tag có xử lý consent | Approved collection behavior hoặc denied behavior |
-| Destination | Local/QA staging dùng QA stream; production dùng production stream sau approval | Google tag và mapping stream theo environment | QA hoặc production web stream |
-
-#### Per-event routing view (derived)
-
-| Event | Data Layer payload | GTM object | Allowed parameters |
-| --- | --- | --- | --- |
-| `registration_start` | `event` + `form_id` + `method` | `CE - Web - registration_start` → GA4 Event tag | `form_id`, `method` |
-| `registration_error` | `event` + `form_id` + `method` + `error_type` | `CE - Web - registration_error` → GA4 Event tag | `form_id`, `method`, `error_type` |
-| `sign_up` | `event` + `form_id` + `method` | `CE - Web - sign_up` → GA4 Event tag | `form_id`, `method` |
-
-### 5.6 Consent và Data Classification Matrix
-
-| Event/parameter | Classification | Consent requirement | Denied behavior | Destination | Retention/owner | Evidence/status |
-| --- | --- | --- | --- | --- | --- | --- |
-| `registration_start.form_id`, `registration_start.method` | Internal, controlled, non-PII | Approved analytics consent | Block, omit hoặc dùng Consent Mode behavior đã approve | QA stream; production stream sau approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| `registration_error.form_id`, `registration_error.method`, `registration_error.error_type` | Internal, controlled, non-PII | Approved analytics consent | Block, omit hoặc dùng Consent Mode behavior đã approve | QA stream; production stream sau approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| `sign_up.form_id`, `sign_up.method` | Internal, controlled, non-PII | Approved analytics consent | Block, omit hoặc dùng Consent Mode behavior đã approve | QA stream; production stream sau approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| Any event / email, phone, password, raw error text, raw account ID | Prohibited | Not applicable | Không collect hoặc forward | None | Không retention / Privacy owner | `PROHIBITED / enforced` |
-| User-ID sau authenticated sign-in | Separate identity contract | Separate approved conditions | Clear hoặc omit theo identity contract | Chỉ approved identity configuration | Identity retention policy / Identity owner | `N/A / separate review` |
-
-Giữ implementation detail và test case trong [Consent Management](05-consent-answer.md). Không gửi PII, secret, password, payment data, raw form value hoặc free text không kiểm soát đến GA4.
-
-### 5.7 Key-Event và Custom-Definition Decision Record
-
-```text
-Decision ID: DEC-REG-001
-Event/parameter: sign_up; sign_up.method
-Requirement/journey ID: REQ-REG-001 / J-REG-001
-Business question và decision: Method nào hoàn tất registration? Đánh dấu account creation đã confirm là key event sau khi validation.
-Success condition và expected occurrence: Backend xác nhận account creation; một occurrence cho mỗi confirmed account.
-Deduplication rule: Không event khi validation fail, server failure, retry trước success hoặc refresh; một event cho mỗi confirmed account.
-Mark as GA4 key event? [Pending → Yes sau QA và Product approval]
-Standard field checked: Recommended sign_up event; đã kiểm tra standard event count và user metrics.
-Custom dimension/metric required? [Yes — event-scoped custom dimension cho method sau QA; không có custom metric]
-Cardinality/quota review: Method có controlled value set với cardinality thấp; form_id chỉ collect để traceability, không đăng ký thành recurring custom dimension.
-Consent/privacy impact: method và form_id là controlled non-PII, cần approved analytics consent.
-Report/export consumers: R-REG-001 / Product Analytics; R-REG-002 / Analytics QA.
-QA/evidence ID: TC-REG-001 / [evidence link]
-Owner, approval, effective date: Product owner + Analytics QA + Privacy owner / pending / [YYYY-MM-DD]
-```
-
-`registration_error.error_type` chưa có decision record; chỉ mở record khi recurring error analysis được approve.
-
-### 5.8 Derived reporting requirements
-
-Đây là derived reporting view. Event Contract và Parameter Dictionary vẫn là source of truth.
-
-| Report ID | Question | Population/grain | Dimensions | Metrics/formula | Surface | Owner |
-| --- | --- | --- | --- | --- | --- | --- |
-| `R-REG-001` | Method nào có validated completion rate thấp nhất? | User đã chọn method và bắt đầu registration | `method`, device category, date | User có `sign_up` / user có `registration_start` | Detail report + funnel Exploration | Product Analytics |
-| `R-REG-002` | Account creation đã confirm có gửi một lần với value đúng không? | Controlled test event occurrences | Event name, method, form ID, error type | Event count và duplicate review | Exploration + processed event report | Analytics QA |
-
-Numerator và denominator của completion rate phải dùng cùng date range, population, identity context, journey definition và cùng source `method`. Event count không giống completed-user count.
-
-### 5.9 Traceability Matrix và approval
-
-| Requirement/event | Application state | Data Layer | GTM | Consent | Request/destination | GA4/report field | QA/evidence | Release | Owner/status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `REQ-REG-001 / registration_start` | Selected method và form-ready state | `event: registration_start` + `form_id` + `method` | `CE - Web - registration_start` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production sau approval | Event name, users, `method`, funnel entry | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-| `REQ-REG-001 / registration_error` | Validation/server error đã approve và đang hiển thị | `event: registration_error` + `form_id` + `method` + `error_type` | `CE - Web - registration_error` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production sau approval | Event name, `error_type` | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-| `REQ-REG-001 / sign_up` | Backend-confirmed account creation | `event: sign_up` + `form_id` + `method` | `CE - Web - sign_up` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production sau approval | Event name, `method`, pending key event | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-
-Approval yêu cầu business meaning, technical mapping, privacy/consent behavior, QA evidence, report readiness và release reference rõ ràng. Production activation do Section 10 xử lý.
-
-### 5.10 Schema Lifecycle Register
-
-Đây là plan mới ở `v1.0`, chưa có schema migration nào được đề xuất. Giữ entry này để thể hiện rõ trạng thái lifecycle:
-
-| Trường | Giá trị ghi nhận | Ghi chú |
-| --- | --- | --- |
-| Change ID | `N/A-REG-001` | Chưa đề xuất schema migration cho version này |
-| Event/parameter | Tất cả Registration event và parameter | Mở lại record khi có event hoặc parameter bị ảnh hưởng |
-| Current version | `v1.0` | Version đang được document |
-| Proposed version | — | Chưa đề xuất version mới |
-| Change type | No change | Không thay đổi meaning, type, scope hoặc allowed value |
-| Affected consumers | — | Chưa xác định consumer cần migration |
-| Migration/QA action | Mở lại register trước khi đổi event meaning, parameter type/scope hoặc allowed value | Cập nhật contract, mapping, QA case và report cùng lúc |
-| Approval owner | Product + Analytics + Privacy owners | Bắt buộc cho mọi schema change sau này |
-| Effective date | — | Không áp dụng khi chưa có change |
-| Status | Not applicable | Register vẫn sẵn sàng cho schema change tiếp theo |
+~~~text
+Change ID: REG-CHG-001
+Event/parameter: sign_up.method
+Current version: v1
+Proposed version: v1
+Change type: Initial approval
+Affected consumers: Application, Data Layer, GTM, GA4, analysis
+Migration action: None; triển khai đúng value set đã duyệt
+Approval owner: Product + Analytics
+Effective date: Sau khi QA được duyệt
+Status: Approved
+~~~
 
 ## Tài liệu tham khảo chính thức
 
-- [About events](https://support.google.com/analytics/answer/9322688)
-- [Enhanced measurement events](https://support.google.com/analytics/answer/9216061?hl=en)
-- [Recommended events](https://support.google.com/analytics/answer/9267735)
-- [Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce)
-- [Custom events](https://support.google.com/analytics/answer/12229021?hl=en)
-- [Event naming rules](https://support.google.com/analytics/answer/13316687)
-- [Event parameters](https://support.google.com/analytics/answer/13675006)
-- [Event collection limits](https://support.google.com/analytics/answer/9267744)
-- [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)
-- [Cardinality](https://support.google.com/analytics/answer/12226705?hl=en)
-- [About key events](https://support.google.com/analytics/answer/9267568)
-- [Send User-IDs](https://developers.google.com/analytics/devguides/collection/ga4/user-id)
-- [GTM Custom Event trigger](https://support.google.com/tagmanager/answer/7679219)
-- [Avoid sending personally identifiable information](https://support.google.com/analytics/answer/6366371)
+- Google Analytics — About events: https://support.google.com/analytics/answer/9322688
+- Enhanced Measurement: https://support.google.com/analytics/answer/9216061
+- Recommended events: https://developers.google.com/analytics/devguides/collection/ga4/reference/events
+- Custom events: https://support.google.com/analytics/answer/12229021
+- Event naming rules: https://support.google.com/analytics/answer/13316687
+- Event parameters: https://support.google.com/analytics/answer/13594907
+- Event collection limits: https://support.google.com/analytics/answer/9267744
+- Custom dimensions and metrics: https://support.google.com/analytics/answer/14240153
+- User-ID: https://support.google.com/analytics/answer/9213390
+- GTM Custom Event trigger: https://support.google.com/tagmanager/answer/7679219
+- Tránh gửi thông tin nhận dạng cá nhân: https://support.google.com/analytics/answer/6366371

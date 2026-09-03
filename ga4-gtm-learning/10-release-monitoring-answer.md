@@ -1,478 +1,435 @@
 # 10 — GTM Release Management and GA4 Monitoring
 
-## Purpose
+## 1. Overview
 
-Tracking changes are production changes. A tag can fire correctly in Preview and still send to the wrong property, duplicate an existing event, violate consent/privacy rules, or change reporting after publication. Release management connects the approved measurement contract, implementation, QA evidence, approval, publication, rollback, smoke testing, and monitoring.
+### 1.1 Objective
 
-Use this model:
+Provide a practical, traceable process for moving a material GTM/GA4 change from an approved requirement to a safe release, a monitored observation window, and a documented closure or incident response.
+
+Tracking changes are production changes. Preview can pass while the published change sends to the wrong property, duplicates an event, violates consent/privacy rules, or changes reporting semantics.
+
+### 1.2 Scope
+
+- Change classification, release ownership, workspace/environment/version control, approval, publication, smoke testing, monitoring, containment, and rollback.
+- Material changes to GTM configuration, event routing, consent/privacy behavior, destinations, key events, custom definitions, reports, or data quality.
+- Release and Monitoring Records linked to Sections 01–09.
+- Practical observation of event volume, duplicates/missingness, parameter quality, destination, consent, processed reports, and data quality.
+- Risk/status classification, monitoring cadence, escalation, and evidence access/retention for the team operating the release.
+
+### 1.3 Boundaries with the other sections
+
+| Source of truth | Owns | Section 10 uses it for |
+|---|---|---|
+| Section 07 — Measurement Plan | Event meaning, schema, occurrence, consent/privacy and destination decisions | Requirement readiness and release impact |
+| Sections 01–06 | Data Layer, Variables, Triggers, Tags, Consent and Template configuration | Implementation scope and affected objects |
+| Section 08 — Debug/QA | Runtime test matrix, layer evidence and defect status | QA gate and smoke-test evidence |
+| Section 09 — Reports/Charts | Field readiness, report configuration and interpretation | Report impact and processed-data validation |
+| Section 10 — Release Monitoring | Release decision, observation, incident, rollback and closure | End-to-end traceability |
+
+Section 10 does not redefine event contracts, repeat QA procedures, report formulas, or template internals. It links those records and decides whether the change can be released and closed.
+
+### 1.4 Release lifecycle
 
 ```text
-Small scoped change
-  → workspace
-  → Preview/QA
-  → evidence and review
-  → version
+Classify change
+  → prepare Release Record
+  → requirement and implementation readiness
+  → Section 08 QA
+  → named version and approval
   → publish to intended environment
   → production smoke test
-  → monitoring window
-  → close, remediate, or rollback
+  → observation and processed-data check
+  → Go, Hold, Accept exception, Close, or Incident
 ```
 
-GTM version rollback is a recovery mechanism for container configuration. It does not delete or repair events already processed by GA4, and it does not automatically reverse GA4 property settings or permanent data filters.
+GTM rollback restores container configuration for future behavior. It does not delete or repair events already processed by GA4, reverse a property setting, or undo a permanent data filter.
 
-## How to Use This Process
+## 2. Release preparation
 
-Use this process for any material change that may affect tracking behavior, consent/privacy, routing, key events, destinations, schemas, reports, or data quality. Create the release record before implementation and update it as evidence becomes available.
+### 2.1 When to create a release record
 
-### Minimal release packet
+Create a Release Record before implementation for a material change that can affect tracking behavior, consent/privacy, routing, destination, key events, schemas, reports, or data quality. For an unaffected layer or downstream asset, record `N/A` and the reason.
 
-Every material change should have:
+| Change | Release treatment |
+|---|---|
+| No implementation or configuration change | Record the decision; use the applicable planning or operations workflow. |
+| Report-only change | Use Section 09 requirement/configuration/interpretation records; no GTM rollback is needed. |
+| GTM Variable, Trigger, Tag, consent, routing, or template change | Use a focused workspace, Section 08 QA, a named version, and a smoke test. |
+| Event/schema/key-event or GA4 property change | Link the Section 07 decision, affected reports, QA evidence, and processed-data follow-up. |
+| Production incident or urgent containment | Open or update the Release Record, document the last known-good state, and follow Section 10 incident steps. |
 
-- a release record with an owner, scope, environment, change type, and linked IDs;
-- the relevant Measurement Plan, implementation, Debug/QA, report, and monitoring records;
-- a version/publish record and production smoke-test evidence;
-- an observation result, final outcome, or incident record.
+Use this risk level to scale review and monitoring. The team may refine the examples after the first project:
 
-Do not create every template for every change. If a layer or downstream asset is unaffected, record `N/A` and the reason. A report-only change normally uses Section 09 configuration/review records and does not require a GTM version or GTM rollback.
+| Risk level | Typical change | Minimum treatment |
+|---|---|---|
+| Low | Report layout, naming, or documentation with no collection impact | Owner review and the applicable Section 09 record. |
+| Medium | Variable, Trigger, Tag, routing, or non-breaking parameter change | Section 08 QA, named version, approval, smoke test, and short observation window. |
+| High | Event/schema, consent/privacy, destination, key event, GA4 property, or irreversible filter change | Cross-functional approval, full QA, production-safe smoke test, defined escalation, and processed-data validation. |
 
-### Normal change flow
+### 2.2 Minimal release packet
 
-1. **Classify the change.** Record the business purpose, affected journey, change type, owner, environment, and expected downstream impact.
-2. **Check Gate 0.** Confirm the approved [Measurement Plan](07-measurement-plan-answer.md), event contract, schema/lifecycle decision, consent/privacy decision, and reporting requirement.
-3. **Implement in a focused workspace.** Complete Gate 1 and identify every affected variable, trigger, tag, template, destination, report, key event, and consumer.
-4. **Run Debug/QA.** Complete Gate 2 using the [Debug/QA test matrix](08-debug-qa-answer.md). Preserve the first failing layer, evidence, defect status, and retest result.
-5. **Prepare the release.** Resolve workspace conflicts, save a named version, attach QA/report/monitoring records, and complete Gate 3 approval.
-6. **Publish and smoke-test.** Publish only to the intended environment, then run the smallest approved production smoke test.
-7. **Observe and validate.** Check immediate signals, compare with the baseline, and validate processed reports or Explorations after the expected processing delay.
-8. **Close or respond.** Complete Gate 4 and record the outcome. If the change is unsafe or materially wrong, contain or roll back, open an incident, and record the affected period.
+Every material release should link:
 
-### Handoff map
+- Release Record with owner, scope, environment, change type, and affected journey;
+- approved Measurement Plan/schema decision and implementation references;
+- Section 08 QA result and evidence;
+- Section 09 report/configuration impact when reporting is affected;
+- named GTM version, publisher, target environment, and rollback/mitigation path;
+- Monitoring Record, smoke-test result, and final outcome or incident.
 
-| Stage | Primary source/owner | Evidence handed to the next stage |
-| --- | --- | --- |
-| Requirement | Measurement Plan / Product and Analytics | Plan, event contract, schema/lifecycle decision, consent/privacy decision |
-| Implementation | Sections 01–06 / Developer and GTM implementer | Application/Data Layer change, workspace diff, affected consumers, expected request count |
-| QA | Debug/QA / QA reviewer | Test matrix, layer evidence, defect/retest status, release recommendation |
-| Reporting | Reports and Charts / Analytics owner | Field readiness, report configuration, interpretation or `N/A` impact note |
-| Release | Section 10 / Publisher or approver | Release record, named version, target environment, approval, rollback path |
-| Monitoring | Section 10 / Monitoring owner | Baseline, thresholds, observation result, incident or closure decision |
-
-### Exception paths
-
-- **No contract or implementation change:** do not force a release; record the reason and use the applicable report or operations workflow.
-- **QA failure before publish:** hold the release, preserve evidence, fix the first failing layer, and rerun the same test case.
-- **Production failure:** contain the smallest safe surface first; then decide whether to fix forward or roll back. Do not wait for processed reports when privacy, routing, or duplicate key-event risk is obvious.
-- **Report-only change:** use the Section 09 report requirements, configuration, QA, and interpretation records. Do not use a GTM rollback as the recovery mechanism.
-
-## Operating Principles
-
-- Keep changes small, related, and independently testable.
-- Separate development/QA from production destinations.
-- Require an explicit measurement-plan reference for every material event/tag change.
-- Keep one traceable chain from the Measurement Plan and schema version to GTM objects, QA evidence, report/configuration IDs, release version, and monitoring record.
-- Use Preview and actual network evidence, not only “Tag Fired”.
-- Publish a named version with a useful description and owner.
-- Make the release decision reversible where possible and explicit where not.
-- Define baseline metrics and an observation window before publishing.
-- Treat consent, privacy, routing, duplication, and key-event integrity as release gates.
-- Record the affected period even when a rollback succeeds.
-- Validate processed reporting data after its expected delay; Realtime and DebugView are diagnostic evidence, not a replacement for reporting validation.
-- Do not make data filters or deletion decisions casually; they can be irreversible or prospective only.
-
-## Roles and Responsibilities
-
-| Role                      | Responsibility                                                            |
-| ------------------------- | ------------------------------------------------------------------------- |
-| Requester/product owner   | Defines business reason and success criterion                             |
-| Developer                 | Implements the application/Data Layer contract and provides build context |
-| GTM implementer           | Configures tags, triggers, variables, consent, routing, and version       |
-| Analytics owner           | Reviews event meaning, destinations, reports, key events, and baselines   |
-| QA reviewer               | Executes test matrix and validates evidence                               |
-| Privacy/security reviewer | Reviews PII, consent, access, and destination risk where applicable       |
-| Publisher/approver        | Confirms gates, publishes, and owns rollback decision                     |
-| Incident owner            | Coordinates impact assessment, mitigation, communication, and follow-up   |
-
-One person may hold several roles in a small team, but the release record should still name each responsibility.
-
-## Change Traceability
-
-For every material change, keep one chain of references. If a layer is not affected, record `N/A` rather than leaving the impact unknown:
-
-```text
-Requirement / Measurement Plan
-  → schema or lifecycle change
-  → Data Layer and GTM implementation
-  → consent/privacy decision
-  → Debug/QA evidence
-  → GA4 report, custom definition, or Exploration impact
-  → GTM release version
-  → monitoring record and affected-period assessment
-```
-
-The [Measurement Plan](07-measurement-plan-answer.md) remains the source of truth for event meaning and schema. [Debug/QA](08-debug-qa-answer.md) remains the source of truth for test evidence and defect status. [Reports and Charts](09-reports-charts-answer.md) remains the source of truth for report configuration, field readiness, and interpretation.
-
-## GTM Workspaces, Environments, and Versions
-
-### Workspaces
-
-Use a workspace for a related set of changes that will be tested and versioned together. Keep unrelated initiatives separate so the reviewer can understand the diff and a rollback does not undo unrelated work.
-
-Good workspace boundaries:
-
-- one measurement journey and its required variables/triggers/tags;
-- one consent or routing change with its supporting configuration;
-- one narrowly scoped vendor/template update;
-- one controlled bug fix.
-
-Avoid a workspace that contains unrelated tag cleanup, a new ecommerce implementation, a consent change, and a production hotfix. That is difficult to test and unsafe to roll back.
-
-Google’s [Workspaces guidance](https://support.google.com/tagmanager/answer/7059647) describes workspaces as sets of changes that become a version and recommends keeping changes small, related, and clearly named.
-
-### Environments
-
-Use explicit Dev/QA/Staging/Live environments when the organization’s website deployment supports them. Each environment must have:
-
-- a documented URL/hostname;
-- the correct container snippet or preview method;
-- an approved GA4 destination/Measurement ID;
-- an environment-safe routing rule;
-- access and data-handling expectations;
-- a test account/data policy.
-
-Unknown hostnames must not silently fall back to production. A QA environment sending to production is a release-blocking defect.
-
-See [GTM environments](https://support.google.com/tagmanager/answer/6311518).
-
-### Versions and approvals
-
-Before publishing:
-
-1. Review the complete workspace change list.
-2. Run Preview and the required QA matrix.
-3. Confirm actual network destinations and payloads.
-4. Record a version name, description, owner, ticket, and release window.
-5. Obtain the required approvals.
-6. Publish only to the intended environment.
-7. Save the published version and publish history as evidence.
-
-GTM versions are snapshots and can be used to set a previous version as latest for recovery. Native approval requests are a Tag Manager 360 capability; for standard accounts, use a documented peer-approval gate with the same evidence and separation of duties. See [Publishing, versions, and approvals](https://support.google.com/tagmanager/answer/6107163).
-
-## Release Gates
-
-### Gate 0 — Requirement readiness
-
-- [ ] Business question and decision are documented.
-- [ ] Measurement Plan ID/version, event contract, schema version, and any schema/lifecycle change ID are recorded.
-- [ ] Data Layer source and authoritative business moment are known.
-- [ ] Population/grain or other reporting requirement is recorded when reporting is affected.
-- [ ] Privacy, consent, destination, key-event, and custom-definition decisions are complete.
-- [ ] A rollback/mitigation approach exists.
-
-### Gate 1 — Implementation readiness
-
-- [ ] Naming, variables, triggers, tags, templates, folders, and descriptions follow standards.
-- [ ] Environment routing is explicit and fails safely.
-- [ ] Expected request count is documented.
-- [ ] Enhanced measurement and legacy paths were checked for overlap.
-- [ ] Custom definitions and report requirements are identified.
-- [ ] Shared variables, triggers, tags, templates, and downstream consumers affected by the change are identified.
-- [ ] Template source, sandbox permissions, owner, and update impact are reviewed when a template changes.
-- [ ] Environment and destination routing fails safely for unknown or unsupported contexts.
-
-### Gate 2 — QA readiness
-
-- [ ] Positive, negative, duplicate, boundary, SPA/navigation, consent, privacy, and routing tests pass.
-- [ ] Data Layer, GTM, network, DebugView, and report evidence is captured where applicable.
-- [ ] Processed report validation is scheduled when it cannot yet be available in the release window.
-- [ ] Denied/granted consent behavior matches the approved design; a denied state is not assumed to mean zero network requests.
-- [ ] All defects are fixed, accepted with an owner/date, or block release according to severity.
-- [ ] Test property/stream and browser/device are recorded.
-
-### Gate 3 — Publish readiness
-
-- [ ] Workspace contains only intended changes.
-- [ ] Workspace is current; conflicts or out-of-date changes are resolved.
-- [ ] Version name and description explain the change.
-- [ ] Correct environment and publisher are confirmed.
-- [ ] Release window and observation period are agreed.
-- [ ] Rollback version and incident contact are available.
-- [ ] Linked QA, report, and monitoring records are attached.
-
-### Gate 4 — Post-publish readiness
-
-- [ ] Production smoke test passes with safe data.
-- [ ] Correct container version and destination are verified.
-- [ ] No unexpected duplicate/missing requests are observed.
-- [ ] Realtime/DebugView checks are complete.
-- [ ] Processed reports are scheduled for later validation.
-- [ ] Monitoring owner accepts the result or opens an incident.
-
-## Release Record Template
+### 2.3 Release Record
 
 ```text
 Release ID:
-Change title:
-Business purpose:
+Project, change, or incident ID:
+Status: Draft / Review / Approved / In QA / Published / Monitoring / Pending / Closed / Blocked
+Risk level: Low / Medium / High
+Risk rationale:
+Change title and business purpose:
 Change type: New / fix / schema / consent / routing / template / report impact
-Measurement Plan ID/version:
-Requirement/event IDs:
-Schema/lifecycle change ID:
-Traceability ID:
+Measurement Plan and requirement IDs:
+Schema/lifecycle decision ID:
 Affected journey and downstream consumers:
-GTM account/container:
-Workspace:
-Version:
+GTM account/container and workspace:
 Source/build/application version:
-Target environment:
-GA4 property/stream/Measurement ID:
-Consent/privacy impact:
-Tags/triggers/variables/templates changed:
-Expected new/changed events:
-Expected request count:
-QA evidence:
-Report/custom-definition/configuration IDs:
-Monitoring specification/record ID:
-Known limitations:
-Approvers:
-Publisher:
-Release date/timezone:
-Observation window:
-Rollback version/mitigation:
-Monitoring owner:
-Final outcome:
-Affected period if incident:
+Target environment and GA4 property/stream:
+Changed GTM objects or GA4 settings:
+Expected events and request count:
+Consent/privacy and destination impact:
+Production smoke-test method and approval:
+Section 08 QA evidence:
+Section 09 report/configuration IDs:
+Monitoring ID:
+Version, approvers, publisher and release window:
+Rollback version or mitigation:
+Observation window and monitoring owner:
+Evidence location, access restriction, and retention period:
+Final outcome and affected period if incident:
 ```
 
-## Production Smoke Test
+### 2.4 Roles and ownership
 
-Run the smallest safe test that exercises the changed path:
+| Role | Release responsibility |
+|---|---|
+| Requester/product owner | Business purpose and success criterion. |
+| Developer | Application/Data Layer change and build context. |
+| GTM implementer | Variables, Triggers, Tags, consent, routing and workspace version. |
+| Analytics owner | Event/report impact, field readiness, baseline and interpretation. |
+| QA reviewer | Section 08 execution and evidence review. |
+| Privacy/security reviewer | PII, consent, access and destination risk when applicable. |
+| Publisher/approver | Gate decision, publication and rollback approval. |
+| Monitoring/incident owner | Observation, escalation, impact assessment and follow-up. |
 
-1. Confirm the production hostname and published container version.
-2. Confirm the approved test identity/data and consent state.
-3. Perform one controlled business action.
-4. Confirm the application outcome and expected business moment.
-5. Check the Data Layer event count and payload.
-6. Check GTM/Tag Assistant where the session permits it.
-7. Inspect the network request, payload, destination, and request count.
-8. Check Realtime/DebugView as appropriate.
-9. Stop if PII, wrong destination, duplicate key event, or severe error appears.
-10. Record evidence, timestamp, browser/device, consent state, result, and next check.
+One person may hold several roles, but the Release Record still names each responsibility.
 
-Do not create production key events or Google Ads conversions solely to prove a release if the business or privacy owner has not approved a safe test method.
+### 2.5 Traceability
 
-## Monitoring Specification
-
-Monitoring Specification is the operating plan for watching a release after it is published. It answers: **what to monitor, how to measure it, when to check it, who owns the check, and what action to take when the result is abnormal**.
-
-It is not a release gate by itself. The gates use it as evidence:
+Keep one reference chain. If a layer is not affected, record `N/A` and why:
 
 ```text
-Monitoring Specification = the plan for observing the change
-Release Gate             = the decision point that uses the plan and evidence
+Measurement Plan/schema decision
+  → implementation and affected GTM objects
+  → Section 08 QA evidence
+  → Section 09 report/configuration impact
+  → named GTM version and target environment
+  → Monitoring Record and affected-period assessment
 ```
 
-Do not create every field for every minor change. Create a complete specification for material changes that can affect event delivery, key events, consent/privacy, routing, ecommerce, reporting, or a critical user journey. For an unaffected layer, write `N/A` and the reason.
+## 3. Release implementation
 
-### How to use the specification
+### 3.1 Release gates
 
-1. **Before implementation:** identify the changed event, report, destination, business outcome, downstream consumer, and source of truth.
-2. **Before publish:** choose the signals, define the population/grain, record the baseline and thresholds, assign the monitoring owner, and set the observation window.
-3. **In the immediate release window:** check destination, request count, consent, duplicate/missing behavior, and the changed journey.
-4. **After normal processing:** validate the processed Report or Exploration, including population, grain, scope, filters, Data quality state, and any `(other)`/thresholding/sampling indicators.
-5. **At closure:** record the result in the release record. Choose `Close`, `Incident`, `Contain`, `Rollback`, or `Accept exception`.
+| Gate | Minimum evidence before proceeding |
+|---|---|
+| Gate 0 — Requirement readiness | Approved Measurement Plan/schema decision, business outcome, affected reports, consent/privacy/destination decisions, and rollback or mitigation approach. |
+| Gate 1 — Implementation readiness | Focused workspace, safe environment routing, naming standards, expected count, overlap check, affected consumers, and template review when applicable. |
+| Gate 2 — QA readiness | Section 08 positive/negative/duplicate/consent/privacy/routing results, first-failing-layer status, evidence links, and processed-data follow-up when needed. |
+| Gate 3 — Publish readiness | Current workspace, intended environment, named version, approvals, release/observation window, rollback path, and linked records. |
+| Gate 4 — Post-publish readiness | Smoke test, version/destination check, immediate signals, scheduled processed-data validation, and Monitoring Record outcome or incident. |
 
-### Monitoring record template
+Do not repeat the Section 08 test matrix here. Link its scenario and evidence IDs from the Release Record.
 
-Use one record per material release or monitored asset. The `Monitoring ID` is linked from the Release Record.
+### 3.2 Workspace and environment rules
+
+- Keep one related, independently testable change set per workspace.
+- Keep unrelated cleanup, ecommerce work, consent changes, and hotfixes separate.
+- Record the URL/hostname, container snippet or preview method, GA4 destination, routing rule, access, and test-data policy for each environment.
+- Unknown hostnames must fail safely; a QA environment sending to production is release-blocking.
+- Identify enhanced-measurement or legacy paths that could overlap with the changed event.
+
+See [GTM Workspaces](https://support.google.com/tagmanager/answer/7059647) and [GTM Environments](https://support.google.com/tagmanager/answer/6311518).
+
+### 3.3 Version, approval, and publication
+
+Before publishing:
+
+1. Review the complete workspace diff and resolve conflicts.
+2. Run Preview and the approved Section 08 QA matrix.
+3. Verify actual Network destination and payload where applicable.
+4. Save a named version with description, owner, ticket, and release window.
+5. Obtain the documented approval and confirm publisher/target environment.
+6. Publish only to the intended environment and retain publish history as evidence.
+
+GTM versions are recoverable snapshots. If native approval requests are unavailable, use a documented peer-approval gate with the same evidence and separation of duties. See [Publishing, versions, and approvals](https://support.google.com/tagmanager/answer/6107163).
+
+### 3.4 Production smoke test
+
+Run the smallest safe test that exercises the changed path. Use a pre-approved safe method (for example, a QA route, synthetic/test account, or allowlisted test identity) and do not create real customer data.
+
+1. Confirm hostname, published container version, GA4 property/stream, and consent state.
+2. Use the approved test identity/data and perform one controlled business action.
+3. Confirm the application outcome and expected business moment.
+4. Check the Data Layer/GTM evaluation where available and inspect the Network request, payload, destination, and count.
+5. Check Realtime/DebugView when applicable; these are recent/diagnostic signals, not processed-report proof.
+6. Stop and escalate for PII, wrong destination, duplicate key event, or severe error.
+7. Record timestamp, browser/device, consent, result, evidence, and next check.
+
+Production smoke tests must not create key events or conversions solely for validation without an approved safe test method.
+
+## 4. Monitoring implementation
+
+### 4.1 Monitoring Record
+
+Use one Monitoring Record for each material release or monitored asset. It defines what is watched, how it is measured, when it is checked, who owns the check, and what action follows an abnormal result.
 
 ```text
 Monitoring ID:
 Release ID:
+Status: Draft / Review / Monitoring / Pending / Closed / Blocked
+Risk level: Low / Medium / High
 Event/report/journey being monitored:
 Business outcome:
 Signal and metric definition:
-Population and grain:
+Population, grain, and scope:
 Baseline period and completeness:
-Expected range:
+Expected range or seasonality:
 Warning threshold:
 Release-blocking threshold:
-Observation window:
-Check frequency:
+Observation window and check frequency:
 Source of truth:
-Monitoring owner:
-Escalation owner:
+Monitoring owner and escalation owner:
+Escalation channel and response target:
 Response action:
-Final observation result:
+Observation result and decision:
 Evidence links:
+Evidence location, access restriction, and retention period:
 ```
 
-Example for a registration release:
+Create a complete record for material changes. For an unaffected signal or layer, write `N/A` and the reason.
 
-```text
-Signal: sign_up events per confirmed account creation
-Population: confirmed account creations in the observation window
-Grain: one confirmed account / one expected sign_up
-Source of truth: registration service plus processed GA4 report
-Action: contain or rollback if duplicate key events or a material drop are confirmed
-```
+### 4.2 Signals to monitor
 
-### Relationship to release gates
+Check the minimum set for every material release. Add optional signals only when the changed asset or business outcome requires them.
 
-| Gate | How the Monitoring Specification is used |
-| --- | --- |
-| Gate 0 — Requirement readiness | Decide whether monitoring is required and define the business outcome and source of truth. |
-| Gate 1 — Implementation readiness | Identify changed signals, destinations, reports, key events, and downstream consumers. |
-| Gate 2 — QA readiness | Verify expected request count, duplicate/missing behavior, consent behavior, and the test evidence that will feed monitoring. |
-| Gate 3 — Publish readiness | Confirm the monitoring record, baseline, thresholds, owner, escalation path, and observation window are ready. |
-| Gate 4 — Post-publish readiness | Use monitoring results and processed report validation to close the release or open an incident. |
+#### Minimum signals
 
-Monitoring should detect both transport failures and semantic failures. A request can continue to arrive while the business meaning is wrong.
+| Signal | Example measure | Action it supports |
+|---|---|---|
+| Collection volume | Event count by canonical event | Detect missing or overfiring delivery. |
+| Business outcome | Key-event/user count or source-system outcome | Detect a material outcome change. |
+| Duplicate/missingness | Events per business occurrence; missing required-parameter rate | Detect duplicate tags, retries, remounts, or schema regression. |
+| Destination | Measurement ID and hostname by environment | Detect routing errors. |
+| Consent/privacy | Granted/denied tag and request behavior | Detect privacy regression. |
+| Report freshness | Processing delay and incomplete date | Prevent premature decisions. |
 
-### Signals
+#### Optional signals
 
-| Signal            | Example measure                          | Why it matters                       | Frequency            |
-| ----------------- | ---------------------------------------- | ------------------------------------ | -------------------- |
-| Collection volume | Event count by canonical event           | Detect missing/overfiring events     | Daily/release window |
-| Unique users      | Users/key-event users                    | Detect broad delivery changes        | Daily/weekly         |
-| Key events        | Key-event count/rate                     | Protect business outcome reporting   | Release + daily      |
-| Duplicate rate    | Events per confirmed business occurrence | Detect double tags/retries/remounts  | Release + daily      |
-| Missingness       | Null/omitted required parameter rate     | Detect schema regressions            | Release + daily      |
-| Vocabulary        | Unexpected parameter values              | Detect app/GTM contract drift        | Daily/weekly         |
-| Destination       | QA vs production ID and hostname         | Detect routing errors                | Every release        |
-| Consent behavior  | Granted/denied tag/request behavior      | Detect privacy regression            | Every consent change |
-| Report freshness  | Data delay and incomplete period         | Prevent premature decisions          | Daily                |
-| Data quality      | Thresholding, sampling, `(other)`, and field availability indicators | Separate platform/report limits from collection defects | Release + daily |
-| Report configuration | Population, grain, scope, filters, and source-of-truth surface | Detect semantic drift after a change | Every report change |
-| Source/medium     | Direct/referral/campaign shifts          | Detect attribution or linker changes | Daily/weekly         |
-| Ecommerce         | Transactions/revenue vs source of truth  | Protect financial reporting          | Daily                |
+| Signal | Example measure | Action it supports |
+|---|---|---|
+| Vocabulary | Unexpected parameter values or casing | Detect application/GTM contract drift. |
+| Data quality | Thresholding, sampling, `(other)`, and field availability | Separate platform/report limits from collection defects. |
+| Report semantics | Population, grain, scope, filters, and source-of-truth surface | Detect semantic drift after a report change. |
+| Ecommerce or other critical source | Transactions/outcome versus approved source of truth | Reconcile high-impact business data when in scope. |
 
-### Baselines and thresholds
+Monitoring must detect both transport failure and semantic failure. A request can arrive while its business meaning is wrong.
 
-Do not choose a universal percentage threshold without a baseline. Establish normal values by event, environment, day-of-week, release cadence, and traffic mix.
+### 4.3 Baseline and thresholds
 
-Record:
+Do not use one universal percentage threshold. Record:
 
 - baseline period and completeness;
-- metric definition, population, grain, scope, and source-of-truth surface;
-- expected range and seasonality;
-- warning threshold;
-- release-blocking threshold;
-- alert owner and response time;
-- known campaigns or product changes that explain movement;
-- source of truth for reconciliation.
+- metric definition, population, grain, scope, and source of truth;
+- expected range, day-of-week pattern, and known product changes;
+- warning threshold and release-blocking threshold;
+- owner, escalation path, and response time.
 
-Example starting policy, to be calibrated:
+Use this starting severity policy only after calibration:
 
 ```text
-Critical: Any PII or unauthorized destination; stop and escalate immediately.
+Critical: PII or unauthorized destination; stop and escalate.
 High: Key event absent, duplicated at scale, or materially miscounted.
-Medium: Required parameter missing for a material subset or one browser/route affected.
-Low: Small vocabulary/documentation drift with no current decision impact.
+Medium: Required parameter missing for a material subset or one route/browser is affected.
+Low: Small vocabulary or documentation drift with no current decision impact.
 ```
 
-Statistical anomaly detection can support review but does not replace a measurement contract or incident owner. GA4 documents anomaly detection as a statistical method for time-series data; see [Anomaly detection](https://support.google.com/analytics/answer/9517187).
+### 4.4 Observation windows
 
-## Monitoring Workflow
+**Immediate release window**
 
-### Immediate release window
+- Confirm version, hostname, property/stream, timestamp, changed events, destination, consent, and request count.
+- Use Section 08 evidence for runtime behavior; do not treat a Tag Fired status alone as proof.
 
-- Confirm version, hostname, stream, and timestamp.
-- Check the changed event(s) and adjacent events.
-- Confirm no duplicate request or unexpected tag.
-- Confirm consent and privacy behavior.
-- Confirm key-event and ecommerce behavior if affected.
+**Short observation window**
 
-### Short observation window
+- Compare volume and business outcome with the pre-release baseline.
+- Inspect missing/invalid parameters and route/browser/device differences.
+- Validate the processed Report or Exploration after its expected processing window, using Section 09 population, grain, scope, filters, and data-quality rules.
 
-- Compare volume to the pre-release baseline.
-- Inspect null/missing required parameters and unexpected values.
-- Check route/browser/device differences.
-- Check source/medium/referral changes if navigation or domains changed.
-- Validate the processed report or Exploration after normal processing; check its population, grain, scope, filters, Data quality indicator, and known `(other)`/thresholding/sampling state.
-- Compare important business outcomes with the approved source system when one exists.
+**Closure**
 
-### Periodic operations
+- Record the observation result, affected period, decision impact, and any open follow-up.
+- Close only when the required processed-data check is complete or an approved exception has an owner and due date.
 
-- Review event and parameter inventory against active configuration.
-- Review obsolete tags, triggers, variables, templates, reports, audiences, and exports.
-- Review access, owners, integrations, consent/privacy decisions, and data filters.
-- Reconcile important ecommerce/key-event data with the source system.
-- Review report owners, field readiness, report configuration, monitoring thresholds, and retirement triggers.
+Realtime and DebugView are diagnostic/recent-activity evidence. They do not replace processed Report/Exploration validation.
 
-## Incident Response
+## 5. Incident and recovery
 
-### Detect and classify
+### 5.1 Detect and classify
 
-Use the failure-first-layer diagnosis and severity guidance from [Debug/QA](08-debug-qa-answer.md). A monitoring alert is a signal to investigate; it is not by itself proof that GTM is the root cause.
+Use the first-failing-layer diagnosis and severity guidance from [Debug/QA](08-debug-qa-answer.md). A monitoring alert is a signal to investigate, not proof that GTM is the root cause.
 
-Capture:
+Record the first observed time, last known-good version, affected property/stream/environment, event/report/journey, issue type (missing, duplicate, misrouted, malformed, privacy, or semantic), estimated volume/period, and evidence links.
 
-- first observed time and timezone;
-- last known good version/configuration;
-- affected property, stream, environment, event, report, and user journey;
-- whether the issue is missing, duplicated, misrouted, malformed, privacy-related, or attribution-related;
-- estimated affected volume and period;
-- evidence at application, Data Layer, GTM, network, DebugView, and report layers.
+For High or Critical impact, notify the escalation channel and response owner recorded in the Monitoring Record; do not rely on an informal message with no incident reference.
 
-### Contain
+### 5.2 Contain
 
 Choose the smallest safe action:
 
-- pause or block a faulty tag;
-- publish the last known-good GTM version;
+- pause or block a faulty Tag;
 - correct environment routing;
-- disable a broken enhancement where safe;
+- publish the last known-good version when the fault is in GTM;
 - stop a server/offline sender or retry loop;
+- disable a broken enhancement where safe;
 - prevent further PII collection;
-- avoid activating a permanent data filter as an emergency shortcut unless the appropriate owner approves it.
+- avoid activating a permanent data filter as an emergency shortcut without the appropriate approval.
 
-### Recover and communicate
+### 5.3 Rollback runbook
 
-- run the smoke test again;
-- validate the affected event and adjacent flows;
-- state clearly what data cannot be repaired retroactively;
-- notify affected report/marketing/product owners;
-- document the affected period, decision impact, and follow-up fix;
-- add a regression test or monitoring signal so the issue is less likely to recur.
-
-### Do not assume rollback repairs data
-
-Rolling back a GTM container stops or changes future client-side behavior. It does not remove already processed events, repair an incorrect key-event count, or restore data excluded by a permanent GA4 filter. Quantify the affected period and annotate downstream decisions.
-
-## Data Filters and Developer Traffic
-
-GA4 data filters affect incoming events from the point of activation forward and can permanently remove excluded data from Analytics and BigQuery. Test filters before activation and distinguish developer/internal traffic handling from ordinary report filtering. See [Data filters](https://support.google.com/analytics/answer/13296761).
-
-Before activating a filter:
-
-- define the traffic classification;
-- validate Testing mode;
-- confirm debug/QA access remains possible;
-- record affected environments and IP/hostname rules;
-- obtain approval;
-- record activation time and irreversible impact.
-
-## Rollback Runbook
-
-1. Confirm the incident and severity; do not rollback solely from an unexplained small fluctuation.
-2. Identify the last known-good GTM version and what it contains.
-3. Check whether the issue is in GTM, application/Data Layer, GA4 property configuration, consent, or an external system.
-4. Assess what the rollback would also undo.
-5. Obtain the publisher/incident owner decision according to severity.
-6. Set/publish the approved previous version to the correct environment.
-7. Run production smoke tests for the changed path and adjacent critical paths.
-8. Check destination, request count, consent, DebugView/Realtime, and later reports.
+1. Confirm severity; do not roll back for a small unexplained fluctuation alone.
+2. Identify the last known-good version and its contents.
+3. Determine whether the fault is in the Application/Data Layer, GTM, consent, GA4 property, or another system.
+4. Assess what the rollback will also undo.
+5. Obtain the publisher/incident-owner decision.
+6. Publish the approved previous version to the correct environment.
+7. Repeat smoke tests for the changed path and adjacent critical paths.
+8. Check destination, request count, consent, DebugView/Realtime, and later processed reports.
 9. Record rollback time, version, evidence, affected period, and remaining data-quality impact.
 10. Create the corrective change and regression tests before re-release.
 
-If the root cause is application-side, GA4 property-side, or server-side, a GTM rollback may not help and can make the state harder to reason about.
+If the root cause is application-side, server-side, or GA4 property-side, a GTM rollback may not help.
 
-## Release decision and closure
+### 5.4 Data filters and developer traffic
 
-- **Go:** Gates 0–3 pass, QA evidence is linked, the intended version/environment/destination are confirmed, and rollback or containment ownership is available.
-- **Hold:** A business moment is undefined, the first failing layer is unknown, routing is wrong, prohibited data is present, or duplicate/missing key-event behavior is unresolved.
-- **Accept exception:** The remaining risk is bounded, non-blocking, and has an accountable owner, mitigation, due date, reviewer, and monitoring action.
-- **Close:** Gate 4 is complete only after the observation window, processed report validation, affected-period assessment, and final release outcome are recorded.
+Test traffic classification and GA4 data filters before activation. Record the rule, environments, Testing-mode result, approval, activation time, and potential irreversible impact. Keep developer/internal traffic handling separate from ordinary report filtering. See [Data filters](https://support.google.com/analytics/answer/13296761).
+
+Rolling back a GTM container does not remove processed events, repair an incorrect key-event count, or restore data excluded by a permanent filter. Quantify the affected period and annotate downstream decisions.
+
+### 5.5 Release decision and closure
+
+Update the Release Record and Monitoring Record status at each decision; never leave a published change in `Approved` or `In QA`.
+
+- **Go:** Gates 0–3 pass; the intended version, environment, destination, QA evidence, rollback/containment owner, and Monitoring Record are ready.
+- **Hold:** Requirement is undefined, the first failing layer is unknown, routing is wrong, prohibited data is present, or duplicate/missing key-event behavior is unresolved.
+- **Accept exception:** Remaining risk is bounded and non-blocking, with owner, mitigation, reviewer, due date, and monitoring action.
+- **Close:** Gate 4 is complete after the observation window, required processed-data validation, affected-period assessment, and final outcome are recorded.
+
+## 6. Operational notes and common mistakes
+
+- Preview success does not prove production routing or processed GA4 reporting.
+- Realtime/DebugView proves recent receipt or diagnostics, not historical completeness.
+- A report-only change should not be recovered with a GTM rollback.
+- Keep unrelated changes out of the same workspace.
+- Do not use a universal threshold without a complete baseline.
+- Do not leave an affected layer blank; use `N/A` with a reason.
+- Preserve the affected period even after a successful rollback.
+- Keep Ads, campaign optimization, and attribution operations outside this section’s scope.
+
+## 7. Cross-reference map
+
+| Section | Release-monitoring use |
+|---|---|
+| 01 — Data Layer Design | Confirm the changed payload source and application handoff. |
+| 02 — Variable Management | Identify affected Variables and ownership. |
+| 03 — Trigger Management | Identify authoritative Trigger and overlap risk. |
+| 04 — Tag Management | Identify destination, mapping, sequencing, and Tag impact. |
+| 05 — Consent | Confirm granted/denied behavior and privacy impact. |
+| 06 — Template Governance | Review template version, permissions, consumers, and rollback/export path when applicable. |
+| 07 — Measurement Plan | Confirm approved requirement, contract, schema, consent, and destination. |
+| 08 — Debug/QA | Link test matrix, runtime evidence, defect status, and smoke-test proof. |
+| 09 — Reports/Charts | Link report configuration, field readiness, interpretation, and processed-data impact. |
+
+## 8. Worked Journey — Registration release
+
+The following values illustrate how a Registration change is recorded across the release lifecycle. The event contract remains in Section 07, runtime test evidence in Section 08, and report configuration in Section 09.
+
+### 8.1 Release context
+
+```text
+Release ID: REL-REG-001
+Project, change, or incident ID: [ticket]
+Status: Monitoring
+Risk level: Medium
+Risk rationale: GTM mapping change with registration-report impact; no consent or destination change
+Change title and business purpose: Update registration event mapping and registration report
+Change type: GTM mapping + report impact
+Measurement Plan and requirement IDs: MP-REG-001 / REQ-REG-001
+Affected journey and downstream consumers: J-REG-001 / registration report and QA Exploration
+GTM account/container and workspace: [container] / WS-REG-001
+Source/build/application version: [build]
+Target environment and GA4 property/stream: QA → [QA property/stream], then Live → [approved production stream]
+Changed GTM objects or GA4 settings: [Variables/Trigger/Tag or custom definition IDs]
+Expected events and request count: registration_start at start; one sign_up per confirmed account
+Consent/privacy and destination impact: approved analytics behavior; QA destination during validation
+Production smoke-test method and approval: [synthetic/test account or allowlisted identity] / [approver]
+Section 08 QA evidence: QA-REG-RUN-001 / [evidence IDs]
+Section 09 report/configuration IDs: R-REG-001 / EX-REG-QA-001
+Monitoring ID: MON-REG-001
+Version, approvers, publisher and release window: [version / owners / window]
+Rollback version or mitigation: [last known-good version or containment]
+Observation window and monitoring owner: [window] / [owner]
+Evidence location, access restriction, and retention period: [location] / [access] / [period]
+Final outcome and affected period if incident: [outcome]
+```
+
+### 8.2 Gate summary
+
+| Gate | Registration evidence | Status |
+|---|---|---|
+| Gate 0 | Approved Section 07 requirement, contract, destination/consent decision, and Section 09 report impact | Pass |
+| Gate 1 | Focused workspace, QA routing, affected GTM objects, expected count, and no overlap identified | Pass |
+| Gate 2 | Section 08 valid/negative/duplicate/consent/routing tests linked to QA-REG-RUN-001 | Pass or [status] |
+| Gate 3 | Named version, publisher, target environment, rollback path, and MON-REG-001 attached | Pass or [status] |
+| Gate 4 | Smoke test complete; processed Registration Report validation and observation result recorded | Pending until [date] or [status] |
+
+### 8.3 Monitoring Record
+
+```text
+Monitoring ID: MON-REG-001
+Release ID: REL-REG-001
+Status: Monitoring
+Risk level: Medium
+Event/report/journey being monitored: registration_start → sign_up; R-REG-001 and EX-REG-QA-001
+Business outcome: one server-confirmed account corresponds to one sign_up
+Signal and metric definition: event volume, duplicate/missingness, destination, consent, and processed registration completion rate
+Population, grain, and scope: approved release traffic; one event occurrence for QA signals; Section 09 cohort/user metric for the rate
+Baseline period and completeness: [pre-release period / completeness]
+Expected range or seasonality: [range]
+Warning threshold: [calibrated threshold]
+Release-blocking threshold: duplicate key event, unauthorized destination, PII, or material missingness
+Observation window and check frequency: immediate smoke test → [short window] → [processed-data date]
+Source of truth: registration service, Section 08 evidence, and processed GA4 asset
+Monitoring owner and escalation owner: [owners]
+Escalation channel and response target: [channel] / [target]
+Response action: contain or rollback after confirmation; open incident for material impact
+Observation result and decision: [result / Go, Hold, Accept exception, Close, or Incident]
+Evidence links: [release, QA, report, smoke-test, and processed-data IDs]
+Evidence location, access restriction, and retention period: [location] / [access] / [period]
+```
+
+### 8.4 Closure note
+
+Close the release only after the smoke test, immediate signal checks, required processed Report/Exploration validation, and affected-period assessment are recorded. If processed data is still within its documented window, keep Gate 4 and the Monitoring Record `Pending` with an owner and follow-up date.
 
 ## Official References
 
@@ -483,9 +440,5 @@ If the root cause is application-side, GA4 property-side, or server-side, a GTM 
 - [Data filters](https://support.google.com/analytics/answer/13296761)
 - [Monitor events in DebugView](https://support.google.com/analytics/answer/7201382)
 - [Realtime report](https://support.google.com/analytics/answer/9271392)
-- [Anomaly detection](https://support.google.com/analytics/answer/9517187)
 - [GA4 data freshness](https://support.google.com/analytics/answer/11198161)
 - [Data quality](https://support.google.com/analytics/answer/12856703)
-- [Data compatibility](https://support.google.com/analytics/answer/11608978)
-- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379)
-- [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)

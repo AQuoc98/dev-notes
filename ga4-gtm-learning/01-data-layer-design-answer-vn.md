@@ -1,215 +1,274 @@
 # 01 — Thiết kế Data Layer
 
-## Data Layer, GTM và GA là gì?
+## 1. Mục tiêu và phạm vi
+
+Tài liệu này định nghĩa cách frontend application phát hành business event đáng tin cậy và an toàn về quyền riêng tư cho Google Tag Manager (GTM) và Google Analytics 4 (GA4).
+
+Data Layer là ranh giới contract giữa application code và GTM. Application sở hữu business truth; GTM đọc các giá trị đã được phê duyệt và chuyển chúng tới GA4. Thiết kế này phục vụ quy trình GTM/GA4 ổn định, có thể lặp lại, không nhằm phục vụ quảng cáo hay tối ưu campaign.
+
+### Trong phạm vi
+
+- Đặt tên event, quy tắc xác định một lần xảy ra hợp lệ (occurrence), payload schema, kiểu dữ liệu, allowed values và versioning.
+- Một message `dataLayer.push()` đầy đủ, tự chứa đủ thông tin cho mỗi lần xảy ra hợp lệ đã được phê duyệt.
+- Typed frontend analytics adapter và các safeguard cho API bất đồng bộ, SPA và component lifecycle.
+- Quyền riêng tư, ranh giới consent, chống duplicate, validation và bàn giao cho GTM.
+- `calculation_action` của FD làm pattern triển khai chuẩn.
+
+### Ngoài phạm vi
+
+- Chi tiết GTM Variables, Triggers, Tags hoặc GA4 report; xem Sections 02–04 và 09.
+- Chi tiết triển khai consent management; xem Section 05.
+- Template governance, release monitoring hoặc vận hành incident; xem Sections 06, 08 và 10.
+- Google Ads, media buying, campaign optimization hoặc advertising attribution.
+
+## 2. Tổng quan: ranh giới hệ thống và vòng đời event
+
+### 2.1 Vai trò của từng thành phần
+
+Các định nghĩa dưới đây bám theo vai trò được mô tả trong tài liệu Google Tag Manager và GA4:
+
+| Thành phần                | Cách hiểu và trách nhiệm                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application (website/app) | Product code render UI, nhận input, gọi API, quyết định business outcome có xảy ra hay không và publish event đã được phê duyệt.                                                                           |
+| Data Layer                | Một JavaScript object, thông thường là `window.dataLayer`, được GTM và `gtag.js` dùng để truyền event data và variable có cấu trúc cho các tag. Data Layer chỉ mang dữ liệu, không tự gửi dữ liệu tới GA4. |
+| Google Tag Manager (GTM)  | Hệ thống quản lý tag: đọc giá trị Data Layer qua Variables, lắng nghe bằng Triggers, áp dụng consent/routing và chạy Tags để gửi dữ liệu tới destination.                                                  |
+| Google Analytics 4 (GA4)  | Analytics property nhận event và parameter từ Google tag hoặc GA4 Event tag, sau đó xử lý dữ liệu cho Realtime, DebugView, Reports và Explorations.                                                        |
+
+Tóm tắt trong một câu: Application phát business fact, Data Layer mang message, GTM routing và gửi message, còn GA4 tiếp nhận và phân tích event.
+
+### 2.2 Vòng đời event
 
 ```text
-Website/App
-↓
-Data Layer
-↓
-GTM - xử lý các message trong Data Layer theo thứ tự vào trước, xử lý trước
-↓
-GA4 / Ads / các công cụ khác
+Application xác nhận business fact
+        ↓
+Application push một Data Layer message đầy đủ
+        ↓
+GTM xử lý message theo thứ tự trong queue
+        ↓
+GTM Variables đọc các field đã được phê duyệt
+        ↓
+GTM Trigger nhận diện event
+        ↓
+Consent và quy tắc destination được đánh giá
+        ↓
+GA4 Event tag gửi payload đã được phê duyệt
 ```
 
-**Data Layer** là một object JavaScript dùng để lưu trữ dữ liệu có cấu trúc mà Google Tag Manager có thể đọc và gửi tới GA4.
+Boundary rule: Application sở hữu business truth, Data Layer mang message, GTM routing và gửi message, còn GA4 tiếp nhận và phân tích. Chỉ push event sau khi Application chứng minh được kết quả nghiệp vụ, và chỉ một lần cho mỗi lần xảy ra hợp lệ.
 
-**GTM (Google Tag Manager)** là công cụ quản lý và triển khai tracking tag trên website hoặc app mà không cần thay đổi code ứng dụng mỗi lần.
+## 3. Các quy tắc thiết kế cốt lõi
 
-**GA (Google Analytics)** là nền tảng thu thập, phân tích và báo cáo hành vi người dùng trên website và app.
+### 3.1 Đặt tên theo business fact, không theo UI action
 
-## Các nguyên tắc của Data Layer
+Dùng tên business event ổn định như `sign_up`, `purchase` hoặc `calculation_action`. Không đặt tên theo màu button, CSS selector, component hoặc vị trí trên màn hình. UI có thể thay đổi nhưng ý nghĩa nghiệp vụ phải giữ nguyên.
 
-### 1 — Mô tả sự kiện nghiệp vụ
+### 3.2 Định nghĩa khi nào một lần tính được xem là hợp lệ
 
-Event nên mô tả điều đã xảy ra từ góc nhìn nghiệp vụ, thay vì hành động UI mà người dùng thực hiện.
+Trước khi triển khai, cần ghi rõ thời điểm một business event được tính là đã xảy ra. Ví dụ:
 
-**Không nên**
+- server xác nhận account creation;
+- purchase được chấp nhận với transaction hợp lệ;
+- một bộ input FD được chấp nhận và API đã trả về response tương ứng.
 
-```js
-dataLayer.push({
-  event: "green_button_click",
-});
-```
+Thay đổi input, click, bắt đầu request hoặc component render chưa đủ để ghi nhận event. Với FD, response hợp lệ nhưng không tạo ra solution vẫn là một lần tính hợp lệ (`solution_found = false`). Ngược lại, input không hợp lệ, request bị hủy, timeout hoặc server lỗi nghĩa là phép tính chưa hoàn tất; không được ghi nhận như một calculation thành công. Nếu cần theo dõi lỗi, hãy định nghĩa một error event riêng.
 
-**Nên**
+### 3.3 Mỗi message phải tự chứa đủ thông tin
 
-```js
-dataLayer.push({
-  event: "sign_up",
-});
-```
+Đặt event name và toàn bộ giá trị bắt buộc trong cùng một push. Không phụ thuộc vào giá trị còn sót từ message trước. Điều này ngăn GTM Variables đọc nhầm dữ liệu cũ khi application phát event liên tiếp.
 
-UI có thể đổi từ nút màu xanh lá sang xanh dương, hoặc nội dung nút đổi từ `Create Account` thành `Register`, nhưng kết quả nghiệp vụ vẫn là người dùng đã đăng ký.
+### 3.4 Dùng contract (bộ quy ước chung) tường minh và có version
 
-Cách này giúp analytics độc lập với cách triển khai UI.
+`Contract` là bản quy ước mà Application, Data Layer, GTM và GA4 cùng phải tuân theo. Với mỗi field, ghi rõ: tên, kiểu dữ liệu, bắt buộc hay tùy chọn, nguồn dữ liệu, giá trị/unit được phép, phân loại quyền riêng tư và cách xử lý khi thiếu. Dùng các giá trị ổn định cho máy đọc; không bắt GTM đổi display label của UI thành giá trị chuẩn. `event_schema_version` là mã phiên bản của bộ quy ước này. Khi thay đổi làm cho code hoặc cấu hình cũ không còn tương thích, phải tăng version và cập nhật Application, GTM, QA và reporting cùng nhau.
 
-### 2 — Phát event đáng tin cậy
+### 3.5 Chỉ thu thập dữ liệu hữu ích tối thiểu
 
-Chỉ push event khi kết quả nghiệp vụ đã được xác nhận và chỉ phát một lần cho mỗi lần xảy ra.
+Mỗi field phải trả lời một measurement question đã được phê duyệt. Không đưa toàn bộ form hoặc application state vào Data Layer chỉ vì chúng đang có sẵn. Không bao giờ gửi email, tên, credential, access token, password, comment không giới hạn, raw user text hoặc API output nhạy cảm.
 
-**Không nên**
+### 3.6 Business logic nằm trong application
 
-```js
-const handleSubmit = () => {
-  dataLayer.push({
-    event: "sign_up",
-  });
+Application hoặc API response quyết định `solution_found`, transaction validity, registration success và các outcome khác. Analytics adapter chỉ validate và publish snapshot đã được phê duyệt. GTM chỉ transport và routing, không tính toán hoặc suy luận business result.
 
-  createAccount();
-};
-```
+### 3.7 Consent là một ranh giới riêng
 
-**Nên**
+Application có thể tạo Data Layer message trước khi consent được cấp, nhưng message đó không chứng minh collection được phép. Consent default, update và tag behavior được định nghĩa ở Section 05 và kiểm tra ở Section 08.
 
-```js
-const handleSubmit = async () => {
-  const response = await createAccount();
+## 4. Thiết kế contract và schema
 
-  if (response.success) {
-    dataLayer.push({
-      event: "sign_up",
-    });
-  }
-};
-```
+### 4.1 Contract record
 
-### 3 — Sử dụng contract rõ ràng và ổn định
-
-Team cần thống nhất cấu trúc chính xác của từng event.
-
-```js
-dataLayer.push({
-  event: "calculation_completed",
-  country: "us",
-  connection_type: "ledger",
-  result_count: 12,
-});
-```
+Tạo một record trước khi code:
 
 ```text
-event
-  type: string
-  value: "calculation_completed"
-
-country
-  type: string
-  allowed values: "us" | "ca" | "uk" | ...
-
-connection_type
-  type: string
-  source: calculation input
-
-result_count
-  type: number
-  source: API response
+Event name:
+Business definition:
+Một lần xảy ra hợp lệ (valid occurrence):
+Emission timing:
+Expected frequency:
+Required fields:
+Optional fields:
+Source của từng field:
+Allowed values và units:
+Privacy classification:
+Data Layer schema version:
+Owner và approver:
+GTM/GA4 consumers:
 ```
 
-### 4 — Mỗi event phải tự chứa đủ thông tin
+Record này là nguồn cho Measurement Plan (Section 07), thiết kế GTM asset (Sections 02–04), QA expectation (Section 08) và field readiness của report (Section 09).
 
-Mỗi event nên chứa toàn bộ thông tin cần thiết để hiểu event đó.
+### 4.2 Event envelope (khung thông tin chung) của FD
 
-**Tránh**
+`Event envelope` là phần khung nằm ngoài cùng của message. Nó cho biết message thuộc event nào, dùng version nào, do application nào phát ra, kết quả ra sao và snapshot input nằm ở đâu. Contract calculation của FD dùng khung ổn định sau:
 
-```js
-dataLayer.push({
-  country: "us",
-});
+| Field                  | Type    | Bắt buộc | Source và quy tắc                                                                                                     |
+| ---------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `event`                | string  | Có       | Application constant; giá trị chính xác `calculation_action`.                                                         |
+| `event_schema_version` | string  | Có       | Application constant; version hiện tại `1.0`.                                                                         |
+| `app_name`             | string  | Có       | Application constant; giá trị chính xác `fd`.                                                                         |
+| `solution_found`       | boolean | Có       | API response tương ứng; `true` chỉ khi response đó tạo output, `false` chỉ khi response hợp lệ nhưng không có output. |
+| `inputs`               | object  | Có       | Snapshot đầy đủ đã được phê duyệt, gắn với API request tương ứng.                                                     |
 
-dataLayer.push({
-  connection_type: "ledger",
-});
+Nếu business system bắt buộc dùng chuỗi `Yes`/`No` thay cho Boolean, hãy thay đổi contract một cách có chủ đích và cập nhật schema version, GTM Variables, QA matrix và reports cùng lúc. Không âm thầm convert type trong GTM.
 
-dataLayer.push({
-  event: "calculation_completed",
-});
-```
+### 4.3 Schema `inputs` của FD
 
-**Ưu tiên**
+Giữ các field dưới đây trong snapshot do Application quản lý khi chúng được Measurement Plan phê duyệt. Dùng các mã ổn định để máy đọc và kiểu number/Boolean tự nhiên; ghi rõ unit cho mọi giá trị số.
 
-```js
-dataLayer.push({
-  event: "calculation_completed",
-  country: "us",
-  connection_type: "ledger",
-  result_count: 12,
-});
-```
+| Field                                            | Type    | Quy tắc                                                   |
+| ------------------------------------------------ | ------- | --------------------------------------------------------- |
+| `country`                                        | string  | Country code có kiểm soát.                                |
+| `language`                                       | string  | Language code có kiểm soát.                               |
+| `building_code`                                  | string  | Design-code identifier có kiểm soát.                      |
+| `design_method`                                  | string  | Enum design method có kiểm soát.                          |
+| `unit_system`                                    | string  | Enum unit system có kiểm soát.                            |
+| `connection_type`                                | string  | Enum connection type có kiểm soát; review cardinality.    |
+| `fastener_installation`                          | string  | Enum installation có kiểm soát.                           |
+| `fx`, `fy`                                       | number  | Input số, có tài liệu về unit/ý nghĩa.                    |
+| `load_duration`                                  | string  | Enum load duration có kiểm soát.                          |
+| `main_member_thickness`, `side_member_thickness` | number  | Thickness dạng số, có unit rõ ràng.                       |
+| `side_member_grade`, `main_member_grade`         | string  | Enum material grade có kiểm soát.                         |
+| `side_member_density`, `main_member_density`     | number  | Density dạng số, có unit rõ ràng.                         |
+| `contact_length`                                 | number  | Length dạng số, có unit rõ ràng.                          |
+| `predrilled`                                     | boolean | Boolean; không dùng `Yes`/`No` trừ khi contract thay đổi. |
+| `fastener_angle`                                 | number  | Angle dạng số, có unit rõ ràng.                           |
+| `service_class`                                  | string  | Enum service class có kiểm soát.                          |
+
+Application nên giữ nguyên toàn bộ snapshot input đã gửi tới API để khi QA cần có thể đối chiếu response với đúng bộ input đó. Trong GTM/GA4, chỉ map các giá trị đơn lẻ (scalar field — một field chứa một giá trị), chẳng hạn `connection_type`, `unit_system` hoặc `solution_found`, khi chúng nằm trong danh sách reporting đã được phê duyệt; không gửi cả object `inputs` như một parameter. Nếu application dùng một mã tạm để ghép request với response, mã đó chỉ nên nằm trong application log. Không đưa mã này vào GA4 nếu chưa được duyệt riêng vì đây không phải field báo cáo cần thiết.
+
+### 4.4 Quy tắc đặt tên và data shape
+
+- Dùng `snake_case` viết thường cho event và payload key.
+- Chỉ dùng một canonical event name; không tạo các alias như `fd_calc`, `calculate_click` và `calculation_done` cho cùng một business fact.
+- Chỉ dùng nested object khi contract cần namespace rõ ràng như `inputs`. GTM đọc nested path bằng Data Layer Variable Version 2 (Section 02).
+- Đặt `event` và mọi field bắt buộc trong cùng một push.
+- Chỉ omit optional value khi contract cho phép; không thay dữ liệu thiếu bằng empty string, `unknown` hoặc value của event trước.
+- Giữ nguyên natural type. Chuẩn hóa label UI hoặc string phải nằm trong application code.
+
+## 5. Pattern triển khai frontend
+
+### 5.1 Dùng một typed analytics adapter (adapter có kiểm tra kiểu dữ liệu)
+
+Không đặt raw `dataLayer.push()` rải rác trong UI component. Một application-owned adapter nhỏ giúp event name và payload type có thể search, review, mock và test. Adapter không được chứa product decision logic.
+
+### 5.2 Snapshot và API bất đồng bộ
+
+`Snapshot` là “ảnh chụp” toàn bộ giá trị input tại một thời điểm. Khi event phụ thuộc vào API, hãy xử lý theo thứ tự:
+
+1. Chuẩn hóa các input hiện tại về đúng kiểu và giá trị đã quy định.
+2. Tạo một snapshot đầy đủ và không thay đổi snapshot đó sau khi gửi request.
+3. Gửi chính snapshot đó tới API.
+4. Khi response quay về, kiểm tra response thuộc về snapshot nào bằng sequence, request token hoặc cơ chế nội bộ tương đương.
+5. Phân loại response: có output, không có output, input không hợp lệ, request bị hủy, timeout hoặc server lỗi.
+6. Chỉ push một event đầy đủ cho loại response đã được contract cho phép.
+
+Nếu người dùng đã nhập giá trị mới, response cũ phải được xem là stale và không được dùng để tạo event cho giá trị mới. Request thất bại cũng không được ghi nhận nhầm thành trường hợp “không có output”.
+
+### 5.3 Safeguard cho SPA và component lifecycle
+
+- Không emit business success từ mount, render, route restoration hoặc generic click handler.
+- Định nghĩa debounce hoặc commit behavior cho input thay đổi liên tục; không phát một business event cho mỗi keystroke trừ khi đó là contract rõ ràng.
+- Bảo vệ trước retry, duplicate callback, React Strict Mode, remount và websocket replay bằng idempotency ở source.
+- Chọn một canonical source cho SPA page view: Enhanced Measurement, GTM History Change hoặc application/router event. Không dùng các source chồng lấn.
+- Giữ analytics transport non-blocking. Tracking failure phải quan sát được trong development/QA nhưng không làm hỏng product action.
+
+### 5.4 Application contract tests
+
+Tự động hóa tối thiểu các kiểm tra sau:
+
+- confirmed success phát đúng một event với name, version, type và allowed value chính xác;
+- valid no-output phát event đã thống nhất với `solution_found = false`;
+- validation failure, API failure, timeout, cancellation và abandoned UI không phát successful event;
+- stale response, retry, duplicate callback, remount và Strict Mode không tạo duplicate;
+- message chứa full approved snapshot và không có prohibited field;
+- optional field được omit thay vì tự tạo giá trị.
+
+## 6. Validation và bàn giao cho GTM
+
+Trước khi bàn giao event cho GTM, frontend owner cung cấp:
 
 ```text
-Điều gì đã xảy ra?
-→ calculation_completed
-
-Ở đâu?
-→ us
-
-Loại connection nào?
-→ ledger
-
-Có bao nhiêu kết quả?
-→ 12
+Event name và schema version:
+Occurrence và timing rule:
+Số lần dự kiến cho mỗi lần xảy ra hợp lệ:
+Data Layer key/path và type của từng field:
+Allowed values và units:
+Required và optional fields:
+Semantics của valid no-output và failure:
+Privacy review:
+Consent dependency:
+QA build/hostname:
+Application test evidence:
 ```
 
-### 5 — Chỉ thu thập dữ liệu an toàn và hữu ích
+GTM implementer sẽ map path đã phê duyệt vào Variables, tạo một Custom Event Trigger authoritative, áp dụng consent và environment routing, rồi map allowlist vào GA4 Event tag. Xem Sections 02–05 để biết chi tiết triển khai.
 
-Mỗi field phải trả lời được một câu hỏi nghiệp vụ đã được phê duyệt.
+## 7. Lưu ý vận hành và guardrails
 
-Ví dụ, nếu business muốn biết loại connection nào được tính thường xuyên nhất, dữ liệu sau là hữu ích:
+### 7.1 Stale data và persistence
 
-```js
-{
-  event: 'calculation_completed',
-  connection_type: 'ledger'
-}
+GTM có thể giữ lại giá trị Data Layer qua nhiều message. Một message bỏ qua field có thể bị đọc thành giá trị từ event trước. Same-push completeness và missing-data behavior rõ ràng là biện pháp kiểm soát; không sửa stale value bằng Custom JavaScript tạm thời trong GTM.
+
+### 7.2 Phòng duplicate
+
+Một lần xảy ra hợp lệ phải tạo một application message. Kiểm tra duplicate container installation, GTM Tag chồng lấn, retry, remount, Strict Mode, SPA route restoration và nhiều analytics library. Các calculation hợp lệ riêng biệt vẫn phải là các event riêng.
+
+### 7.3 Scope và quyền riêng tư
+
+Chỉ giữ full snapshot khi cần cho application QA hoặc internal record đã được phê duyệt. Gửi tới GA4 chỉ scalar allowlist cần cho một câu hỏi có tài liệu. Không để PII, secret, raw free text hoặc API response body xuất hiện trong analytics payload trên browser.
+
+### 7.4 Ranh giới debug
+
+Data Layer presence chỉ chứng minh application đã push message; không chứng minh GTM đã fire, consent cho phép collection, request tới đúng stream hoặc processed GA4 data đã sẵn sàng. Xác minh từng ranh giới theo evidence sequence của Section 08.
+
+## 8. Bản đồ tham chiếu chéo
+
+- [Section 02 — Variable Management](02-variable-management-answer-vn.md): canonical Data Layer Variables, nested Version 2 path, naming và missing-data behavior.
+- [Section 03 — Trigger Management](03-trigger-management-answer-vn.md): Custom Event Trigger filter, exception và firing-count control.
+- [Section 04 — Tag Management](04-tag-management-answer-vn.md): Google tag, GA4 Event tag, parameter allowlist, consent và destination routing.
+- [Section 05 — Consent Management](05-consent-answer-vn.md): consent default, update và denied-state behavior.
+- [Section 06 — Template Governance](06-template-governance-answer-vn.md): reviewed template và governance khi cần custom template.
+- [Section 07 — Measurement Plan](07-measurement-plan-answer-vn.md): business question, field approval, ownership và contract versioning.
+- [Section 08 — Debug/QA](08-debug-qa-answer-vn.md): test setup, expected behavior, evidence, defect và retest.
+- [Section 09 — Reports and Charts](09-reports-charts-answer-vn.md): field readiness, event-level QA, user-level interpretation và processing window.
+- [Section 10 — Release Monitoring](10-release-monitoring-answer-vn.md): release gate, smoke test, observation, incident và rollback.
+
+## 9. Ví dụ và Journey hoàn chỉnh
+
+Các ví dụ được đặt ở cuối để những phần trước có thể dùng như contract và hướng dẫn triển khai tái sử dụng.
+
+### 9.1 Đặt tên business event
+
+Tránh gắn event với một chi tiết UI:
+
+```javascript
+// Không nên
+window.dataLayer.push({ event: "green_button_click" });
+
+// Nên dùng: business fact ổn định
+window.dataLayer.push({ event: "sign_up" });
 ```
 
-Không nên gửi toàn bộ application state chỉ vì dữ liệu đó đang có sẵn. Object này có thể chứa thông tin không cần thiết hoặc nhạy cảm.
-
-```js
-dataLayer.push({
-  event: "calculation_completed",
-  ...formData,
-});
-```
-
-Không bao giờ gửi các giá trị như:
-
-```js
-{
-email: 'user@example.com', // PII ❌
-access_token: 'eyJ...', // Secret ❌
-password: '...', // Secret ❌
-user_comment: inputValue // Unrestricted input ❌
-}
-```
-
-### Tóm tắt
-
-```text
-1. ĐIỀU GÌ đã xảy ra?
-   → Mô tả kết quả nghiệp vụ
-
-2. Nó CÓ THỰC SỰ xảy ra không?
-   → Chỉ phát event khi đã xác nhận, và chỉ một lần
-
-3. Event CÓ CẤU TRÚC thế nào?
-   → Định nghĩa contract ổn định
-
-4. Event có TỰ ĐỦ thông tin không?
-   → Bao gồm toàn bộ context cần thiết
-
-5. Dữ liệu này CÓ THỰC SỰ CẦN không?
-   → Chỉ thu thập dữ liệu hữu ích và an toàn
-
-Cùng nhau, các nguyên tắc này giúp Data Layer hướng về nghiệp vụ,
-đáng tin cậy, nhất quán, tự chứa đủ thông tin và an toàn về quyền riêng tư.
-```
-
-## Pattern triển khai dành cho frontend
-
-### Dùng một analytics adapter có type
-
-Không đặt raw `dataLayer.push()` rải rác trong UI component. Dùng một application-owned adapter nhỏ để event name và payload type có thể được review, search, mock và thay đổi tại một nơi.
+### 9.2 Ví dụ typed adapter
 
 ```typescript
 type AnalyticsEvent =
@@ -222,6 +281,7 @@ type AnalyticsEvent =
   | {
       event: "calculation_action";
       event_schema_version: "1.0";
+      app_name: "fd";
       solution_found: boolean;
       inputs: {
         connection_type: string;
@@ -235,7 +295,7 @@ export function track(event: AnalyticsEvent): void {
 }
 ```
 
-Adapter là transport boundary, không phải nơi chứa product business logic. Application service hoặc confirmed response quyết định outcome đã trở thành true; adapter chỉ publish snapshot đã approve.
+Application service chỉ gọi adapter sau khi biết authoritative result:
 
 ```typescript
 const result = await accountService.createAccount(input);
@@ -250,91 +310,20 @@ if (result.ok) {
 }
 ```
 
-### Safeguard cho SPA và component lifecycle
-
-- Không emit success event từ component mount, render hoặc generic button handler. React Strict Mode, remount, retry hoặc route restoration có thể chạy các path này nhiều lần.
-- Emit sau authoritative async result. Định nghĩa idempotency tại source nếu cùng callback, retry hoặc websocket message có thể được deliver nhiều lần.
-- Với SPA page view, chọn một canonical source: GA4 Enhanced Measurement, GTM History Change hoặc application/router event. Không enable các source overlap.
-- Chỉ push route event sau khi router đã commit route mới và approved page metadata đã sẵn sàng.
-- Giữ analytics transport non-blocking với user journey. Tracking failure phải observable trong development/QA nhưng không được làm hỏng product action.
-- Không đưa PII, credential, unrestricted text hoặc toàn bộ application state vào generic adapter payload.
-
-### Frontend contract test
-
-Tối thiểu hãy tự động hóa các check sau nếu test stack của application cho phép:
-
-1. Confirmed success emit đúng một event với exact name, schema version, type và allowed values.
-2. Validation failure, API failure, cancellation hoặc abandoned UI không emit success event.
-3. Double click, retry, Strict Mode, remount và duplicate callback không tạo duplicate business outcome.
-4. SPA navigation emit page/route event đúng một lần và không overlap collection source khác.
-5. Payload không chứa prohibited field; optional value được omit thay vì tự tạo fallback.
-
-## Ví dụ review: FD Calculation Action
-
-Payload FD ban đầu là điểm khởi đầu hữu ích, nhưng chưa đáp ứng đầy đủ các nguyên tắc vì sử dụng tên event mang tính UI chung chung, dùng nhãn hiển thị làm giá trị, trộn nhiều quy ước đặt tên, và dùng string cho các khái niệm số và Boolean. Ví dụ đã chỉnh sửa dưới đây làm rõ business fact, thời điểm, kiểu dữ liệu và contract, đồng thời giữ lại snapshot đầy đủ của calculation cần cho các câu hỏi báo cáo đã được phê duyệt.
-
-## FD Calculation Action — Luồng nghiệp vụ và contract Data Layer
-
-### Logic nghiệp vụ và luồng event
-
-Business muốn đo tần suất người dùng thay đổi input của FD và tần suất các calculation đó tạo ra solution. Hành trình **Calculation Action** bắt đầu mỗi khi người dùng thay đổi một giá trị input:
+### 9.3 Journey FD `calculation_action`
 
 ```text
-Người dùng thay đổi một giá trị input của FD
-→ application ghi nhận snapshot đầy đủ của các input
+Người dùng thay đổi một input FD
+→ application tạo complete input snapshot
 → application gửi snapshot đó tới calculation API
-→ API trả về kết quả cho đúng snapshot đó
-→ application xác định response có tạo ra output hay không
-→ application đặt `solution_found` là `Yes` hoặc `No`
-→ application push một message `calculation_action` đầy đủ
-→ GTM ánh xạ các field đã được phê duyệt và gửi event tới GA4
+→ API trả response cho đúng snapshot
+→ application xác định response có tạo output hay không
+→ application đặt solution_found là true hoặc false
+→ application push một complete calculation_action message
+→ GTM map field được phê duyệt và gửi event tới GA4
 ```
 
-Thay đổi input khởi động hành trình, nhưng application chỉ push event sau khi biết response tương ứng từ API. Vì vậy `solution_found` là dữ liệu có tính quyết định:
-
-- `"Yes"`: API trả về một result được tạo trong phần output.
-- `"No"`: response của API không tạo ra result nào trong phần output.
-
-### Các field canonical của event
-
-| Field                  | Kiểu    | Bắt buộc | Giá trị cho phép/ví dụ | Nguồn                  | Quy tắc                                              |
-| ---------------------- | ------- | -------- | ---------------------- | ---------------------- | ---------------------------------------------------- |
-| `event`                | string  | Có       | `calculation_action`   | Hằng số application    | Tên business event ổn định                           |
-| `event_schema_version` | string  | Có       | `1.0`                  | Hằng số application    | Tăng version khi contract thay đổi không tương thích |
-| `app_name`             | string  | Có       | `fd`                   | Hằng số application    | Định danh application ổn định                        |
-| `solution_found`       | boolean | Có       | `true`, `false`        | Response API tương ứng | Chỉ là `true` khi response đó tạo ra output          |
-| `inputs`               | object  | Có       | Xem bảng bên dưới      | Trạng thái calculation | Một snapshot đầy đủ gắn với request API tương ứng    |
-
-### Các field trong `inputs`
-
-UI hiện tại cung cấp các giá trị theo dạng hiển thị, nhưng contract canonical sử dụng giá trị ổn định, dễ đọc bằng máy và đúng kiểu tự nhiên. Việc ánh xạ từ giá trị UI/API sang các giá trị này phải nằm trong application code, không nằm trong GTM.
-
-| Field                   | Kiểu    | Ví dụ                            | Mapping từ source/UI             |
-| ----------------------- | ------- | -------------------------------- | -------------------------------- |
-| `country`               | string  | `gb`                             | `United Kingdom`                 |
-| `language`              | string  | `en`                             | `English`                        |
-| `building_code`         | string  | `en_1995_1_1_2004_a2_2014`       | `EN 1995-1-1:2004/A2:2014`       |
-| `design_method`         | string  | `lsd`                            | `Limit States Design (LSD)`      |
-| `unit_system`           | string  | `metric`                         | `Metric`                         |
-| `connection_type`       | string  | `clt_floor_floor_half_lap_joint` | `CLT Floor-Floor Half-Lap Joint` |
-| `fastener_installation` | string  | `typical`                        | `Typical`                        |
-| `fx`                    | number  | `1`                              | `fxInput: "1"`                   |
-| `fy`                    | number  | `0`                              | `fyInput: "0"`                   |
-| `load_duration`         | string  | `medium_term`                    | `Medium Term`                    |
-| `main_member_thickness` | number  | `180`                            | `tm: "180"`                      |
-| `side_member_thickness` | number  | `180`                            | `ts: "180"`                      |
-| `side_member_grade`     | string  | `c24`                            | `sgs: "350 (C24)"`               |
-| `side_member_density`   | number  | `350`                            | `sgs: "350 (C24)"`               |
-| `main_member_grade`     | string  | `c24`                            | `sgm: "350 (C24)"`               |
-| `main_member_density`   | number  | `350`                            | `sgm: "350 (C24)"`               |
-| `contact_length`        | number  | `3000`                           | `contactLength: "3000"`          |
-| `predrilled`            | boolean | `false`                          | `predrill: "No"`                 |
-| `fastener_angle`        | number  | `90`                             | `alphaFastener: "90"`            |
-| `service_class`         | string  | `service_class_1`                | `Service Class 1`                |
-
-### Message Data Layer đầy đủ
-
-Đây là message đầy đủ cho một calculation đã tạo ra solution:
+Payload chuẩn cho response hợp lệ có tạo output:
 
 ```javascript
 window.dataLayer.push({
@@ -367,17 +356,11 @@ window.dataLayer.push({
 });
 ```
 
-Thiết kế này tuân theo các nguyên tắc Data Layer:
+Với response hợp lệ nhưng không có output, giữ nguyên snapshot đầy đủ và đặt `solution_found: false`. Không phát successful event cho invalid input, timeout, cancellation hoặc server failure trừ khi có error contract riêng đã được phê duyệt.
 
-- **Business fact:** `calculation_action` xác định một lần thử calculation FD đã hoàn tất, độc lập với nhãn field, component hoặc button.
-- **Event đáng tin cậy:** response API tương ứng là trigger có tính quyết định; một lần thay đổi hoàn tất tạo ra một event.
-- **Contract ổn định:** tên field, kiểu string, giá trị cho phép và nguồn dữ liệu đều rõ ràng. Thay đổi phá vỡ tương thích cần được cập nhật contract version đồng bộ.
-- **Message tự chứa đủ thông tin:** `solution_found` và snapshot đầy đủ của input được gửi cùng nhau.
-- **Dữ liệu an toàn và hữu ích:** loại bỏ UI text không liên quan và metadata do GTM sở hữu; payload không chứa PII, credential hoặc user text không giới hạn.
+### 9.4 Shape ecommerce tùy chọn
 
-## Phụ lục Ecommerce Data Layer
-
-Ecommerce dùng cùng các nguyên tắc trên, nhưng message phải giữ đúng event-level và item-level scope. Commerce application hoặc backend sở hữu transaction truth và chỉ push event khi matching business state đã được xác nhận.
+Các nguyên tắc Data Layer vẫn giữ nguyên với ecommerce, nhưng contract có cả event-level và item-level scope. Chỉ dùng pattern này khi project đã phê duyệt requirement ecommerce:
 
 ```javascript
 window.dataLayer.push({
@@ -386,12 +369,9 @@ window.dataLayer.push({
     transaction_id: "T_12345",
     value: 30.03,
     currency: "USD",
-    tax: 1.11,
-    shipping: 3.33,
     items: [
       {
         item_id: "SKU_12345",
-        item_name: "Example product",
         price: 10.01,
         quantity: 3,
       },
@@ -400,19 +380,11 @@ window.dataLayer.push({
 });
 ```
 
-Quy tắc:
-
-- Giữ `items` ở dạng array và giữ number đúng type number.
-- Cung cấp ít nhất `item_id` hoặc `item_name` cho mỗi item.
-- Khi gửi `value`, phải gửi `currency`; purchase `value` là tổng `price × quantity` và không gồm tax hoặc shipping.
-- Dùng `transaction_id` có thẩm quyền và định nghĩa retry/replay deduplication. Không chỉ dựa vào thank-you-page view nếu refresh hoặc revisit có thể gửi lại purchase.
-- Không phụ thuộc value còn sót từ ecommerce event trước. Push complete snapshot cần cho occurrence hiện tại và kiểm tra stale-value behavior trong QA.
-
-Planning record và custom item-definition decision nằm tại [Section 07](./07-measurement-plan-answer-vn.md); payload và duplicate evidence nằm tại [Section 08](./08-debug-qa-answer-vn.md); reconciliation nằm tại [Sections 09–10](./09-reports-charts-answer-vn.md).
+Giữ `items` ở dạng array, bảo toàn kiểu số, dùng `transaction_id` có thẩm quyền và định nghĩa retry/replay deduplication. Xem hướng dẫn ecommerce trong Measurement Plan và Debug/QA trước khi triển khai.
 
 ## Tài liệu tham khảo
 
-- [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer): cấu trúc data layer, `dataLayer.push()`, thứ tự xử lý event, persistence, quy tắc đặt tên và xử lý lỗi.
-- [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en): mối quan hệ giữa tag, trigger, variable và data layer.
-- [Google Analytics — Set up events](https://developers.google.com/analytics/devguides/collection/ga4/events): tên event GA4, parameter, custom event và kiểm tra trong Realtime/DebugView.
-- [Google Analytics — Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce): recommended ecommerce events, event-level values và `items` array.
+- [Google for Developers — The data layer](https://developers.google.com/tag-platform/tag-manager/datalayer)
+- [Tag Manager Help — Components of Google Tag Manager](https://support.google.com/tagmanager/answer/6103657?hl=en)
+- [Google Analytics — Set up events](https://developers.google.com/analytics/devguides/collection/ga4/events)
+- [Google Analytics — Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce)

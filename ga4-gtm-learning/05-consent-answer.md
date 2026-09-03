@@ -1,374 +1,306 @@
-# 05 - Google Tag Manager Consent Management and Governance
+# 05 — Consent Management for GA4 in Google Tag Manager
 
-## What consent means in GTM
+## 1. Objective, scope, and outputs
 
-Consent is the user’s permission for a specific type of storage or data use. In Google Tag Manager (GTM), consent signals tell Google tags and other tags how they may behave.
+### Objective
 
-Consent management has three separate responsibilities:
+Define a repeatable way to receive a visitor’s consent choice, apply it to Google Tag Manager (GTM), and verify that GA4 tags collect only what the approved policy allows.
 
-1. **Obtain** the user’s choice through a Consent Management Platform (CMP), banner, or another approved consent solution.
-2. **Communicate** that choice to GTM and Google products as consent states.
-3. **Enforce** the choice through built-in tag behavior, additional consent checks, tag configuration, and governance controls.
+### Scope
 
-Consent is not the same as a trigger. A trigger identifies an event that qualifies a tag to run; consent determines whether the tag may run and, for consent-aware tags, what data or storage behavior is allowed.
+- Consent defaults and updates for a web GTM container.
+- The Consent Initialization trigger, Consent Mode, built-in consent checks, and additional consent checks.
+- CMP (Consent Management Platform) mapping, persistence, revocation, and environment control.
+- QA evidence for storage, requests, destinations, and GA4 receipt.
+- A practical FD calculation_action example.
 
-## Why consent matters
+Legal wording, the final regional policy, CMP vendor selection, and advertising implementation are owned by the relevant privacy or business owners. Advertising consent types are mentioned only when a tag inventory requires them; they are not the core of this guide.
 
-Consent management helps the organization:
+### Outputs
 
-- Respect user privacy choices and applicable regulatory requirements.
-- Control cookies, identifiers, and advertising-related data use.
-- Prevent unapproved collection while preserving privacy-safe measurement where supported.
+Every consent-controlled tag should have:
 
-Consent Mode is a signal-and-behavior mechanism. It does **not** create the consent banner, decide the organization’s legal basis, or automatically make every third-party tag compliant.
+1. An approved purpose, destination, and required consent types.
+2. A recorded default and update path.
+3. A GTM configuration and owner.
+4. A QA record covering consent state, tag behavior, storage, request, and destination.
 
-## Consent Mode
+## 2. Overview: consent is a control applied to measurement
 
-Google Consent Mode lets a website communicate the user’s consent state to Google. Google tags then adjust cookie, identifier, and measurement behavior according to that state.
+### 2.1 Plain definitions
 
-### Basic and advanced implementations
+| Term | Practical meaning |
+| --- | --- |
+| **Consent state** | The current value for a consent type: granted, denied, or not yet initialized. |
+| **CMP** | The banner or preference center that obtains and stores the visitor’s choice. |
+| **Consent Mode** | Google’s mechanism for passing consent state to Google tags so their storage and measurement behavior can change. |
+| **Consent Initialization - All Pages** | GTM’s earliest trigger, used only by tags or templates that set or update consent. |
+| **Built-in consent check** | Consent-aware behavior already provided by a Google tag. |
+| **Additional consent check** | A GTM firing gate for a reviewed custom or third-party tag. |
+| **Downstream** | A system after GTM that receives or processes the result; for this guide, GA4 DebugView is the first check and processed GA4 Reports are a later check. |
 
-| Implementation            | Before the user chooses                                                                    | If the user denies                                                                               | Measurement implication                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| **Basic Consent Mode**    | Google tags are blocked from loading until the banner interaction.                         | No data is sent to Google by those blocked tags, including the consent status.                   | Modeling is based on a general model.                                   |
-| **Advanced Consent Mode** | Google tags load with configured defaults, normally denied where an opt-in policy applies. | Consent-aware Google tags can send limited cookieless signals and do not use the denied storage. | Can support more detailed, advertiser-specific modeling where eligible. |
+Data Layer, Variables, Triggers, Tags, and GA4 are defined in Sections 01–04. Consent does not replace any of them; it supplies an approval context when a tag is evaluated.
 
-Choose the implementation with the privacy owner and document the decision. Do not infer the implementation from whether a banner is visible; verify the actual tag and network behavior.
+### 2.2 Lifecycle
 
-### Important nuance: denied does not always mean zero network requests
-
-`denied` generally means that the relevant Google tag must not use the denied storage or identifier. In advanced Consent Mode, a tag may still send limited cookieless pings, such as consent-state or measurement signals, depending on the tag, consent type, configuration, and Google product behavior.
-
-Therefore, QA must check both:
-
-- Whether cookies, local storage, or identifiers are created or read.
-- Whether requests are sent, what they contain, and whether they are limited to the approved behavior.
-
-Basic Consent Mode has a different expectation: blocked Google tags should not send data before a user interaction.
-
-## Consent states
-
-Each consent type should have an explicit operational state:
-
-- **`granted`** — the user or approved policy allows the relevant storage or use.
-- **`denied`** — the user or approved policy does not allow it.
-- **Not set / unknown** — no usable state has been established. Treat this as an implementation defect or an uninitialized state, not as permission.
-
-For an additional consent check in GTM, the tag only passes when all required consent types are `granted`. A `denied` or unresolved state should prevent that additional check from passing.
-
-### Key consent types
-
-| Consent type              | Controls                                                                                                  | Governance interpretation                                                                                      |
-| ------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `analytics_storage`       | Storage used for analytics measurement, such as analytics cookies.                                        | Required for analytics storage where the policy requires opt-in.                                               |
-| `ad_storage`              | Storage used for advertising, including Google Ads cookies and identifiers used by supported Google tags. | Required for advertising storage. Do not treat it as a substitute for the advertising data-use controls below. |
-| `ad_user_data`            | Sending user data to Google for advertising-related purposes.                                             | Review separately from cookie storage; it is a data-use signal, not simply a cookie flag.                      |
-| `ad_personalization`      | Use of data for personalized advertising.                                                                 | Review separately from collection and storage. A user may allow measurement but not personalized ads.          |
-| `functionality_storage`   | Storage supporting site or app functionality, such as language or session preferences.                    | Often essential or functional, but classify it by the organization’s policy.                                   |
-| `personalization_storage` | Storage used for personalization, such as content or video recommendations.                               | Permit only for the approved personalization purpose.                                                          |
-| `security_storage`        | Storage used for security, authentication, fraud prevention, or user protection.                          | Usually a security control; confirm the required treatment with the privacy and security owners.               |
-
-The first four types are commonly associated with Google advertising and analytics controls. The last three are additional privacy storage types supported in GTM and should be mapped to the organization’s CMP categories.
-
-### Granted and denied behavior
-
-Use this table as a governance model, then verify the exact behavior for each tag and vendor.
-
-| State             | Google-tag expectation                                                                                                                    | Third-party-tag expectation                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `granted`         | The tag may use the approved storage or data behavior, subject to its configuration and destination.                                      | The tag may run only if its purpose and required consent have been approved.                                |
-| `denied`          | The tag must not use the denied storage or identifier. It may be blocked or may send limited cookieless signals in advanced Consent Mode. | Block the tag or apply the vendor’s documented consent-aware behavior. Do not assume automatic enforcement. |
-| Not set / unknown | Establish a default before measurement. Never rely on an accidental default.                                                              | Treat as not approved until the state is resolved.                                                          |
-
-Also consider the difference between **revoking consent** and **removing previously stored data**. Consent Mode does not by itself define the organization’s cookie-deletion or data-retention process. Verify how the CMP, browser, vendor, and server-side systems handle revocation.
-
-## Page-load order and Consent Initialization
-
-Consent must be established before normal page triggers and measurement tags are evaluated.
-
-Recommended logical order:
-
-```text
-Page starts
-   ↓
+~~~text
+CMP / approved policy
+        ↓
 Consent Initialization - All Pages
-   ↓
-Set consent defaults and load/read the CMP state
-   ↓
-Apply any stored user choice through the consent update
-   ↓
-Initialization and normal triggers
-   ↓
-Google tag, GA4, Ads, and other tags evaluate consent
-   ↓
-User changes preferences → update consent on the same page
-```
+        ↓
+Set explicit defaults and apply any stored choice
+        ↓
+User chooses or changes preferences → send an update on the same page
+        ↓
+Application event enters the Data Layer
+        ↓
+Trigger matches → tag evaluates built-in/additional consent checks
+        ↓
+GA4 request, limited consent-aware behavior, or blocked tag
+~~~
 
-### Consent Initialization versus Initialization
+An application event can exist in the Data Layer even when analytics consent is denied. The event is not proof of permission. The tag’s consent behavior and the resulting request are the evidence.
 
-- Use **Consent Initialization - All Pages** only for tags or templates that set or update consent, such as the CMP integration or a default-consent template.
-- Use the normal **Initialization** trigger for other tags that need to run early but do not manage consent.
-- Consent Initialization is designed to run before other triggers, including Initialization.
+### 2.3 Basic versus Advanced Consent Mode
 
-If the CMP is asynchronous, the implementation must handle the race between the CMP and measurement tags. Use the approved CMP integration or an appropriate waiting mechanism. Do not solve the race by adding arbitrary exception triggers to Google tags.
+Choose the mode with the privacy owner and record it in the consent contract. Verify the real tag and network behavior; a visible banner alone does not prove the mode.
 
-## Default consent and consent updates
+| Mode | Before a choice | When analytics consent is denied | QA implication |
+| --- | --- | --- | --- |
+| **Basic** | Google tags are blocked until the user interacts with the banner. | Blocked tags should not send data. | Expect no GA4 request from the blocked tag before a choice. |
+| **Advanced** | Google tags load with the configured default, commonly denied where opt-in applies. | Consent-aware tags may send limited cookieless signals and must not use denied analytics storage. | Check both storage and the contents of any request. |
 
-### Default consent
+The exact behavior depends on the tag, consent type, configuration, and Google product. Do not promise “zero network requests” without testing the selected implementation.
 
-Set an explicit default for every consent type used by the implementation. Defaults should reflect the approved policy and may be region-specific.
+## 3. Consent contract: decide before configuring GTM
 
-For a strict opt-in policy, a typical starting point for measurement and advertising is:
+Record these decisions before creating or changing a consent tag:
 
-```text
-analytics_storage  = denied
-ad_storage          = denied
-ad_user_data        = denied
-ad_personalization  = denied
-```
+| Contract item | Required decision |
+| --- | --- |
+| Purpose and destination | What data is collected, why, and where it goes. |
+| Consent type | Which consent type controls the purpose; start with analytics_storage for GA4-only measurement. |
+| Regions | Where the default and banner apply. |
+| Default state | State before a usable stored choice is available. |
+| Update source and timing | Which CMP callback or approved template sends the update, and when. |
+| Persistence | Where the CMP stores the choice for the next page or visit. |
+| Revocation | What changes immediately and how previously stored data is handled. |
+| Unknown/failure behavior | Fail-safe behavior when the CMP is slow, blocked, or returns an invalid value. |
+| Mode and version | Basic or Advanced Consent Mode and the policy/implementation version. |
+| Owner and evidence | Responsible owner, ticket, approval, and QA location. |
 
-Do not copy this example blindly to functionality or security storage. A default is a policy decision and must not break essential site functions.
+### 3.1 State model
 
-The default must be set before commands or tags that send measurement data. For a custom GTM consent template, use Tag Manager’s consent APIs such as `setDefaultConsentState` rather than relying on a queued `gtag('consent', ...)` call inside Custom HTML.
+- **granted**: the approved purpose may use the allowed storage or data behavior.
+- **denied**: the purpose must not use the denied storage or identifier; the tag is blocked or follows the selected consent-aware behavior.
+- **Not set / unknown**: no reliable state exists. Treat it as an initialization failure, not as permission.
 
-### Consent updates
+For an Additional Consent Check, every required type must be granted when the tag is evaluated. A later consent update does not retroactively approve an earlier tag execution.
 
-When the user accepts, rejects, or changes a category:
+### 3.2 Consent types used by a tag inventory
 
-1. Convert the CMP choice to the approved Google consent types.
-2. Send the update immediately on the page where the choice occurs.
-3. Persist the choice in the CMP or approved consent store.
-4. Re-evaluate future tags and events using the new state.
+| Consent type | Controls | Use in this GA4-focused guide |
+| --- | --- | --- |
+| analytics_storage | Analytics storage such as analytics cookies. | Primary control for GA4 measurement when policy requires it. |
+| ad_storage | Advertising-related storage. | Add only when an approved advertising tag exists. |
+| ad_user_data | Sending user data to Google for advertising purposes. | Separate advertising data-use decision; not implied by analytics consent. |
+| ad_personalization | Use of data for personalized advertising. | Separate advertising decision. |
+| functionality_storage | Storage needed for site functionality, such as language settings. | Classify with the privacy owner; do not copy an analytics default blindly. |
+| personalization_storage | Storage for personalization, such as recommendations. | Add only for an approved personalization purpose. |
+| security_storage | Storage for authentication, fraud prevention, or security. | Usually essential, but confirm the organization’s policy. |
 
-Do not wait until after navigation or page unload. An update made just before a page transition may not complete, and the next page can start with an incomplete state. Consent Mode does not store the user’s choice for you; the CMP or consent solution must do that.
+## 4. Implementation in GTM
 
-## CMP integration
+### 4.1 Inventory the source of truth
 
-The CMP is normally responsible for the user interface, category descriptions, preference storage, and consent records. GTM is responsible for receiving the state and applying it to tags.
+Use one approved CMP or consent service as the source of truth for the current choice. Before editing GTM, record:
 
-Document the integration contract:
+- CMP categories and their mapping to Google consent types.
+- The container and environment that receive the state.
+- The callback, template, or integration that sends updates.
+- The owner and policy version.
 
-| Contract item    | Required decision                                                                  |
-| ---------------- | ---------------------------------------------------------------------------------- |
-| Source of truth  | Which CMP or consent service owns the current choice?                              |
-| Category mapping | Which CMP categories map to each Google consent type?                              |
-| Initial state    | What defaults apply before the CMP is ready, and in which regions?                 |
-| Update event     | Which callback, template, or API call sends a changed choice?                      |
-| Timing           | How is an asynchronous CMP prevented from racing normal tags?                      |
-| Revocation       | How are cookies, identifiers, and downstream permissions handled after withdrawal? |
-| Evidence         | Where are the policy version, consent record, and test evidence stored?            |
+Prefer an official or reviewed CMP integration/template. If a custom GTM consent template is necessary, use the Tag Manager Consent APIs **setDefaultConsentState** and **updateConsentState**. Do not replace these APIs with gtag consent calls inside a Custom HTML tag; Google notes that queued gtag commands may be processed after the next message.
 
-Prefer a supported CMP integration or a reviewed community template. If the organization maintains a custom integration, place it under change control and test the consent API calls, race conditions, regional behavior, and failure path.
+### 4.2 Set the order with Consent Initialization
 
-## GTM consent settings
+1. Use **Consent Initialization - All Pages** for the CMP/default-consent tag or template.
+2. Set a default for every consent type used by the container, before measurement tags can send data.
+3. Apply a stored choice, or send the user’s new choice through the approved update path.
+4. Use **Initialization** for other early tags that do not manage consent.
+5. Let normal application events and measurement tags run only after the consent state is available.
 
-GTM has two related mechanisms:
+Consent Initialization always runs before Initialization and all other triggers. It is not a general “run early” trigger. If the CMP is asynchronous, use the integration’s documented waiting mechanism; do not add arbitrary exception triggers to compensate for a race.
 
-### Built-in consent checks
+### 4.3 Defaults, updates, persistence, and revocation
 
-Consent-aware Google tags contain built-in logic that changes tag behavior based on the consent state. Common Google tags with built-in Consent Mode support include:
+**Default**
 
-- Google tag
-- Google Analytics / GA4
-- Google Ads
-- Floodlight
-- Conversion Linker
+- Set an explicit value for every consent type used.
+- Scope regional defaults only when the approved policy requires different treatment.
+- For a strict analytics opt-in, analytics_storage = denied is a common starting point; confirm the actual policy.
+- Do not let an absent or malformed CMP value become an accidental granted.
 
-For these tags, use the built-in checks as the primary control. Review the built-in consent types in the tag’s consent settings.
+**Update**
 
-### Additional consent checks
+- Convert the CMP choice to the approved Google consent types.
+- Send the update immediately on the page where the visitor confirms or changes preferences.
+- Persist the choice in the CMP or approved consent store for subsequent pages.
+- Re-evaluate future tags using the new state.
 
-Additional consent checks are GTM firing gates. They are useful for custom, partner, or third-party tags that do not have suitable built-in consent behavior.
+**Revocation**
 
-Available settings include:
+- Send a new update when a user changes granted to denied.
+- Document whether and how the CMP removes client storage or requests downstream deletion; Consent Mode does not define that process for the organization.
+- Do not replay business events that occurred before consent unless the measurement plan explicitly allows it and duplicate prevention is defined.
 
-- **Not set** — no additional checks configured; this is the default and must be reviewed.
-- **No additional consent required** — an explicit reviewed decision that no additional consent is needed beyond any built-in behavior.
-- **Require additional consent for tag to fire** — the tag fires only when every specified consent type is `granted`.
+### 4.4 Configure tag consent settings
 
-Governance rules:
+Google tags that support Consent Mode have built-in consent behavior. Review the built-in consent types in each Google tag and use that behavior as the primary control.
 
-- Do not add additional consent checks to Google tags merely to duplicate their built-in checks.
-- Do not use exception triggers to block Google tags when Consent Mode is already controlling their behavior.
-- Use additional checks for reviewed third-party or custom tags that must not fire without a specific consent type.
-- Record why a tag is marked “No additional consent required.”
-- Enable and review GTM’s Consent Overview regularly.
+For custom or third-party tags, choose one reviewed Additional Consent Checks setting:
 
-Additional consent checks control whether a tag fires. They do not replace a CMP, a consent default, a Consent Mode update, or a legal policy.
+| GTM setting | Use |
+| --- | --- |
+| **Not set** | Temporary default while the tag is awaiting review; it must not be treated as an approval. |
+| **No additional consent required** | Explicitly record why built-in behavior or the tag’s approved design is sufficient. |
+| **Require additional consent for tag to fire** | Add every consent type that must be granted before the tag can run. |
 
-## How the components fit together
+Do not add redundant Additional Consent Checks to a Google tag, and do not use an exception Trigger to override built-in Consent Mode behavior. Consent checks answer “may this tag run?”; Trigger logic still answers “does this event match?”
 
-```text
-CMP / consent policy
-        │  default + update states
-        ▼
-Consent Initialization / consent APIs
-        │
-        ▼
-GTM consent state ───────────────┐
-        │                         │
-        │                         ├─ Built-in consent checks
-        │                         └─ Additional consent checks
-        ▼
-Data Layer event + variables → Trigger matches → Tag is evaluated
-                                                    │
-                                                    ▼
-                           Google tag / GA4 destination / partner endpoint
-```
+### 4.5 Environment and change control
 
-Relationship summary:
+Keep CMP configuration, consent defaults, container IDs, destinations, and policy versions aligned between staging and production. A consent change requires:
 
-- **Data Layer** carries structured business events and values. It is not itself proof of consent.
-- **Triggers** decide whether an event matches a tag’s firing conditions.
-- **Consent** is evaluated when the tag is considered for execution and can control firing or behavior.
-- **Tags** transform configuration and data into a measurement or marketing action.
-- **The Google tag** is a central Google measurement connection that can send data to linked destinations such as GA4 and Google Ads.
-- **GA4 destinations** receive events from the Google tag or GA4 event tags according to the configured measurement and consent behavior.
+1. Contract and inventory update.
+2. Privacy/business review when applicable.
+3. GTM Preview and browser Network/storage testing.
+4. A published container version with a rollback reference.
+5. Post-release monitoring for unexpected requests, blocked tags, or environment drift.
 
-### Trigger matched versus data actually sent
+## 5. QA and evidence
 
-These are different observations:
+### 5.1 Test order
 
-| Observation                          | What it proves                                            | What it does not prove                                                              |
-| ------------------------------------ | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Trigger matched                      | The event and trigger conditions were true.               | That the tag executed or sent a request.                                            |
-| Tag fired in Preview                 | GTM allowed the tag to execute in that container session. | That a full measurement payload was sent, or that a vendor accepted it.             |
-| Request visible in the network panel | A request was made to an endpoint.                        | That every Data Layer value was included or that the request was legally permitted. |
-| Cookie or storage value exists       | A storage operation occurred.                             | That the value came from the expected tag or has the intended purpose.              |
+1. Start from a clean browser profile or clear the documented CMP storage.
+2. Record the expected default and the expected behavior for the selected Consent Mode.
+3. Open GTM Preview and inspect Consent Initialization before any application event.
+4. Exercise the approved user choice, then run the business event.
+5. Compare GTM status, browser storage, Network requests, and GA4 DebugView.
+6. Repeat for denial, change/revocation, slow CMP, direct landing, SPA navigation, and each environment.
 
-When investigating a discrepancy, inspect the event timeline, consent state, tag status, tag parameters, browser storage, and network request together.
+Section 08 defines the detailed evidence and pass/fail report format. This section defines what consent-specific evidence must be present.
 
-## Management workflow
+### 5.2 Minimum matrix: what to do and what to verify
 
-Use the following workflow for new tags and material consent changes:
+Run each row as a separate test. Start from the stated browser condition, perform the action, and record the evidence in the last column.
 
-1. **Request** — document the business purpose, vendor, destination, event, and expected outcome.
-2. **Classify** — identify storage, data use, personal data, advertising, personalization, and security implications.
-3. **Map** — map the purpose to one or more consent types and document the legal/privacy decision.
-4. **Inventory** — record the tag, trigger, variables, built-in checks, additional checks, owner, and environment.
-5. **Implement** — configure defaults, CMP updates, built-in behavior, and additional checks.
-6. **Test** — validate Preview, browser storage, network requests, user flows, regions, and failure paths.
-7. **Review** — obtain analytics/GTM, engineering, privacy, and security approval as applicable.
-8. **Publish** — publish a version with a change description and rollback reference.
-9. **Monitor** — check diagnostics, tag behavior, consent rates, data quality, and unexpected vendors.
-10. **Review or retire** — periodically revalidate purpose, consent mapping, vendor terms, and actual behavior; remove unused tags.
+| Test scenario | Action | Pass condition |
+| --- | --- | --- |
+| First visit with no stored choice | Clear the documented CMP storage, load the page, and inspect Consent Initialization before clicking the banner. | The approved default is visible before normal tags run; no tag silently treats an unknown state as granted. |
+| Analytics consent granted, then business event | Select the approved analytics option, confirm the consent update, and run one business event. | The update occurs on the same page; the GA4 tag follows built-in behavior; approved storage and one expected request are observed. |
+| Analytics consent denied, then business event | Deny analytics, confirm the denied state, and run the same event. | Denied analytics storage is not used. Basic blocks the tag, or Advanced shows only the documented limited behavior. |
+| Change or revoke consent | Start with granted, run one event, revoke analytics in the preference center, then run a second event. | The revoke update is sent on the current page; the second event follows the denied behavior; no duplicate business event is created. |
+| CMP is slow or blocked | Throttle or block the CMP in a test environment, then load the page and run the event. | The approved default and fail-safe behavior remain in place; a missing CMP does not become accidental granted consent. |
+| Direct landing and refresh | Open a deep link directly, then refresh without visiting another page first. | Consent state is initialized from the approved source; the test does not depend on an earlier Data Layer message. |
+| SPA route change | Change routes without a full page reload and run the event once. | Stored consent remains available; no duplicate consent update or business event is produced. |
+| Staging versus production | Repeat the approved path in each environment and compare IDs and destinations. | CMP configuration, container, measurement ID, destination, and policy version all match the environment record. |
 
-## Ownership and inventory
+### 5.3 Evidence and pass criteria
 
-Assign clear owners for privacy/legal, Analytics/GTM, CMP/engineering, business/marketing, QA/data quality, and security. Record at least:
+Capture:
 
-```text
-Tag name and ID; vendor and endpoint; business purpose; data collected and classification;
-destination; cookies/storage/identifiers; built-in and additional consent checks;
-trigger and exception configuration; CMP category mapping; regions and environments;
-owner and backup owner; last review date; change ticket, approval, and QA evidence.
-```
+- Consent state and order in GTM Preview, including the Consent Initialization event.
+- Tag status, built-in checks, Additional Consent Checks, and matched Trigger.
+- Cookies/storage and identifier creation before and after each choice.
+- Network endpoint, timing, event name, consent-related fields, identifiers, and payload allowlist.
+- GA4 DebugView or another approved downstream check. Downstream means the system after GTM: it confirms whether the request was received or processed, not merely that GTM allowed the tag to run.
+- CMP record, policy version, environment, timestamp, and tester.
 
-## QA, Preview, and network testing
+A consent test passes only when the documented state, storage behavior, request behavior, destination, and downstream result agree. “Downstream result” means the next system confirms the expected receipt or processing result; it does not mean that every report is updated immediately. “Banner appeared” or “Trigger matched” alone is not sufficient evidence.
 
-### Minimum test matrix
+## 6. Operational notes and common failures
 
-| Scenario                          | Expected checks                                                                                      |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| New visitor, no prior choice      | Correct default state appears before normal tags.                                                    |
-| Accept all                        | Consent types update to the approved granted state; approved tags and storage work.                  |
-| Reject analytics                  | Analytics storage is not used; verify the expected basic/advanced network behavior.                  |
-| Reject advertising only           | Advertising storage and data-use signals remain denied while permitted analytics behavior continues. |
-| Granular choice                   | Each CMP category maps to the correct Google consent types.                                          |
-| Change or revoke choice           | Update is sent on the current page; future behavior changes; cleanup behavior is documented.         |
-| Direct landing page               | No dependency on a previous page or prior Data Layer event.                                          |
-| Slow or blocked CMP               | Defaults and fail-safe behavior remain correct.                                                      |
-| SPA route change                  | Consent state persists and events do not duplicate.                                                  |
-| Multiple tabs / returning visitor | Stored choice is handled consistently and does not silently override a newer choice.                 |
-| Region-specific visitor           | Correct regional banner, defaults, and tag behavior are applied.                                     |
-| Staging / production              | Correct container, CMP configuration, IDs, and destinations are used.                                |
+### Rules to keep the implementation predictable
 
-### What to inspect
+- Consent state is context, not a business event. Do not push a fake consent_granted event to make a GA4 tag fire.
+- Keep one source of truth. Multiple CMPs, snippets, plugins, or containers can overwrite each other’s state.
+- Treat missing, malformed, or stale state as not approved until it is resolved; never convert it silently to granted.
+- Make consent updates idempotent so a repeated CMP callback does not create duplicate updates or business events.
+- Keep raw calculation inputs, email addresses, account IDs, credentials, and unrestricted user input out of the Data Layer and GA4 payload unless separately approved.
 
-1. **GTM Preview / Tag Assistant:** consent state at each event, Consent Initialization order, trigger matches, fired and blocked tags, built-in checks, and additional checks.
-2. **Browser storage:** cookies, local storage, session storage, and identifier creation before and after each choice.
-3. **Network panel:** request timing, endpoint, consent parameters, identifiers, event name, and whether the request is limited or full.
-4. **GA4 DebugView or equivalent:** whether the intended event and parameters arrive after the approved consent state.
-5. **CMP record:** whether the choice, category, policy version, and timestamp are recorded according to policy.
+### Common failures and the practical response
 
-Do not mark a test as passed solely because the banner appeared or the trigger matched. Capture evidence for the consent state, storage, request, destination, and expected outcome.
+| Failure or symptom | What it usually means | Practical response |
+| --- | --- | --- |
+| A tag fires before the default is visible | Consent Initialization is missing, too late, or attached to the wrong tag. | Fix the Consent Initialization setup and retest from a clean browser state. |
+| A denied choice still creates analytics storage | The Google tag or a custom tag is bypassing consent controls. | Inspect built-in/additional checks, hard-coded scripts, and third-party plugins; remove the bypass. |
+| The same update or event appears twice | Multiple callbacks, containers, or SPA handlers are firing. | Keep one source of truth and add idempotency/duplicate protection. |
+| GTM says “fired” but no request is visible | A browser restriction, ad blocker, or network failure may be involved. | Separate configuration evidence from delivery evidence; test in an approved clean browser and record the limitation. |
+| Staging and production send to different places | Environment configuration drift exists. | Compare CMP mapping, container version, IDs, destinations, and policy version before publishing. |
+| Consent changes but old cookies remain | Revocation and client-storage cleanup are separate from Consent Mode. | Document the CMP/browser cleanup behavior and test it with the privacy owner. |
+| Server-side or iframe data ignores the new state | Consent was not propagated to the downstream component. | Add an explicit propagation contract and a separate end-to-end test. |
 
-## Failure modes and edge cases
+Review the GTM Consent Overview page after every material tag change so each tag has an intentional consent setting.
 
-Watch for these conditions:
+## 7. Cross-reference with the other sections
 
-- **CMP timing:** the CMP loads too late, the default is missing, or an update is cancelled during navigation. Fix the order or use an approved waiting strategy.
-- **Stale or duplicate consent:** stored consent survives a policy change, or multiple CMPs, containers, snippets, or plugins send conflicting states.
-- **Hard-coded or ungoverned tags:** site code, CMS, app, vendor plugin, or partner tag bypasses the GTM consent design.
-- **Google tag over-blocking:** exception triggers or additional checks stop a built-in consent-aware tag from behaving as intended.
-- **SPA, cross-domain, or iframe behavior:** route changes duplicate updates/events, or consent is not transferred consistently.
-- **Revocation and server-side gaps:** the new state is sent, but cookies, server-side records, or downstream enforcement are not handled according to policy.
-- **Sensitive data leakage:** calculation inputs, account identifiers, email addresses, or other personal data are pushed or sent before the approved state.
-- **Environment drift:** staging and production have different CMP mappings, defaults, container versions, or destination IDs.
+- **Section 01 — Data Layer Design:** business event and payload contract; a Data Layer message is not consent proof.
+- **Section 02 — Variable Management:** map only approved scalar fields; missing values must not be converted into permission.
+- **Section 03 — Trigger Management:** a Trigger match is separate from the consent decision; keep the event Trigger narrow and authoritative.
+- **Section 04 — Tag Management:** Google tag/GA4 configuration, parameter allowlist, and request validation.
+- **Section 07 — Measurement Plan:** define the consent expectation for each material event before implementation.
+- **Section 08 — Debug and QA:** use the full evidence template and pass/fail decision.
+- **Section 09 — Reports and Charts:** validate processed GA4 data only after the documented processing window.
+- **Section 10 — Release Monitoring:** monitor the first production release for consent regressions and unexpected destinations.
 
-## Change control
+## 8. Worked Journey: FD calculation_action
 
-Require a documented change for:
+This example applies the approved FD event contract without sending raw inputs or personal data.
 
-- Adding, removing, or repurposing a tag or destination.
-- Changing a consent default or regional rule.
-- Changing CMP categories or the mapping to Google consent types.
-- Changing Consent Mode from basic to advanced, or vice versa.
-- Changing a Google tag’s built-in or additional consent settings.
-- Changing event parameters that may contain personal or sensitive data.
-- Adding server-side forwarding or a new downstream vendor.
+### Setup record
 
-Each change should include purpose, impact assessment, inventory updates, privacy review where required, test evidence, approver, publish version, and rollback plan.
+~~~text
+CMP:                 approved web CMP
+Default:             analytics_storage = denied until the approved choice
+Update:              CMP callback → updateConsentState
+GA4 tag:             GA4 - Event - calculation_action
+Trigger:             CE - calculation_action - All
+Destination:         approved GA4 web stream only
+Additional check:    none; rely on the Google tag built-in analytics consent behavior
+~~~
 
-## FD-style example: `calculation_action`
+### Application message
 
-Assume FD has a calculator that sends a GA4 event when a user completes a calculation. The event must not contain unnecessary personal data.
-
-### Data Layer event
-
-```javascript
+~~~javascript
 dataLayer.push({
   event: "calculation_action",
   calculation_action: "completed",
   calculation_type: "eligibility",
-  calculation_outcome: "qualified",
+  calculation_outcome: "qualified"
 });
-```
-
-Recommended setup:
-
-```text
-Tag:     GA4 - Event - calculation_action
-Trigger: CE - calculation_action - All
-Event:   calculation_action
-Params:  calculation_action, calculation_type, calculation_outcome
-Consent: Built-in analytics_storage behavior
-```
+~~~
 
 ### Expected flow
 
-1. The CMP and `CMP - Consent - Default` run through Consent Initialization.
-2. The approved default is applied, for example `analytics_storage = denied` before an opt-in choice.
-3. The user completes the FD calculation and the Data Layer event is pushed.
-4. The `calculation_action` trigger matches.
-5. GTM evaluates the GA4 tag and its built-in consent behavior.
-6. If analytics consent is granted, the event can be sent according to the approved Google tag and GA4 event configuration.
-7. If analytics consent is denied, behavior depends on the selected basic or advanced Consent Mode implementation: the tag may be blocked, or limited cookieless signals may be sent without analytics storage.
+1. Consent Initialization sets the approved default.
+2. The visitor grants or denies analytics consent; the CMP sends the update on the same page.
+3. The application completes the calculation and pushes one calculation_action message.
+4. The Trigger matches and the GA4 tag is evaluated.
+5. With granted, the event is sent once with the approved scalar parameters.
+6. With denied, the tag follows the selected Basic or Advanced behavior and must not use denied analytics storage.
+7. If consent changes after the calculation, do not replay the event unless the measurement plan explicitly allows it.
 
-Do not blindly replay an event that occurred before consent after the user grants consent. Decide whether the business event is still valid, whether replay is allowed by policy, and how to prevent duplicate key events, Ads conversions, or calculation records.
+### Acceptance evidence
 
-### QA acceptance criteria for the example
-
-- The event is not sent to an unapproved destination.
-- `calculation_action` is not confused with a consent type; it is a business event name or parameter.
-- No email, account ID, raw financial input, or other unnecessary personal data is included.
-- With analytics denied, the expected storage and network behavior is observed for the chosen Consent Mode implementation.
-- With analytics granted, GA4 receives the event and documented parameters once.
-- Consent changes do not create duplicate calculation events.
+- Correct default and update are visible before the event.
+- Exactly one application message, one Trigger match, and one approved destination are observed.
+- No email, account ID, raw financial input, or internal request token is present.
+- Storage and Network behavior match the selected Consent Mode.
+- GA4 DebugView receives the event only under the approved behavior.
 
 ## References
 
-- [Google for Developers — Consent mode overview](https://developers.google.com/tag-platform/security/concepts/consent-mode): consent states, basic versus advanced consent mode, and how Google tags adapt their behavior.
-- [Google for Developers — Set up consent mode on websites](https://developers.google.com/tag-platform/security/guides/consent): default and updated consent states, Tag Manager Consent APIs, and implementation guidance.
-- [Tag Manager Help — Tag Manager consent mode support](https://support.google.com/tagmanager/answer/10718549?hl=en): Consent Initialization, built-in consent checks, additional consent checks, and Consent Overview.
-- [Tag Manager Help — About consent mode](https://support.google.com/tagmanager/answer/10000067?hl=en): consent-mode behavior, cookieless pings, and Google tag support.
+- [Google for Developers — Set up consent mode on websites](https://developers.google.com/tag-platform/security/guides/consent): defaults, updates, same-page timing, and Tag Manager Consent APIs.
+- [Tag Manager Help — Tag Manager consent mode support](https://support.google.com/tagmanager/answer/10718549?hl=en): Consent Initialization, built-in checks, Additional Consent Checks, consent types, and Consent Overview.
+- [Google for Developers — Consent mode overview](https://developers.google.com/tag-platform/security/concepts/consent-mode): basic and advanced Consent Mode behavior.

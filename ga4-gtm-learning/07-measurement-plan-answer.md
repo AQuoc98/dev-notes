@@ -1,522 +1,416 @@
 # 07 — GA4/GTM Measurement Plan
 
-## 1. Overview
+## 1. Objective, scope, and outputs
 
-### Purpose
+### 1.1 Objective
 
-A Measurement Plan is the contract between a business question and the data the team will collect, route, validate, and report. It defines what must be measured, when the event is true, which fields are allowed, who owns the signal, and how another person can verify it.
+The Measurement Plan defines what the team will measure, why it matters, when an event is valid, and how the implementation will be handed off. It turns a business requirement into an approved event and parameter contract that the Application, Data Layer, GTM, consent controls, and GA4 can implement consistently.
 
-Start with the business outcome, not with a GTM tag or a list of clicks.
+This is a design and approval document. It is not a runtime debug log and it is not a guide for building GA4 Reports, Explorations, or charts.
 
-For a normal frontend/GTM change, the minimum contract contains:
+### 1.2 Scope
 
-- requirement and journey IDs;
-- business meaning and authoritative moment;
-- event name, required/optional parameters, types, and allowed values;
-- occurrence and deduplication rule;
-- Data Layer source and GTM mapping;
-- consent/privacy behavior and destination;
-- reporting/custom-definition decision;
-- QA, owner, version, and review date.
+- Stable web, client-side collection with Google Tag Manager (GTM) and Google Analytics 4 (GA4).
+- Business questions, authoritative business moments, event names, parameters, occurrence rules, deduplication, consent, privacy, destination, ownership, and schema versioning.
+- Decisions about key events, custom definitions, identity, cardinality, and data minimization when the requirement needs them.
+- Canonical records and implementation handoff for Sections 01–06.
+- A worked Registration Journey at the end of this document.
 
-### Scope
+### 1.3 Out of scope
 
-This section focuses on stable web client-side collection through GTM and GA4. It supports frontend developers, GTM owners, analytics reviewers, and QA. Advertising activation, campaign optimization, attribution strategy, and Google Ads operations are outside the core plan.
+- Runtime test execution, evidence, and pass/fail decisions: see Section 08 — Debug/QA.
+- Processed-data analysis, GA4 Reports, Explorations, and chart design: see Section 09 — Reports/Charts.
+- Production release monitoring and rollback: see Section 10 — Release Monitoring.
+- Ads, campaign setup, attribution optimization, or Google Ads operations.
 
-### Measurement chain
+### 1.4 Outputs
 
-```text
+1. An approved plan for each Journey or measurement requirement.
+2. One Event Contract and Parameter Dictionary for every canonical event.
+3. Data Layer, GTM, consent, destination, owner, and lifecycle references that implementers can follow.
+4. Key-event, custom-definition, identity, and data-classification decisions where applicable.
+5. A versioned handoff that Sections 08–10 can use without redefining the event meaning.
+
+## 2. Overview: what the plan controls
+
+### 2.1 Measurement chain
+
+~~~text
 Business question
-  → authoritative business moment
-  → event and parameter contract
-  → application/Data Layer signal
-  → GTM mapping and destination
-  → consent/privacy decision
-  → QA evidence
-  → report or downstream consumer
-```
+→ authoritative business moment
+→ event and parameter contract
+→ Application publishes a complete Data Layer message
+→ GTM maps the approved fields, consent, and destination
+→ GA4 receives and processes the event
+→ Debug/QA and Reports/Charts use the approved contract
+~~~
 
-### Core terms
+The Application owns the business truth. The Data Layer carries structured data for GTM. GTM routes and maps approved fields. GA4 receives and processes the request. The plan records the decisions and handoff; it does not replace the runtime validation in Section 08 or the analysis work in Section 09.
 
-| Term | Practical meaning | Planning decision |
-| --- | --- | --- |
-| Event | A business action or outcome | Define when it becomes true and how often it may occur |
-| Event parameter | Detail attached to one event occurrence | Define meaning, type, allowed values, scope, and missing-value behavior |
-| User property | A relatively stable attribute of a user | Define source, update/unset behavior, consent, and scope |
-| Dimension | A field used to group or filter data | Use a controlled value set and register it only when reporting needs it |
-| Metric | A number that can be counted, summed, or calculated | Define unit, source, aggregation, and validation |
-| Key event | An event marked as important in GA4 | Mark only after the event contract and collection QA are correct |
+### 2.2 Core terms
 
-Collection and reporting are separate. A parameter can be collected without being registered as a custom definition, and a registered definition does not repair a bad payload.
+| Term | Practical meaning |
+|---|---|
+| Event | A named interaction or business state sent to GA4. |
+| Event parameter | A field describing that event, such as method or form_id. |
+| Occurrence | One valid business occurrence counted under the event's rules; a click or retry is not automatically a new occurrence. |
+| Contract | The shared rules for an event and its fields: meaning, types, allowed values, missing-data behavior, privacy, owner, and version. |
+| User property | A relatively stable attribute of a user, not a per-event value. |
+| Key event | An event the business explicitly treats as an important outcome. |
+| Custom definition | A GA4 dimension or metric registration that makes an approved parameter available for analysis. |
+| Schema version | The version of the event and parameter contract; it changes only through review. |
 
-### Choose the event type
+### 2.3 Choose the event type and name
 
-Use this order before creating a new GTM event:
+Use the least custom solution that represents the requirement:
 
-1. Check whether GA4 already collects the interaction automatically.
-2. Check whether Enhanced Measurement covers it in the current web stream.
-3. Check whether a recommended GA4 event matches the business meaning.
-4. Create a custom event only when the previous options do not fit.
+1. Use automatically collected events when GA4 already captures the behavior.
+2. Check Enhanced Measurement for supported web interactions.
+3. Use a Google recommended event when it matches the business moment.
+4. Create a custom event only when the previous options do not represent the requirement.
 
-Use the official [event naming rules](https://support.google.com/analytics/answer/13316687), [recommended events](https://support.google.com/analytics/answer/9267735), and [collection limits](https://support.google.com/analytics/answer/9267744) as the current authority. Keep event names lowercase `snake_case`, stable, and independent of changing business values.
+Use lower-case, stable, descriptive names (for example, sign_up or calculation_action). Do not encode values in event names, such as sign_up_email. Put variable values in parameters. Check Google's naming rules, reserved names, and collection limits before approval.
 
-### Collection truth versus reporting truth
+## 3. Measurement-Plan workflow
 
-| Checkpoint | It proves | It does not prove |
-| --- | --- | --- |
-| Application | The product knows the business state | Analytics received it |
-| Data Layer | The state and payload were exposed to GTM | GTM sent the correct request |
-| GTM | The trigger/tag evaluated and attempted collection | GA4 processed every field for reporting |
-| DebugView/Realtime | GA4 received a recent diagnostic signal | Historical processing or final report availability |
-| Report/Exploration | GA4 processed data into a usable view | The original implementation was correct without upstream evidence |
+### 3.1 Define the decision
 
-## 2. Measurement-Plan workflow
+Record:
 
-Work through these steps in order. Each step should produce a decision that the next owner can use without guessing.
+- The business question or decision the measurement supports.
+- The user action or business state being measured.
+- The population or Journey scope.
+- The success condition and the intended consumer.
+- The business owner and technical owner.
 
-### Step 1 — Define the decision
+If nobody can state what decision the event supports, do not add the event yet.
 
-Write a question that can change a product, technical, or operational action. Record the decision owner, population, success criterion, and expected use of the result. Do not create events only to produce vanity counts.
+### 3.2 Define the authoritative moment
 
-### Step 2 — Identify the authoritative business moment
+The authoritative moment is the application or backend state that proves the business action occurred. Prefer an application event or a confirmed server result over a click, page view, DOM selector, or route change.
 
-Describe the state transition that makes the event true. Prefer the application or backend result over a click, DOM label, route, or visual confirmation. Record the success condition, invalid/failure behavior, retry behavior, refresh behavior, and deduplication rule.
+For each event, specify:
 
-### Step 3 — Select the event name and type
+- Which state transition creates the event.
+- Which source is authoritative (application or server).
+- What counts as one valid occurrence.
+- How retries, refreshes, remounts, double-submit, cancellation, timeout, and server failure are treated.
+- How an idempotency or deduplication rule prevents duplicate business occurrences.
 
-Use an existing automatic, Enhanced Measurement, or recommended event when its meaning matches. Otherwise define one custom event with a stable business definition. Do not encode a changing value into the event name; keep that value as a controlled parameter.
+Keep a valid “no result” outcome separate from validation failure, timeout, cancellation, or server failure. A missing required state is not a valid occurrence.
 
-### Step 4 — Define parameters and schema
+### 3.3 Define the event and parameter contract
 
-For every parameter, record:
+For every event, agree on:
 
-- canonical name and meaning;
-- source of truth and owner;
-- type and scope;
-- required or optional status;
-- allowed values and normalization;
-- missing/invalid behavior;
-- consent/privacy classification;
-- expected cardinality and volume;
-- reporting or export destination.
+- Canonical event name and event type.
+- Plain-language definition and valid occurrence.
+- Required and optional parameters.
+- Parameter meaning, data type, scope, allowed values, source, and expected volume.
+- Missing, invalid, and not-applicable behavior.
+- Consent category, privacy classification, destination, owner, and schema version.
 
-Fail QA for a missing required value. For an optional value, document whether it is omitted or handled by an approved fallback. Do not use a generic `unknown` value to hide a broken source.
+Required fields must be present before handoff. Optional fields may be omitted only when the contract says so. Do not use a generic value such as unknown to hide an implementation defect.
 
-Check current reserved names, prefixes, lengths, parameter counts, item limits, and primitive types against the official [event naming rules](https://support.google.com/analytics/answer/13316687) and [collection limits](https://support.google.com/analytics/answer/9267744). Re-check them before implementation because platform limits can change.
+### 3.4 Define the Data Layer and GTM handoff
 
-Add a schema version only when the team can operate and interpret it. Otherwise version the Measurement Plan and inventory rather than adding unused metadata to every event.
+The plan must identify the exact application event, Data Layer fields, GTM Variables, Trigger, Tag, environment, consent behavior, and destination.
 
-### Step 5 — Define Data Layer and GTM mapping
+The application publishes one complete event message at the authoritative moment. GTM reads that message and forwards only the approved scalar fields. Keep internal snapshots or request tokens in application logs for correlation; do not send them to GA4 unless separately approved.
 
-Specify the exact application signal, Data Layer path, GTM variable/trigger/tag, Google tag configuration, environment routing, and destination. The application should publish the event and its values together whenever possible. GTM should route the approved signal, not infer business success from fragile DOM state or raw form fields.
+### 3.5 Decide key-event, custom-definition, and identity status
 
-### Step 6 — Decide key-event and custom-definition status
+Document the decision, not just the desired outcome:
 
-For a proposed key event or custom dimension/metric, record the business reason, owner, success condition, consent/privacy impact, expected volume, and consumers. Validate collection before marking a key event. Register a custom definition only after the parameter has passed QA and a recurring report actually needs it.
+- Why the event is or is not a key event.
+- Whether standard or recommended GA4 fields already meet the need.
+- Whether a custom definition is needed for a recurring analysis question.
+- Whether the parameter is suitable for a custom definition (controlled values, useful scope, acceptable cardinality).
+- Whether User-ID is required under a separate identity contract.
+- Owner, approval, status, and effective date.
 
-### Step 7 — Define identity and user properties when needed
+Do not register every parameter automatically. A parameter can be collected without being registered as a custom definition.
 
-Treat authenticated identity separately from event parameters. Record the approved non-PII identifier, source, availability timing, behavior before sign-in/after logout/account switch, consent, access, retention, and deletion implications. For user properties, record name, meaning, allowed values, update/unset behavior, scope, and reportability. See [send User-IDs](https://developers.google.com/analytics/devguides/collection/ga4/user-id).
+### 3.6 Apply privacy and data minimization
 
-### Step 8 — Define reporting readiness
+Classify every event and parameter before implementation. Define the allowed destination and behavior when consent is denied.
 
-For every collected field, choose one outcome:
+Do not send email addresses, phone numbers, passwords, payment data, raw free text, unrestricted form input, internal request tokens, or raw account identifiers to GA4 unless a separate approved contract explicitly permits it. Prefer controlled categories and stable IDs that do not identify a person.
 
-| Outcome | Use when |
-| --- | --- |
-| Standard field/metric | GA4 already provides the required meaning and scope |
-| Recommended parameter | A prescribed parameter supports the intended reporting |
-| Event-scoped custom dimension | A controlled descriptive field is needed in recurring reports |
-| Event-scoped custom metric | A numeric quantity is needed and no standard metric fits |
-| Collected but not reportable | Useful for QA/routing/export but not worth a custom definition |
-| Do not collect | No approved use, excessive risk, PII, or uncontrolled cardinality |
+### 3.7 Review, approve, and version
 
-Record processing delay, scope, cardinality, and the report or export that consumes the field. See [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153) and Section 09 for report readiness.
+Before implementation or a breaking change, review the contract with the business owner, frontend/application owner, analytics owner, privacy/consent reviewer, and GTM owner.
 
-### Step 9 — Review, approve, and version
+Record:
 
-Before implementation, confirm business owner, technical owner, analytics reviewer, privacy/consent reviewer, target environment, version, effective date, next review date, and affected consumers. A schema change must update the event contract, parameter dictionary, Data Layer/GTM mapping, QA cases, reports, and handoff records together.
+- Plan and schema version.
+- Affected events and parameters.
+- Environments and destination streams.
+- Effective date, next review date, and status.
+- Consumers that need migration.
 
-## 3. Canonical plan records and templates
+Any semantic change updates the Event Contract, Parameter Dictionary, Data Layer/GTM mapping, consent decision, and handoff. Retire old fields deliberately; do not silently reuse their meaning.
 
-Keep the canonical records below as the source of truth. Derived summaries and routing views may help readers, but they must not redefine the contract.
+## 4. Canonical plan records
 
-### 3.1 Project Context and Baseline
+These records are the source of truth for planning. Section 08 references them when it executes tests, and Section 09 derives analysis requirements from them; neither section should redefine the event contract.
 
-Use once per plan/version:
+### Record priority and usage order
 
-| Field | Value |
-| --- | --- |
-| Plan ID/version | `[plan ID] / [version]` |
-| Product/business area | `[product or journey]` |
-| GA4 account/property/stream | `[account] / [property] / [stream]` |
-| Google tag/Measurement ID | `[tag or sanitized ID]` |
-| GTM account/container | `[container]` |
-| Platform/source | Web client-side via GTM; document any other source explicitly |
-| Environments | Local, QA/staging, production |
-| Timezone/currency | `[timezone] / [currency if relevant]` |
-| Business/analytics/technical owner | `[teams]` |
-| Privacy/consent reviewer | `[team or N/A]` |
-| Effective/next review date | `[YYYY-MM-DD] / [YYYY-MM-DD]` |
-| Status | Proposed, approved, QA, active, deprecated, or retired |
+Do not fill every record at once. Use the smallest set that can approve the requirement, then add implementation and lifecycle records as the work progresses.
 
-### 3.2 Journey and Event Coverage Matrix
+| Priority | Record | Use it when | Required? |
+|---|---|---|---|
+| P0 | Project Context / Baseline | Starting a new product, Journey, environment, or measurement scope. | Always |
+| P0 | Journey / Event Coverage Matrix | Turning business questions into a list of candidate events. | Always |
+| P0 | Event Contract | Approving an event’s meaning, authoritative moment, occurrence, and destination. | Always for each event |
+| P0 | Parameter Dictionary | Approving the fields, types, values, source, privacy, and missing-data behavior. | Always when the event has parameters |
+| P1 | Consent / Data Classification | Before any field is exposed to GTM or sent to a destination. | Always for collected data |
+| P1 | Key-Event / Custom-Definition Decision Record | When an event may be a key event or a parameter may need GA4 registration. | Conditional; record “Not required” when reviewed and rejected |
+| P1 | Traceability Matrix | After the Application/Data Layer/GTM mapping is known and before handoff. | Required before implementation handoff |
+| P2 | Schema Lifecycle Register | Adding, modifying, deprecating, or retiring an event or parameter. | Required for every schema change |
 
-Use for a multi-event flow. It defines coverage, not the detailed payload:
+Recommended order for a new event:
 
-| Journey ID | Journey | Business question | Planned event sequence | Primary outcome | Report ID | QA ID | Owner | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[ID]` | `[journey]` | `[question]` | `[event A] → [event B] → [event C]` | `[outcome event]` | `[report]` | `[QA]` | `[owner]` | `[status]` |
+~~~text
+Project Context
+→ Journey/Event Coverage
+→ Event Contract
+→ Parameter Dictionary
+→ Consent/Data Classification
+→ Key-Event/Custom-Definition decision (if applicable)
+→ Traceability
+→ Schema Lifecycle entry
+~~~
 
-### 3.3 Event Contract
+For a change to an existing event, open the current Schema Lifecycle entry first, assess affected consumers, then update the Event Contract, Parameter Dictionary, consent decision, and Traceability Matrix before approving the new version. If the requirement is rejected, stop after recording the decision; do not create GTM assets.
 
-Use one record per canonical event:
+### 4.1 Project Context / Baseline
 
-| Field | Value |
-| --- | --- |
-| Requirement/journey ID | `[requirement] / [journey]` |
-| Business question/decision | `[question and action]` |
-| Event name/type | `[event_name] / automatic, enhanced, recommended, or custom` |
-| Business definition | `[what the event means]` |
-| Authoritative moment/source | `[application/backend state]` |
-| Expected occurrence/deduplication | `[count, retry, refresh, idempotency rule]` |
-| Data Layer signal | `[event path and payload owner]` |
-| GTM trigger/tag | `[trigger] / [tag]` |
-| Environment/destination | `[QA and production routing]` |
-| Required/optional parameters | `[names] / [names]` |
-| Consent/privacy behavior | `[approved state and denied behavior]` |
-| Key event status | `[yes/no/pending and reason]` |
-| Reporting/custom-definition status | `[standard/custom/not reportable]` |
-| QA/evidence ID | `[test IDs/evidence link]` |
-| Owner/reviewer/version | `[teams] / [version/date]` |
+| Field | Record |
+|---|---|
+| Plan ID / version | Stable identifier and current version. |
+| Product / Journey | Product area and Journey covered. |
+| GA4 property / stream | Property and web stream used for the environment. |
+| Google tag / Measurement ID | Configured collection destination. |
+| GTM container | Container and workspace used for implementation. |
+| Platform / source | Web application and collection source. |
+| Environments | Local, QA, staging, and production rules. |
+| Timezone / currency | Defaults used by the measurement context. |
+| Owners | Business, application, analytics, GTM, and privacy owners. |
+| Effective / next review | Dates for approval and revalidation. |
+| Status | Draft, approved, deprecated, or retired. |
 
-### 3.4 Parameter Dictionary
+### 4.2 Journey / Event Coverage Matrix
 
-Use one row per approved event parameter:
+| Journey ID | Journey | Business question | Planned event sequence | Primary outcome | Owner | Status |
+|---|---|---|---|---|---|---|
+| J-… | … | … | … → … | … | … | Draft/Approved |
 
-| Event | Parameter | Meaning | Type | Scope | Required? | Allowed values | Missing/invalid behavior | Source | Privacy/consent | Cardinality/volume | Report field |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[event_name]` | `[parameter]` | `[meaning]` | `[string/number]` | `[event/item/user]` | `[yes/no]` | `[controlled list]` | `[omit/fail/fallback]` | `[application/system]` | `[classification/state]` | `[estimate]` | `[standard/custom/N/A]` |
+Keep one row per Journey or requirement. Add an event only when it supports a stated question.
 
-### 3.5 Traceability Matrix
+### 4.3 Event Contract
 
-Use this as the index from requirement to implementation and evidence:
+| Field | Required decision |
+|---|---|
+| Requirement / Journey ID | Requirement that justifies the event. |
+| Business question / decision | What the event will answer. |
+| Event name / type | Canonical name and automatic, Enhanced Measurement, recommended, or custom type. |
+| Definition | Plain-language meaning. |
+| Authoritative moment / source | Application or server state that proves occurrence. |
+| Valid occurrence / deduplication | Count, retry, refresh, cancellation, and idempotency rules. |
+| Data Layer signal | Exact event and payload path. |
+| GTM mapping | Approved Variables, authoritative Trigger, and Tag. |
+| Environment / destination | Stream and routing rule. |
+| Required / optional parameters | Contractual field list. |
+| Consent / privacy | Allowed behavior and data classification. |
+| Key-event status | Yes, No, or Pending with rationale. |
+| Custom-definition status | Required, Not required, or Pending with rationale. |
+| Owner / reviewer / version | Accountability and change control. |
 
-| Requirement/event | Application state | Data Layer | GTM | Consent | Request/destination | GA4/report field | QA/evidence | Release | Owner/status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `[requirement] / [event]` | `[state]` | `[signal]` | `[trigger/tag]` | `[behavior]` | `[request]` | `[field/report]` | `[IDs]` | `[release]` | `[owner/status]` |
+### 4.4 Parameter Dictionary
 
-### 3.6 Key-Event and Custom-Definition Decision Record
+| Event | Parameter | Meaning | Type / scope | Required? | Allowed values | Missing or invalid | Source | Privacy / consent | Cardinality / volume | GA4 registration |
+|---|---|---|---|---|---|---|---|---|---|---|
+| … | … | … | … | Yes/No | Controlled list | Omit, reject, or handoff fail | Application/Data Layer | … | Low/Medium/High | Standard/Custom/Not registered |
 
-Use only when a key event or custom definition is being proposed:
+“GA4 registration” is a planning decision. It does not describe how to build a report.
 
-```text
+### 4.5 Traceability Matrix
+
+| Requirement / event | Application state | Data Layer | GTM | Consent | Destination | Owner / status |
+|---|---|---|---|---|---|---|
+| … | … | … | … | … | … | … |
+
+### 4.6 Key-Event / Custom-Definition Decision Record
+
+~~~text
 Decision ID:
-Event/parameter:
-Requirement/journey ID:
-Business question and decision:
-Success condition and expected occurrence:
+Event or parameter:
+Requirement / Journey ID:
+Business question:
+Success condition and valid occurrence:
 Deduplication rule:
-Mark as GA4 key event? [Yes/No/Pending]
-Standard field checked:
-Custom dimension/metric required? [Yes/No]
-Cardinality/quota review:
-Consent/privacy impact:
-Report/export consumers:
-QA/evidence ID:
-Owner, approval, effective date:
-```
+Key event: Yes / No / Pending
+Standard or recommended field checked:
+Custom definition: Required / Not required / Pending
+Cardinality and quota review:
+Consent and privacy impact:
+Owner / approver:
+Effective date and status:
+~~~
 
-This record governs classification; it does not replace collection QA.
+This record governs classification and approval. Runtime validation belongs to Section 08; report or Exploration design belongs to Section 09.
 
-### 3.7 Consent and Data Classification Matrix
+### 4.7 Consent / Data Classification
 
-Use before production collection:
+| Event / parameter | Classification | Consent requirement | Denied behavior | Destination | Owner / status |
+|---|---|---|---|---|---|
+| … | Analytics / Sensitive / Restricted | … | Suppress, reduce, or approved alternative | QA/Production stream | … |
 
-| Event/parameter | Classification | Consent requirement | Denied behavior | Destination | Retention/owner | Evidence/status |
-| --- | --- | --- | --- | --- | --- | --- |
-| `[event/parameter]` | `[internal/sensitive/prohibited]` | `[category]` | `[block/omit/approved Consent Mode behavior]` | `[stream/none]` | `[policy/owner]` | `[link/status]` |
+Use Section 05 for consent-mode implementation details.
 
-Keep the detailed implementation and test cases in [Consent Management](05-consent-answer.md). Never send PII, secrets, passwords, payment data, raw form values, or uncontrolled free text to GA4.
+### 4.8 Schema Lifecycle Register
 
-### 3.8 Schema Lifecycle Register
+| Change ID | Event / parameter | Current version | Proposed version | Change type | Affected consumers | Migration / handoff action | Approval / effective date | Status |
+|---|---|---|---|---|---|---|---|---|
+| … | … | v… | v… | Add/Modify/Deprecate | Application, GTM, GA4, analysis | … | … | Proposed/Approved/Retired |
 
-Use when an event meaning, parameter type/scope, allowed value, or downstream interpretation changes:
+## 5. Implementation handoff and practical notes
 
-| Field | Template value | Usage |
-| --- | --- | --- |
-| Change ID | `[change ID]` | Stable identifier for the schema change |
-| Event/parameter | `[event.parameter]` | Event or parameter affected by the change |
-| Current version | `[v1]` | Version currently implemented and documented |
-| Proposed version | `[v2]` | Version to be introduced after approval |
-| Change type | `[type/value/meaning]` | Type, allowed-value, meaning, scope, or other schema change |
-| Affected consumers | `[reports/GTM/app]` | Reports, exports, GTM objects, application code, or other dependants |
-| Migration/QA action | `[migration and test plan]` | Required migration, compatibility, and QA work |
-| Approval owner | `[owner]` | Person or team accountable for approval |
-| Effective date | `[date]` | Date the proposed version becomes effective |
-| Status | `[status]` | Proposed, approved, migrating, active, deprecated, or retired |
+### 5.1 Handoff minimum
 
-## 4. Implementation handoff and practical notes
+| Plan item | Application / Data Layer | GTM object | Destination |
+|---|---|---|---|
+| Event name | Publishes the complete approved message | One authoritative Custom Event Trigger and one GA4 Event Tag | Approved QA or production stream |
+| Parameter | Uses the approved type and value set | Data Layer Variables map only approved fields | GA4 event parameters |
+| Consent | Exposes no restricted data when consent is denied | Consent checks follow Section 05 | Allowed collection behavior |
+| Version | Follows the active contract | Workspace/change references the plan version | Same semantic version in handoff |
 
-### Data Layer and GTM handoff
+### 5.2 Cardinality and data minimization
 
-The implementation handoff should contain the exact mapping, not a screenshot without names:
+Cardinality is the number of distinct values a field can produce. High-cardinality free text is difficult to analyze and can create noisy GA4 data. Prefer short, controlled categories and omit values that are not required. Create a custom definition only when the business has a recurring analysis need and the value set is stable.
 
-| Plan field | Application/Data Layer | GTM object | GA4 destination |
-| --- | --- | --- | --- |
-| Event | `[event value]` | Custom Event trigger | Event name |
-| Parameter | `[path and type]` | Data Layer Variable | Event parameter |
-| Consent | `[approved state]` | Consent settings/variables | Approved collection behavior |
-| Destination | `[environment]` | Google tag/stream mapping | QA or production stream |
+### 5.3 Ecommerce addendum
 
-Link the plan to [Debug/QA](08-debug-qa-answer.md) for test IDs and evidence, and to [Reports and Charts](09-reports-charts-answer.md) for report field readiness. Do not maintain a second, conflicting event contract inside GTM.
+For ecommerce, define the business moment, authoritative transaction ID, retry and deduplication rule, numeric value, currency, item schema, and reconciliation owner. Keep ecommerce semantics in the event contract and use the approved Data Layer schema from Section 01.
 
-### Cardinality and data minimization
+### 5.4 Keep planning, QA, and reporting separate
 
-Cardinality is the number of distinct values in a dimension. A controlled category is usually suitable for recurring reports; a value unique to a user, session, request, or occurrence is usually not. Before collecting or registering a high-cardinality field, ask:
+| Document | Main question | Output |
+|---|---|---|
+| Measurement Plan (Section 07) | What should be measured and what does it mean? | Approved contract and handoff. |
+| Debug/QA (Section 08) | Did the runtime produce the approved event, payload, consent, destination, and count? | Evidence and pass/fail result. |
+| Reports/Charts (Section 09) | How should processed GA4 data answer the approved question? | Report, Exploration, or chart specification. |
 
-1. What documented decision requires it?
-2. Can it be reduced to a controlled category?
-3. Is a standard field, ecommerce field, User-ID mechanism, export, or source-system report more appropriate?
-4. What are the expected daily values, privacy risks, retention, and access policy?
+The plan may record reportability or custom-definition status, but it should not contain QA procedures or chart recipes. Keeping these documents separate prevents a test scenario or a visualization from becoming a second, conflicting event definition.
 
-Prefer controlled error categories over raw error text, route groups over full URL values, and report dimensions over unique operational identifiers. If raw detail is genuinely required, document its destination and governance instead of turning it into a routine GA4 custom dimension.
+### 5.5 Anti-patterns to reject
 
-### Ecommerce addendum
+| Anti-pattern | Corrective rule |
+|---|---|
+| Track every click or DOM change | Track the approved business moment. |
+| Fire success on a click before confirmation | Wait for the application or server state that proves success. |
+| Encode values in event names | Keep one stable event name and use parameters. |
+| Send raw form input or PII | Classify, minimize, and suppress unless separately approved. |
+| Register every parameter as a custom definition | Register only recurring, approved analysis fields. |
+| Duplicate automatic, Enhanced Measurement, and custom collection | Choose one authoritative source and document exceptions. |
+| Rename or reuse a field silently | Version, migrate, and retire through the lifecycle register. |
 
-For ecommerce, extend the normal contract with:
+## 6. Cross-reference map
 
-| Area | Required decision |
-| --- | --- |
-| Business moment | When the product/cart/transaction state becomes true |
-| Transaction identity | Authoritative transaction ID, retry/replay behavior, and deduplication owner |
-| Monetary values | Numeric value, ISO currency, tax/shipping treatment, and source of truth |
-| Items | Complete item array, stable item identity, numeric price/quantity, approved taxonomy |
-| Reporting | Standard ecommerce fields first; custom item definitions only for approved recurring analysis |
-| Reconciliation | Comparison with the commerce/order system; GA4 is not the accounting ledger |
+| Section | Use it for |
+|---|---|
+| 01 — Data Layer Design | Message shape, event payload, and application-to-GTM boundary. |
+| 02 — Variable Management | Variable naming, scope, reuse, and value validation. |
+| 03 — Trigger Management | One narrow, authoritative trigger for the approved event. |
+| 04 — Tag Management | GA4 Event Tag, configuration, sequencing, and destination mapping. |
+| 05 — Consent | Consent state, denied behavior, and consent checks. |
+| 06 — Template Governance | Reusable templates, ownership, review, and deployment records. |
+| 08 — Debug/QA | Execute tests and collect evidence against this contract. |
+| 09 — Reports/Charts | Build analysis views from the processed event and parameter definitions. |
+| 10 — Release Monitoring | Monitor production changes after approved deployment. |
 
-Section 01 defines the Data Layer payload, Sections 02–04 map and send it, Section 08 tests payload and duplicates, and Sections 09–10 reconcile and monitor it.
+## 7. Worked Journey: Registration
 
-### Common anti-patterns
+This example shows only planning decisions. Use Section 08 to test the implementation and Section 09 to design analysis views.
 
-| Anti-pattern | Why it fails | Better approach |
-| --- | --- | --- |
-| Track every click without a decision | Noise and maintenance cost | Start from a measurable outcome |
-| Fire success on click | Click is not proof of business success | Use the authoritative application/backend state |
-| Encode values in event names | Splits reporting and destabilizes schema | One event with controlled parameters |
-| Send raw form fields or free text | Privacy and data-quality risk | Allowlist fields and normalize values |
-| Register every parameter as a custom dimension | Consumes quota and creates report clutter | Register only recurring, approved report fields |
-| Duplicate automatic/enhanced collection in GTM | Counts one interaction more than once | Check existing collection before adding a tag |
-| Rename a live event casually | Breaks reports, QA baselines, and consumers | Version the contract and review impact |
+### 7.1 Project context
 
-## 5. Worked example — Registration Journey
+~~~text
+Plan ID: REG-MP-001
+Version: 1.0
+Product: Web registration
+Platform: Client-side web application
+Environments: QA stream first; production after approval
+Status: Approved for implementation
+~~~
 
-This is the only worked Journey example in the document. It is a non-production illustration; replace sample IDs, owners, values, destinations, and evidence with project-approved data. Every subsection below follows the corresponding canonical record in Section 3.
+### 7.2 Journey / Event Coverage
 
-### 5.1 Project Context and Baseline
+| Journey ID | Business question | Planned sequence | Primary outcome | Owner / status |
+|---|---|---|---|---|
+| J-REG-001 | Which registration methods complete successfully? | registration_start → registration_error (when applicable) → sign_up | sign_up | Product + Analytics / Approved |
 
-| Field | Recorded value |
-| --- | --- |
-| Plan ID/version | `MP-REG-001 / v1.0` |
-| Product/business area | Account registration |
-| GA4 account/property/stream | `[project account] / [project property] / QA and production web streams` |
-| Google tag/Measurement ID | `[project Google tag / Measurement ID]` |
-| GTM account/container | `[project GTM account / container]` |
-| Platform/source | Web client-side via application Data Layer → GTM → GA4 |
-| Environments | Local, QA/staging, production |
-| Timezone/currency | `[project timezone] / N/A` |
-| Business/analytics/technical owner | Product team / Analytics QA / Frontend and GTM owner |
-| Privacy/consent reviewer | Privacy owner |
-| Effective/next review date | `[YYYY-MM-DD] / [YYYY-MM-DD]` |
-| Status | Proposed — pending QA and approval |
+### 7.3 Event Contract summary
 
-### 5.2 Journey and Event Coverage Matrix
+| Event | Type | Authoritative moment | Valid occurrence | Required parameters |
+|---|---|---|---|---|
+| registration_start | Custom | Application has accepted the registration method and form is ready | Once per intended registration attempt; no remount duplicate | form_id, method |
+| registration_error | Custom | Application classifies and displays an approved registration error | Once per visible error; retries may create a new occurrence | form_id, method, error_type |
+| sign_up | Recommended | Backend confirms account creation for the submitted registration | Once per created account; no retry or refresh duplicate | form_id, method |
 
-| Journey ID | Journey | Business question | Planned event sequence | Primary outcome | Report ID | QA ID | Owner | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `J-REG-001` | Registration | Where do users abandon registration? | `registration_start` → `[registration_error]*` → `sign_up` | `sign_up` | `R-REG-001` | `TC-REG-001` | Product team | Proposed |
+### 7.4 Parameter Dictionary
 
-`registration_error` is an optional, repeatable failure branch. It is not a mandatory step before `sign_up`.
+| Event | Parameter | Type | Allowed values | Missing or invalid behavior | GA4 registration |
+|---|---|---|---|---|---|
+| registration_start | form_id | String | Approved form IDs | Handoff fail; do not invent a value | Not registered unless needed |
+| registration_start | method | String | email, google, apple | Handoff fail | Custom dimension only if approved |
+| registration_error | form_id | String | Approved form IDs | Handoff fail | Not registered unless needed |
+| registration_error | method | String | email, google, apple | Handoff fail | Custom dimension only if approved |
+| registration_error | error_type | String | validation, server_error, other approved categories | Omit or reject per contract | Custom dimension only if recurring |
+| sign_up | form_id | String | Approved form IDs | Handoff fail | Not registered unless needed |
+| sign_up | method | String | email, google, apple | Handoff fail | Custom dimension only if approved |
 
-### 5.3 Event Contract
+Do not send email, phone, password, raw form content, request tokens, or raw account identifiers to GA4.
 
-#### `registration_start`
+### 7.5 Mapping, consent, and destination
 
-| Field | Recorded value |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | Where do users abandon registration? / improve the entry-to-completion funnel |
-| Event name/type | `registration_start` / custom |
-| Business definition | A registration method is selected and the form is ready for the user to begin |
-| Authoritative moment/source | Application confirms the selected method and form readiness |
-| Expected occurrence/deduplication | Once per intended entry; no duplicate on remount unless the plan defines a new entry |
-| Data Layer signal | `event: registration_start` with `form_id` and `method`; application-owned payload |
-| GTM trigger/tag | `CE - Web - registration_start` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production after approval → production stream |
-| Required/optional parameters | `form_id`, `method` / none |
-| Consent/privacy behavior | Approved analytics consent; block, omit, or use the approved Consent Mode behavior when denied |
-| Key event status | No — funnel entry only |
-| Reporting/custom-definition status | Event name and users; register `method` only if a recurring report requires it; `form_id` is collected but not reportable |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend and GTM owner / Analytics QA / `v1.0` |
+| Plan item | Approved decision |
+|---|---|
+| Data Layer | Application pushes one complete message for each authoritative event. |
+| GTM | One Custom Event Trigger per event and one GA4 Event Tag; map only form_id, method, and approved error_type. |
+| Consent | Follow the approved analytics behavior from Section 05; suppress or reduce data when consent is denied. |
+| Destination | QA stream during validation; production only after approval. |
+| Key event | sign_up: Pending until the business owner approves the success definition. |
+| Custom definition | method: Pending; register only if recurring analysis requires it. |
+| Identity | No User-ID unless a separate identity contract is approved. |
 
-#### `registration_error`
+### 7.6 Registration schema lifecycle
 
-| Field | Recorded value |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | Which registration failures need attention? / separate validation from server-error remediation |
-| Event name/type | `registration_error` / custom |
-| Business definition | An approved validation or server error is shown to the user |
-| Authoritative moment/source | Application classifies and displays the approved error category |
-| Expected occurrence/deduplication | Once per visible error occurrence; do not repeat the same display without a new occurrence |
-| Data Layer signal | `event: registration_error` with `form_id`, `method`, and `error_type`; application-owned payload |
-| GTM trigger/tag | `CE - Web - registration_error` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production after approval → production stream |
-| Required/optional parameters | `form_id`, `method`, `error_type` / none |
-| Consent/privacy behavior | Approved analytics consent; block, omit, or use the approved Consent Mode behavior when denied |
-| Key event status | No — diagnostic journey event |
-| Reporting/custom-definition status | `error_type` is collected; register it as an event-scoped custom dimension only if recurring error analysis is approved |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend and GTM owner / Analytics QA / `v1.0` |
-
-#### `sign_up`
-
-| Field | Recorded value |
-| --- | --- |
-| Requirement/journey ID | `REQ-REG-001 / J-REG-001` |
-| Business question/decision | Which methods complete registration? / measure confirmed completion and classify it as a key event |
-| Event name/type | `sign_up` / recommended |
-| Business definition | Account creation is confirmed by the backend |
-| Authoritative moment/source | Application receives the successful account-creation result |
-| Expected occurrence/deduplication | One per confirmed account; no duplicate on retry or refresh; deduplication is owned by the application/backend |
-| Data Layer signal | `event: sign_up` with `form_id` and `method`; application-owned payload |
-| GTM trigger/tag | `CE - Web - sign_up` / GA4 Event tag |
-| Environment/destination | QA/staging → QA stream; production after approval → production stream |
-| Required/optional parameters | `method`, `form_id` / none |
-| Consent/privacy behavior | Approved analytics consent; block, omit, or use the approved Consent Mode behavior when denied |
-| Key event status | Pending — mark Yes only after collection QA and Product approval |
-| Reporting/custom-definition status | Use the recommended `sign_up` event; register `method` as an event-scoped custom dimension after QA if the recurring report requires it; `form_id` is collected but not reportable |
-| QA/evidence ID | `TC-REG-001 / [evidence link]` |
-| Owner/reviewer/version | Frontend and GTM owner / Analytics QA / `v1.0` |
-
-### 5.4 Parameter Dictionary
-
-| Event | Parameter | Meaning | Type | Scope | Required? | Allowed values | Missing/invalid behavior | Source | Privacy/consent | Cardinality/volume | Report field |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `registration_start` | `form_id` | Stable form identifier | string | Event | Yes | Approved form IDs | Fail QA; do not send the event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `registration_start` | `method` | Selected registration method | string | Event | Yes | `email`, `google`, `apple` | Fail QA; do not send the event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension if recurring report is approved |
-| `registration_error` | `form_id` | Form that displayed the error | string | Event | Yes | Approved form IDs | Fail QA; do not send the event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `registration_error` | `method` | Selected registration method at failure | string | Event | Yes | `email`, `google`, `apple` | Fail QA; do not send the event | Application registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension if recurring report is approved |
-| `registration_error` | `error_type` | Controlled error category | string | Event | Yes | `validation`, `server_error` | Fail QA; do not send the event | Application error classification | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension only if recurring error analysis is approved |
-| `sign_up` | `form_id` | Form used for the confirmed account creation | string | Event | Yes | Approved form IDs | Fail QA; do not send the event | Application/backend registration state | Controlled non-PII; approved analytics consent | Low; controlled IDs | Collected, not reportable |
-| `sign_up` | `method` | Registration method used for the confirmed account | string | Event | Yes | `email`, `google`, `apple` | Fail QA; do not send the event | Application/backend registration state | Controlled non-PII; approved analytics consent | Low; controlled list | Event-scoped custom dimension after QA if recurring report is approved |
-
-Do not collect email, phone, password, raw account ID, raw error text, or free-form form values in this contract.
-
-### 5.5 Data Layer, GTM, and destination mapping
-
-This concrete handoff follows the standard `Event` / `Parameter` / `Consent` / `Destination` rows. The application owns business truth; GTM routes the approved signal and maps only allowlisted parameters.
-
-| Plan field | Application/Data Layer | GTM object | GA4 destination |
-| --- | --- | --- | --- |
-| Event | `event: registration_start`, `event: registration_error`, or `event: sign_up` | Matching Custom Event trigger → GA4 Event tag | Event name on the QA or production web stream |
-| Parameter | `form_id`, `method`, and `error_type` from the application payload; explicit type and allowlist | Data Layer Variables mapped by name; no full-object forwarding | Event parameters |
-| Consent | Approved analytics-consent state exposed to the tag configuration | Consent settings and consent-aware trigger/tag behavior | Approved collection behavior or denied behavior |
-| Destination | Local/QA staging uses the QA stream; production uses the production stream after approval | Google tag and environment-specific stream mapping | QA or production web stream |
-
-#### Per-event routing view (derived)
-
-| Event | Data Layer payload | GTM object | Allowed parameters |
-| --- | --- | --- | --- |
-| `registration_start` | `event` + `form_id` + `method` | `CE - Web - registration_start` → GA4 Event tag | `form_id`, `method` |
-| `registration_error` | `event` + `form_id` + `method` + `error_type` | `CE - Web - registration_error` → GA4 Event tag | `form_id`, `method`, `error_type` |
-| `sign_up` | `event` + `form_id` + `method` | `CE - Web - sign_up` → GA4 Event tag | `form_id`, `method` |
-
-### 5.6 Consent and Data Classification Matrix
-
-| Event/parameter | Classification | Consent requirement | Denied behavior | Destination | Retention/owner | Evidence/status |
-| --- | --- | --- | --- | --- | --- | --- |
-| `registration_start.form_id`, `registration_start.method` | Internal, controlled, non-PII | Approved analytics consent | Block, omit, or use the approved Consent Mode behavior | QA stream; production stream after approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| `registration_error.form_id`, `registration_error.method`, `registration_error.error_type` | Internal, controlled, non-PII | Approved analytics consent | Block, omit, or use the approved Consent Mode behavior | QA stream; production stream after approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| `sign_up.form_id`, `sign_up.method` | Internal, controlled, non-PII | Approved analytics consent | Block, omit, or use the approved Consent Mode behavior | QA stream; production stream after approval | Project retention policy / Privacy owner | `TC-REG-001 / pending QA` |
-| Any event / email, phone, password, raw error text, raw account ID | Prohibited | Not applicable | Do not collect or forward | None | Not retained / Privacy owner | `PROHIBITED / enforced` |
-| User-ID after authenticated sign-in | Separate identity contract | Separate approved conditions | Clear or omit per the identity contract | Approved identity configuration only | Identity retention policy / Identity owner | `N/A / separate review` |
-
-Keep the detailed implementation and test cases in [Consent Management](05-consent-answer.md). Never send PII, secrets, passwords, payment data, raw form values, or uncontrolled free text to GA4.
-
-### 5.7 Key-Event and Custom-Definition Decision Record
-
-```text
-Decision ID: DEC-REG-001
-Event/parameter: sign_up; sign_up.method
-Requirement/journey ID: REQ-REG-001 / J-REG-001
-Business question and decision: Which methods complete registration? Mark confirmed account creation as a key event after validation.
-Success condition and expected occurrence: Backend confirms account creation; one occurrence per confirmed account.
-Deduplication rule: No event on failed validation, server failure, retry before success, or refresh; one event per confirmed account.
-Mark as GA4 key event? [Pending → Yes after QA and Product approval]
-Standard field checked: Recommended sign_up event; standard event count and user metrics checked.
-Custom dimension/metric required? [Yes — event-scoped custom dimension for method after QA; no custom metric]
-Cardinality/quota review: Method has a low controlled value set; form_id is collected for traceability but not registered as a recurring custom dimension.
-Consent/privacy impact: method and form_id are controlled non-PII and require approved analytics consent.
-Report/export consumers: R-REG-001 / Product Analytics; R-REG-002 / Analytics QA.
-QA/evidence ID: TC-REG-001 / [evidence link]
-Owner, approval, effective date: Product owner + Analytics QA + Privacy owner / pending / [YYYY-MM-DD]
-```
-
-`registration_error.error_type` has no decision record yet; open one only when recurring error analysis is approved.
-
-### 5.8 Derived reporting requirements
-
-This is a derived reporting view. The Event Contract and Parameter Dictionary remain the source of truth.
-
-| Report ID | Question | Population/grain | Dimensions | Metrics/formula | Surface | Owner |
-| --- | --- | --- | --- | --- | --- | --- |
-| `R-REG-001` | Which method has the lowest validated completion rate? | Users who select a method and enter registration | `method`, device category, date | Users with `sign_up` / users with `registration_start` | Detail report + funnel Exploration | Product Analytics |
-| `R-REG-002` | Is confirmed account creation sent once with valid values? | Controlled test event occurrences | Event name, method, form ID, error type | Event count and duplicate review | Exploration + processed event report | Analytics QA |
-
-The completion-rate numerator and denominator must use the same date range, population, identity context, journey definition, and `method` source. Event count is not the same as completed-user count.
-
-### 5.9 Traceability Matrix and approval
-
-| Requirement/event | Application state | Data Layer | GTM | Consent | Request/destination | GA4/report field | QA/evidence | Release | Owner/status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `REQ-REG-001 / registration_start` | Selected method and form-ready state | `event: registration_start` + `form_id` + `method` | `CE - Web - registration_start` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production after approval | Event name, users, `method`, funnel entry | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-| `REQ-REG-001 / registration_error` | Approved visible validation/server error | `event: registration_error` + `form_id` + `method` + `error_type` | `CE - Web - registration_error` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production after approval | Event name, `error_type` | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-| `REQ-REG-001 / sign_up` | Backend-confirmed account creation | `event: sign_up` + `form_id` + `method` | `CE - Web - sign_up` → GA4 Event tag | Approved behavior | GA4 request → QA stream; production after approval | Event name, `method`, pending key event | `TC-REG-001 / [evidence]` | `[release ID]` | Frontend + GTM / Proposed |
-
-Approval requires business meaning, technical mapping, privacy/consent behavior, QA evidence, report readiness, and release reference to be explicit. Production activation is handled by Section 10.
-
-### 5.10 Schema Lifecycle Register
-
-This is a new `v1.0` plan, so no schema migration is currently proposed. Keep the register entry to make the lifecycle state explicit:
-
-| Field | Recorded value | Notes |
-| --- | --- | --- |
-| Change ID | `N/A-REG-001` | No schema migration proposed for this plan version |
-| Event/parameter | All Registration events and parameters | Reopen the record for any affected event or parameter |
-| Current version | `v1.0` | Version currently documented |
-| Proposed version | — | No new version proposed |
-| Change type | No change | No meaning, type, scope, or allowed-value change |
-| Affected consumers | — | No migration consumers identified |
-| Migration/QA action | Reopen this register before changing event meaning, parameter type/scope, or allowed values | Update the contract, mapping, QA cases, and reports together |
-| Approval owner | Product + Analytics + Privacy owners | Required for any future schema change |
-| Effective date | — | Not applicable while no change is proposed |
-| Status | Not applicable | Register remains available for the next schema change |
+~~~text
+Change ID: REG-CHG-001
+Event/parameter: sign_up.method
+Current version: v1
+Proposed version: v1
+Change type: Initial approval
+Affected consumers: Application, Data Layer, GTM, GA4, analysis
+Migration action: None; implement the approved value set
+Approval owner: Product + Analytics
+Effective date: After QA approval
+Status: Approved
+~~~
 
 ## Official references
 
-- [About events](https://support.google.com/analytics/answer/9322688)
-- [Enhanced measurement events](https://support.google.com/analytics/answer/9216061?hl=en)
-- [Recommended events](https://support.google.com/analytics/answer/9267735)
-- [Measure ecommerce](https://developers.google.com/analytics/devguides/collection/ga4/ecommerce)
-- [Custom events](https://support.google.com/analytics/answer/12229021?hl=en)
-- [Event naming rules](https://support.google.com/analytics/answer/13316687)
-- [Event parameters](https://support.google.com/analytics/answer/13675006)
-- [Event collection limits](https://support.google.com/analytics/answer/9267744)
-- [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)
-- [Cardinality](https://support.google.com/analytics/answer/12226705?hl=en)
-- [About key events](https://support.google.com/analytics/answer/9267568)
-- [Send User-IDs](https://developers.google.com/analytics/devguides/collection/ga4/user-id)
-- [GTM Custom Event trigger](https://support.google.com/tagmanager/answer/7679219)
-- [Avoid sending personally identifiable information](https://support.google.com/analytics/answer/6366371)
+- Google Analytics — About events: https://support.google.com/analytics/answer/9322688
+- Enhanced Measurement: https://support.google.com/analytics/answer/9216061
+- Recommended events: https://developers.google.com/analytics/devguides/collection/ga4/reference/events
+- Custom events: https://support.google.com/analytics/answer/12229021
+- Event naming rules: https://support.google.com/analytics/answer/13316687
+- Event parameters: https://support.google.com/analytics/answer/13594907
+- Event collection limits: https://support.google.com/analytics/answer/9267744
+- Custom dimensions and metrics: https://support.google.com/analytics/answer/14240153
+- User-ID: https://support.google.com/analytics/answer/9213390
+- GTM Custom Event trigger: https://support.google.com/tagmanager/answer/7679219
+- Avoid sending personally identifiable information: https://support.google.com/analytics/answer/6366371

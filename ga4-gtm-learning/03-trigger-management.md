@@ -1,41 +1,38 @@
-# Subtask 03: Standardize GTM Trigger Management
+# 03 — GTM Trigger Management
 
 ## Objective
 
-Define how GTM triggers are selected from the correct business moment, scoped to the right event and page, named, filtered, tested, reused, published, monitored, and retired so tags fire at the intended moment with the intended frequency.
+Define how to select, scope, test, publish, monitor, and retire Triggers so each Tag evaluates the approved business moment once and in the correct environment.
 
-The work must distinguish between:
+## Scope
 
-- a trigger matching and a tag actually sending a request;
-- a user interaction and a confirmed business outcome;
-- a shared trigger's intended reuse and accidental duplicate collection;
-- configuration evidence and runtime evidence.
+- Authoritative event source and Trigger-type selection.
+- Trigger logic: firing conditions, OR/AND behavior, exceptions, consent, timing, and filters.
+- Custom Event patterns for application-confirmed outcomes.
+- Page-load, DOM, URL, SPA, navigation, click, visibility, and other scoped Trigger types when they represent the measurement question.
+- Trigger Group versus tag sequencing, naming, reuse, inventory, QA, release, and retirement.
+- FD calculation_action as the reference Custom Event.
 
-## Scope — Included Items
+## Outputs
 
-- Trigger selection from the business moment and authoritative source: Page View, Initialization, Consent Initialization, Custom Event, click, form, History Change, Element Visibility, Scroll Depth, YouTube Video, Timer, and Trigger Group where applicable.
-- Trigger logic: multiple firing triggers, multiple conditions, blocking/exception triggers, consent checks, tag firing options, tag sequencing, and Trigger Group semantics.
-- Page-load timing and event availability, including Data Layer message timing, DOM-dependent values, SPA navigation, browser navigation, and delayed or lazy-loaded containers.
-- Filter design using stable variables, URL components, exact operators, regular expressions, CSS selectors, missing-value behavior, route boundaries, and false-positive testing.
-- Custom Event design for application-owned events, including event naming, event-specific values, expected frequency, duplicate policy, and the distinction between intent and confirmed outcomes.
-- Naming, descriptions, shared-trigger reuse, consumer mapping, ownership, versioning, publishing, monitoring, change control, and retirement.
+1. A Trigger decision matrix with preferred type, timing, boundary, and main risk.
+2. A Trigger contract/inventory containing event, authoritative source, conditions, consumers, exceptions, consent, expected frequency, owner, environment, and lifecycle.
+3. Rules for narrow filters, stable Variables, exact/RegEx operators, missing values, and duplicate prevention.
+4. A test record covering valid, negative, duplicate, SPA/navigation, consent, exception, Trigger Group, Network, and GA4 DebugView evidence.
+5. An FD calculation_action Journey showing one application event and one authoritative Trigger match.
 
-## Scope — Excluded Items
+## Acceptance criteria
 
-- A full production-container rewrite or unrestricted audit of unrelated GTM assets.
-- Full Consent Management Platform design or legal consent-policy decisions.
-- Server-side tagging implementation.
-- Remediation of unrelated tags, variables, GA4 reports, or application code beyond the selected trigger flow.
-- Marking runtime tests as passed without GTM Preview, Network, and downstream evidence.
+- Use the narrowest Trigger that represents the approved business moment.
+- Application Custom Events are preferred for confirmed outcomes; click, page, or DOM rules do not replace a missing business event.
+- Firing Triggers behave as alternatives (OR); conditions inside one Trigger must all pass (AND); any matching exception blocks the Tag.
+- Timing does not create stale or missing values, and a Trigger Group is not used to recreate application workflow.
+- A Trigger match is kept separate from Tag execution, Network delivery, and downstream GA4 receipt.
 
-## Deliverables / Outputs
+## Out of scope
 
-- One GTM trigger management guideline covering the trigger mental model, business-moment selection, trigger-type decision rules, page-load timing, Data Layer event availability, filters, regex/CSS selector standards, consent, exceptions, Trigger Groups, tag sequencing, reuse, change control, publishing, monitoring, and retirement.
-- One trigger decision matrix explaining when to use each scoped trigger type and the main risk or boundary for that choice.
-- One scoped trigger inventory and consumer map containing, for every trigger: ID/name, type/event, exact conditions, route/action scope, consuming tags and GA4 event outputs, exceptions, consent checks, Trigger Group/tag-sequencing membership, timing risk, frequency/duplicate policy, owner/reviewer, environment/version, status, and retirement condition.
-- One test plan and evidence-ready test record covering valid, negative, missing/malformed, duplicate, SPA/navigation, consent, exception, Trigger Group, browser/navigation, and downstream Network/GA4 DebugView behavior. Results must identify environment, container version, tester, date, evidence, and status; unexecuted tests remain Pending.
-- One change-control and retirement record describing affected consumers, approval, published version, rollback point, monitoring, replacement, and retirement condition.
+Detailed Variable source design, Tag configuration, consent-policy design, custom-template development, reports, or release operations; use Sections 02, 04–10. Advertising-specific Triggers are excluded.
 
-## Instructions / Answer
+## Source
 
-See [03-trigger-management-answer.md](./03-trigger-management-answer.md).
+Detailed implementation: [03-trigger-management-answer.md](./03-trigger-management-answer.md).

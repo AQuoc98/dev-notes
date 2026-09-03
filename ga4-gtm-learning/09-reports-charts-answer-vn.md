@@ -1,489 +1,533 @@
 # 09 — GA4 Reports, Explorations, Charts và Interpretation
 
-## Mục đích
+## 1. Tổng quan
 
-Report không phải là một tập hợp chart đẹp mắt. Report là câu trả lời có thể lặp lại cho một business question. Hãy xác định question và decision trước, sau đó mới chọn GA4 surface, dimension, metric, filter, segment, chart, phương pháp validation và owner.
+### 1.1 Mục tiêu
 
-Với thay đổi frontend/GTM, minimum handoff hẹp hơn full report design: xác nhận đúng GA4 property nhận event một lần, required parameters trở nên available ở đúng scope, report hoặc Exploration hiện có không bị hỏng, và processing hoặc data-quality limitation đã được ghi nhận. Dashboard và chart design có thể để analytics/report owner phụ trách.
+Biến dữ liệu GA4 đã được kiểm tra thành Report hoặc Exploration có thể tái lập, trả lời một câu hỏi nghiệp vụ rõ ràng và hỗ trợ một quyết định cụ thể. Chart chỉ là lớp trình bày; cần định nghĩa population, grain, scope, field, công thức và giới hạn trước.
 
-Dùng chuỗi sau:
+### 1.2 Phạm vi
 
-```text
-Report audience
-  → business question
-  → decision
-  → population và scope
-  → dimensions + metrics
-  → Report hoặc Exploration
-  → chart/table
-  → QA và limitations
-  → interpretation và action
-```
+- Report requirement, population, grain, scope, field readiness, dimension, metric, filter, segment, formula, chart, owner và maintenance.
+- GA4 Detail/Overview Report, summary card, collection, sharing và export.
+- Free-form, Funnel, Path và các Exploration phù hợp với câu hỏi.
+- Tách user-level reporting khỏi event-level collection QA.
+- Kiểm tra thực tế về data freshness, compatibility, Data quality, thresholding, sampling, identity, consent và cardinality.
 
-## Thuật ngữ dùng chung
+### 1.3 Ngoài phạm vi
 
-Dùng các định nghĩa đơn giản dưới đây khi trao đổi report với Product, Marketing, Engineering, QA hoặc leadership. Trong tài liệu này, **audience** là những người đọc và sử dụng report; không phải GA4 Audience dùng cho targeting.
+- Ý nghĩa event và collection contract: xem Section 07 — Measurement Plan.
+- Kiểm tra runtime Data Layer, GTM, consent, Network và DebugView: xem Section 08 — Debug/QA.
+- Production activation và post-release monitoring: xem Section 10 — Release Monitoring.
+- Ads, campaign optimization, attribution operations hoặc external BI dashboard.
 
-| Thuật ngữ | Ý nghĩa dễ hiểu | Ví dụ trong Registration |
-| --- | --- | --- |
-| Audience | Những người dùng report và decision họ cần đưa ra. | Product team quyết định method đăng ký nào cần điều tra. |
-| Population | Chính xác những user, session, event hoặc item nào được đưa vào analysis. | Những user đã bắt đầu registration journey. |
-| Grain | Một row hoặc một đơn vị được đếm đại diện cho điều gì. | Một user, một session, một event hoặc một ecommerce item. |
-| Scope | Cấp độ mà một value thuộc về. | `method` thuộc event; scope của `device category` cần được kiểm tra theo GA4 surface. |
-| Dimension | Label hoặc category dùng để chia dữ liệu thành các nhóm. | `method`, `device category` hoặc `event_name`. |
-| Metric | Con số được đếm, cộng hoặc tính toán. | Users, event count, revenue hoặc completion rate. |
-| Denominator | Mẫu số dùng làm cơ sở tính rate. | Số user có `registration_start` khi tính completion rate. |
-| Field readiness (mức sẵn sàng của field) | Field đã an toàn và sẵn sàng về kỹ thuật để dùng trong report hay chưa; không chỉ là đã xuất hiện trong request. | `method` đã được collect, register nếu cần, process, compatible và được approve cho reporting. |
-| GA4 surface | Khu vực/công cụ trong GA4 nơi analysis được tạo hoặc xem. | Reports để monitor định kỳ; Explorations để investigation. |
+### 1.4 Chuỗi phân tích
 
-Phân biệt thực tế:
+~~~text
+Audience và decision
+→ câu hỏi
+→ population và grain
+→ dimension, metric và formula
+→ Report hoặc Exploration
+→ chart/table
+→ kiểm tra data quality và limitation
+→ interpretation và action
+~~~
 
-```text
-Population = đưa ai hoặc cái gì vào analysis?
-Grain      = một row hoặc một count đại diện cho điều gì?
-Scope      = value thuộc cấp độ nào?
-Readiness  = field đã dùng đúng và an toàn được chưa?
-```
+## 2. Khái niệm cốt lõi
 
-## Khái niệm cốt lõi về reporting
+### 2.1 Định nghĩa dễ hiểu
 
-### Dimension, metric và scope
+| Thuật ngữ | Cách hiểu đơn giản | Ví dụ trong GA4 | Dùng để quyết định |
+|---|---|---|---|
+| Audience | Người hoặc team sẽ đọc kết quả và đưa ra hành động. Không phải GA4 Audience dùng cho targeting. | Product team xem registration health. | Ai sở hữu quyết định và cần mức chi tiết nào? |
+| Population | Toàn bộ user, session, event hoặc item được đưa vào sau khi áp dụng filter và exclusion đã ghi rõ. | User đã phát registration_start trong một khoảng thời gian. | Thực tế đang đếm ai hoặc cái gì? |
+| Grain | Đơn vị mà mỗi dòng hoặc mỗi count đại diện. | Một distinct user khác với một sign_up event. | Câu hỏi ở cấp user, session, event hay item? |
+| Scope | Cấp độ mà một field thuộc về và tại đó GA4 có thể kết hợp field với metric. | method là event-scoped; user property thuộc user. | Dimension và metric có kết hợp đúng mà không đổi ý nghĩa câu hỏi không? |
+| Dimension | Nhãn mô tả dùng để nhóm, tách hoặc filter dữ liệu. | method, event_name hoặc device category. | Category nào sẽ làm rows, columns hoặc breakdown? |
+| Metric | Giá trị dạng số được GA4 đếm, cộng hoặc tính. | Users, event count, key events hoặc revenue. | Cần so sánh hoặc báo cáo đại lượng nào? |
+| Denominator | Population gốc của một rate; nó quyết định “100%” nghĩa là gì. | User có registration_start với method = X. | Numerator phải chia cho base nào? |
+| Cohort | Population ban đầu được chọn bằng start event và quy tắc thời gian trước khi đo event tiếp theo. | User có registration_start trong cohort window. | User nào đủ điều kiện để tính completion? |
+| Event sequence | Thứ tự bắt buộc của các event để kết quả được tính hợp lệ. | registration_start → sign_up. | Completion có xảy ra sau start event theo đúng flow không? |
+| Completion window | Khoảng thời gian tối đa sau start event mà event tiếp theo vẫn được tính là completion. | sign_up trong 24 giờ sau registration_start. | Khi nào completion còn thuộc về cohort bắt đầu? |
+| User metric | Metric đếm user của GA4 dùng ở cả hai phía, ví dụ Total users hoặc Active users. | Cùng một user metric cho registration_start và sign_up. | Hai phía có đang đếm user theo cùng cách không? |
+| Rate | Tỷ lệ phần trăm cho biết bao nhiêu phần của denominator đã đạt numerator. | 70 user hoàn tất ÷ 100 user bắt đầu = 70%. | Kết quả là tỷ lệ tương đối hay chỉ là số lượng thô? |
+| Field readiness | Field có ý nghĩa đã duyệt, được collect, available sau processing, tương thích, an toàn về privacy và được duyệt cho câu hỏi. | method đã available dưới dạng processed custom dimension sau expected window. | Field đã sẵn sàng dùng trong Report hoặc Exploration chưa? |
+| Report | View được lưu và quản lý để theo dõi lặp lại một câu hỏi ổn định. | Registration health theo method hằng tuần. | Asset này có cần publish và maintain không? |
+| Exploration | Workspace linh hoạt để điều tra, so sánh hoặc thử một câu hỏi còn thay đổi. | Free-form QA event-level hoặc funnel investigation. | Đây là phân tích khám phá hay Report chính thức? |
 
-| Khái niệm | Giải thích dễ hiểu | Ví dụ | Sai lầm thường gặp |
-| --- | --- | --- | --- |
-| Dimension | Label dùng để chia data thành các nhóm. | `method`, `device category`, `event_name` | Xem label như một con số. |
-| Metric | Con số cho biết có bao nhiêu hoặc mức độ bao nhiêu. | Users, event count, key events, revenue | So sánh các số có cơ sở khác nhau. |
-| Scope | Cấp độ mà value thuộc về. | User, session, event hoặc item | Dùng event value để trả lời câu hỏi ở user level. |
-| User scope | Value mô tả user xuyên suốt hoạt động của họ. | User property | Xem nó như value thay đổi ở mỗi event. |
-| Session scope | Value mô tả một visit/session. | Session source/medium | Trộn acquisition ở session scope với user scope. |
-| Event scope | Value mô tả một event occurrence. | Event name hoặc event parameter | Cho rằng event count bằng unique users. |
-| Item scope | Value mô tả một product/item bên trong ecommerce data. | Item name hoặc item category | Cộng item row với event total mà chưa kiểm tra grain. |
+Trước khi chọn chart, luôn ghi ba điểm sau:
 
-Luôn ghi grain của question:
+~~~text
+Population = bao gồm ai hoặc cái gì?
+Grain = mỗi dòng hoặc mỗi count đại diện cho điều gì?
+Scope = mỗi giá trị thuộc cấp độ nào?
+~~~
 
-```text
-Có bao nhiêu user hoàn thành registration?
-→ user-level denominator; key event count có thể khác user count.
+Tóm lại: Audience cho biết ai hành động, Population cho biết phạm vi được đưa vào, Grain cho biết đang đếm đơn vị nào, Scope cho biết field thuộc cấp độ nào, còn Field readiness cho biết kết quả đã an toàn và đủ điều kiện để sử dụng chưa.
 
-Có bao nhiêu registration event được gửi?
-→ event-level count và duplicate behavior là điều cần quan tâm.
-```
+### 2.2 Scope và kỷ luật metric
 
-Nếu metric và dimension không tương thích, GA4 có thể disable combination hoặc trả về kết quả không trả lời đúng question. Không cố tạo chart khi scope nền tảng sai.
+| Scope | Mô tả | Ví dụ | Rủi ro |
+|---|---|---|---|
+| User | Một user trong toàn bộ hoạt động. | Users hoặc user property. | Đếm cùng user thành nhiều event. |
+| Session | Một lần truy cập. | Session source/medium. | Trộn acquisition theo session với user. |
+| Event | Một occurrence của event. | Event name hoặc event parameter. | Coi event count là unique users. |
+| Item | Một item trong ecommerce. | Item name hoặc category. | Cộng item rows vào event total mà không kiểm tra grain. |
 
-### Reports và Explorations
+Hai phía của một rate phải dùng cùng đơn vị đếm và quy tắc population có thể so sánh. Với registration completion rate theo method, hãy định nghĩa:
 
-| Surface | Dùng tốt nhất cho | Điểm mạnh | Lưu ý |
-| --- | --- | --- | --- |
-| Reports snapshot/overview | Monitoring cấp cao | Summary dễ tìm cho audience rộng | Ít detail và ít flexibility phân tích |
-| Detail report | Câu hỏi vận hành lặp lại, đã được quản lý | Lưu dimension, metric, chart và table | Cần configuration phù hợp và quyền publish |
-| Free-form Exploration | So sánh và investigation linh hoạt | Rows, columns, values, segments, filters và visualization | Dễ bị đọc sai; cần document configuration |
-| Funnel exploration | Phân tích tiến trình theo bước | So sánh completion/drop-off qua các bước | User/event counting và open/closed funnel setting rất quan trọng |
-| Path exploration | Tìm behavior trước/sau một hành động | Hiển thị journey và loop | Là exploratory, không phải bằng chứng về causation |
-| Cohort exploration | Retention hoặc behavior lặp lại | So sánh group theo thời gian | Cần cohort definition có ý nghĩa và đủ data |
+- **Cohort/denominator:** distinct user có `registration_start` trong cohort và method = X.
+- **Numerator:** chính các user trong cohort đó hoàn tất `sign_up` với method = X trong completion window đã duyệt.
+- **User metric:** dùng cùng một GA4 user metric (ví dụ Total users hoặc Active users) ở cả hai phía.
+- **Rate:** numerator chia cho denominator.
 
-Google mô tả detail report là report có hai chart và một table; Explorations cung cấp kỹ thuật phân tích nâng cao và flexible analysis. Xem [GA4 detail reports](https://support.google.com/analytics/answer/10659476) và [get started with Explorations](https://support.google.com/analytics/answer/7579450).
+Ví dụ: 100 distinct user bắt đầu bằng method = email trong ngày 1–7/9 và 70 user trong chính cohort đó hoàn tất sign_up bằng method = email trong 24 giờ, thì email registration rate là 70 ÷ 100 = 70%. Với cohort và sequence này, numerator là tập con của denominator. User sign_up nhưng bắt đầu trước cohort window không được tính. Không thay denominator bằng toàn bộ user (bao gồm người chưa từng bắt đầu), toàn bộ event (đổi grain và có thể đếm duplicate) hoặc page view (đo một hành động khác).
 
-### Filter, comparison và segment
+Nếu Report chỉ đếm độc lập start và completion theo ngày event mà không có cohort và completion window, hãy gọi đó là event-window ratio, không gọi là validated completion rate.
 
-- **Filter:** giới hạn data được hiển thị bằng một condition.
-- **Comparison:** hiển thị các subset của report cạnh nhau trong Reports workspace.
-- **Segment:** định nghĩa subset có thể tái sử dụng của user, session hoặc event trong Explorations.
+Giá trị method phải có mặt và thuộc danh sách được kiểm soát ở cả hai event. Nếu method thiếu hoặc không hợp lệ, hãy loại khỏi validated rate hoặc báo cáo riêng; không âm thầm gộp vào method khác.
 
-Viết condition bằng ngôn ngữ đơn giản và ghi rõ scope:
+### 2.3 Reports và Explorations
 
-```text
-Include users who completed sign_up
-versus
-Include events where event_name = sign_up
-```
+| Surface | Dùng khi | Quy tắc thực tế |
+|---|---|---|
+| Overview Report | Tóm tắt cấp topic. | Dùng summary card liên kết tới Detail Report có kiểm soát. |
+| Detail Report | Câu hỏi ổn định cần theo dõi định kỳ. | Chỉ publish sau khi definition, field và owner ổn định. |
+| Free-form Exploration | So sánh hoặc điều tra linh hoạt. | Ghi rõ rows, columns, values, segment, filter và date range. |
+| Funnel Exploration | Completion và drop-off qua các bước. | Ghi rõ đếm user hay event và funnel open/closed. |
+| Path Exploration | Khám phá hành vi trước/sau. | Chỉ dùng để khám phá, không chứng minh causation. |
+| Cohort Exploration | Retention hoặc hành vi lặp lại. | Định nghĩa cohort và observation period trước khi diễn giải. |
 
-Hai cách này có thể cho kết quả khác nhau. Không dùng user segment cho question về event delivery volume, hoặc event filter cho decision cần unique user, nếu chưa document khác biệt.
+Detail Report thường gồm một table và hai chart; Exploration cho phép phân tích linh hoạt hơn. Không biến mọi tab Exploration tạm thời thành Report chính thức.
 
-## Quy trình thiết kế report
+### 2.4 Filter, comparison và segment
 
-### Bước 1 — Xác định question và decision
+- **Filter:** giới hạn rows hoặc event trong asset hiện tại.
+- **Comparison:** hiển thị các nhóm dữ liệu cạnh nhau trong Reports.
+- **Segment:** nhóm user, session hoặc event có thể tái sử dụng trong Explorations.
 
-Ví dụ:
+Viết điều kiện bằng ngôn ngữ dễ hiểu và ghi scope. “Users đã hoàn tất sign_up” khác với “events có event_name bằng sign_up”.
 
-```text
-Report audience: Product team
-Question: Registration method nào có completion rate thấp nhất?
-Decision: Ưu tiên investigation UX theo từng method.
-Cadence: Weekly
-Owner: Product analytics
-```
+## 3. Quy trình tạo Report và Exploration
 
-Report title phải làm rõ mục đích:
+### Bước 1 — Xác định câu hỏi và quyết định
 
-```text
-Product — Registration health by method
-Analytics — Registration event delivery QA
-```
+Ghi một câu hỏi có liên quan trực tiếp đến quyết định:
 
-Tránh các title như `Dashboard 1`, `Test` hoặc `All Events`.
+~~~text
+Audience:
+Question:
+Decision hoặc action:
+Cadence:
+Owner:
+~~~
 
-### Bước 2 — Xác định population và grain
+Đặt tên theo câu hỏi hoặc quyết định. Tránh tên như Dashboard 1, Test hoặc All Events.
 
-**Population** trả lời: “Ai hoặc cái gì được đưa vào?” **Grain** trả lời: “Một row hoặc một đơn vị được đếm đại diện cho điều gì?” Hai thông tin này phải được ghi trước khi chọn chart.
+### Bước 2 — Xác định population, grain và scope
 
-Ví dụ:
+Ghi lại:
 
-```text
-Population: User đã bắt đầu registration journey
-Grain:     Mỗi user chỉ được đếm một lần
-Question:  Bao nhiêu phần trăm user hoàn thành registration?
-
-Population: Tất cả sign_up event được gửi trong QA period
-Grain:     Một event occurrence
-Question:  Mỗi account được confirm có gửi đúng một request không?
-```
-
-Ghi nhận:
-
-- date range và property timezone;
-- population bằng ngôn ngữ dễ hiểu;
+- property, stream, timezone và date range;
+- population và exclusion bằng ngôn ngữ rõ ràng;
 - grain: user, session, event hoặc item;
-- điều kiện include/exclude;
-- comparison period hoặc segment;
-- identity setting/reporting identity nếu liên quan;
-- attribution model và traffic-source scope nếu liên quan;
-- key-event definition và deduplication assumption;
-- expected data freshness.
+- identity/reporting identity khi có liên quan;
+- filter, comparison, segment và comparison period;
+- numerator, denominator, cohort, sequence, completion window, user metric và key-event definition nếu tính rate;
+- freshness và processing status dự kiến.
 
-Không tính user-level rate bằng event count, trừ khi sự khác biệt này là có chủ đích và đã được document.
+Không dùng event count để trả lời câu hỏi user-level nếu chưa ghi rõ lý do.
 
-### Bước 3 — Xác nhận field readiness (field đã dùng được chưa?)
+### Bước 3 — Kiểm tra field readiness
 
-**Field readiness** nghĩa là field đã qua các kiểm tra cần thiết: đã được collect, register nếu cần, process và available, compatible với report đã chọn, an toàn và được approve cho question tương ứng. Parameter xuất hiện trong Network request chưa có nghĩa là field đã sẵn sàng cho reporting.
+Section 07 là nguồn chuẩn cho ý nghĩa event và parameter. Bước này chỉ kiểm tra các field đã duyệt có sẵn sàng và phù hợp với reporting surface đã chọn hay chưa.
 
-Trước khi build report:
+Trước khi dựng asset:
 
-1. Verify event và parameter có trong Measurement Plan và DebugView.
-2. Ưu tiên standard dimension/metric khi nó có đúng meaning và scope.
-3. Xác nhận event parameter thực sự đang được collect.
-4. Chỉ register custom dimension hoặc metric khi cần cho approved analysis.
-5. Ghi registration date và expected availability.
-6. Kiểm tra cardinality, privacy, allowed values và quota.
-7. Test field trong report hoặc Exploration phù hợp sau processing.
+1. Xác nhận event và parameter nằm trong Measurement Plan đã duyệt.
+2. Ưu tiên standard dimension/metric nếu có đúng ý nghĩa và scope.
+3. Xác nhận field đã được collect và nhìn thấy ở GA4 surface phù hợp.
+4. Chỉ đăng ký custom dimension/metric khi có nhu cầu phân tích lặp lại đã duyệt.
+5. Ghi ngày đăng ký và thời điểm có thể sử dụng.
+6. Kiểm tra privacy, allowed values, cardinality, quota và compatibility.
+7. Test field sau processing; parameter xuất hiện trong Network chưa đủ để xem là report-ready.
 
-Google ghi chú custom dimension và metric được tạo từ collected custom data và có thể cần 24–48 giờ mới available cho reporting/advertising. Cần kiểm tra behavior và limit hiện hành trong property và official documentation. Xem [custom dimensions and metrics](https://support.google.com/analytics/answer/14240153).
+Custom dimensions và metrics được tạo từ custom data đã thu thập. Google lưu ý chúng có thể cần đến 24–48 giờ mới xuất hiện trong Reports hoặc Explorations; vì vậy cần ghi expected availability, không coi field vừa đăng ký là dùng được ngay.
 
-### Field-readiness inventory
+### Bước 4 — Chọn GA4 surface
 
-**Mục đích:** Dùng inventory này để theo dõi một dimension hoặc metric đã sẵn sàng cho reporting chưa. Nó tách “parameter đang được collect” khỏi “field đã register, process, tương thích và an toàn để dùng trong report”.
+Dùng Detail Report cho câu hỏi ổn định, lặp lại. Dùng Exploration cho điều tra, so sánh segment linh hoạt, funnel/path hoặc QA event-level. Ghi surface được chọn trong asset record.
 
-| Field | Meaning | Source | Scope (cấp độ dữ liệu) | Standard/custom | Registration date | Expected availability | Risk/notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `event_name` | Canonical event | GA4 event | Event | Standard | N/A | Standard processing | Stable |
-| `method` | Registration method | `sign_up` parameter | Event | Custom if required | YYYY-MM-DD | After processing delay | Controlled values |
-| `form_id` | Stable form identifier | `sign_up` parameter | Event | Custom if required | YYYY-MM-DD | After processing delay | Avoid free text |
-| `device_category` | Device category | GA4 collection | User/session/event context | Standard | N/A | Standard processing | Scope must be checked |
+### Bước 5 — Chọn dimension, metric và formula
 
-### Bước 4 — Chọn GA4 area (surface)
+Chọn bộ field nhỏ nhất nhưng tương thích:
 
-Dùng **detail report** khi cùng một audience sẽ monitor một question ổn định lặp lại. Dùng **Exploration** khi analyst cần compare segment, test hypothesis, inspect funnel/path hoặc explore question chưa ổn định.
+~~~text
+Question:
+Dimensions và scopes:
+Metrics và units:
+Filter/comparison/segment:
+Numerator:
+Denominator:
+Formula:
+~~~
 
-Không biến mọi Exploration ad hoc thành published report. Chỉ promote sau khi question, definition, filter và ownership đã ổn định.
+Với mọi percentage, numerator và denominator phải dùng cùng property, stream, date range, population rule, identity và giá trị dimension. Với rate giữa các event, cần ghi thêm cohort, event sequence, completion window và user metric giống nhau. Nếu UI không biểu diễn đúng công thức, dùng Exploration hoặc export đã được duyệt; không âm thầm thay denominator.
 
-### Bước 5 — Chọn dimension và metric
+Với rate tính giữa nhiều event, cần chọn rõ cách triển khai:
 
-Chọn tập nhỏ nhất có thể trả lời question:
+| Nhu cầu | GA4 surface nên dùng | Quy tắc thực tế |
+|---|---|---|
+| Theo dõi ổn định một metric mà GA4 đã hỗ trợ trực tiếp | Detail Report | Chỉ dùng khi metric và denominator là native, đồng thời công thức có thể nhìn thấy. Không trình bày hai số đếm riêng như một rate đã được tính. |
+| Xem completion và drop-off theo user trong giao diện GA4 | Funnel Exploration | Dùng khi step, cách đếm user, filter method và quy tắc open/closed biểu diễn đúng requirement. Lưu cấu hình và ghi rõ các quy tắc. |
+| Tính chính xác distinct-user numerator ÷ denominator giữa các event, cần join hoặc extract lặp lại | Export hoặc BigQuery đã được phê duyệt | Dùng khi GA4 UI không biểu diễn chính xác công thức. Ghi rõ identity, logic theo thời gian event, schema, quyền truy cập và processing delay. |
 
-```text
-Question: Sign-up có được ghi nhận một lần theo method và device không?
-Dimensions: method, device category, date
-Metrics: users, event count, key events
-Filter: approved registration event family
-```
+Nếu requirement cần rate chính xác giữa hai event nhưng Detail Report và Funnel Exploration đều làm thay đổi population, hãy dùng phép tính từ export/BigQuery đã được duyệt. Không âm thầm thay bằng event count, total users hoặc page views.
 
-Với rate, document numerator và denominator. Ví dụ:
+Thứ tự quyết định: dùng Detail Report cho metric native, Funnel Exploration cho completion flow trong UI, và chỉ dùng phép tính từ export/BigQuery đã được duyệt khi logic cross-event chính xác không thể biểu diễn trong GA4.
 
-```text
-Completion rate = users with sign_up / users with registration_start
-```
+### Bước 6 — Chọn chart
 
-Không gọi `sign_up event count / page views` là completion rate nếu đó không phải business definition đã thống nhất. Tránh trộn event count với user count mà không giải thích grain.
+| Tác vụ phân tích | Chart phù hợp | Cần kiểm tra |
+|---|---|---|
+| Xu hướng | Line | Date granularity và ngày gần nhất chưa hoàn tất. |
+| So sánh category | Bar | Số category có kiểm soát và scope tương thích. |
+| Giá trị chính xác | Table | Unit, sorting và denominator vẫn nhìn thấy. |
+| Thành phần ít nhóm | Donut/pie | Các phần tạo thành một whole có ý nghĩa. |
+| Quan hệ số | Scatterplot | Association không phải causation. |
+| Tiến trình bước | Funnel | User/event counting và funnel rule rõ ràng. |
+| Khám phá Journey | Path | Loop/noise là bình thường; không suy ra causation. |
+| Địa lý | Geo map | Nhóm nhỏ và privacy threshold được kiểm tra. |
 
-### Bước 6 — Chọn chart theo analytical task
+Luôn giữ table hoặc formula hiển thị khi exact value hay denominator quan trọng.
 
-| Task | Visualization ưu tiên | Vì sao | Lưu ý |
-| --- | --- | --- | --- |
-| Trend theo thời gian | Line chart | Thể hiện direction và change | Recent/incomplete data có thể thấp giả tạo |
-| So sánh category | Bar chart | Hỗ trợ ranking và side-by-side comparison | Quá nhiều category làm khó đọc |
-| Giá trị chính xác | Table | Giữ value và nhiều field | Pattern khó nhìn hơn |
-| Composition với ít category | Donut/pie | Hiển thị các phần của một whole có ý nghĩa | Tránh nhiều slice hoặc total không liên quan |
-| Quan hệ giữa numeric field | Scatterplot | Hiển thị association | Correlation không phải causation |
-| Tiến trình theo bước | Funnel | Hiển thị movement qua các step | Kiểm tra user/event count và funnel rule |
-| Khám phá journey | Path | Hiển thị next/previous action phổ biến | Exploratory, có thể có loop/noise |
-| Địa lý | Geo map | So sánh geographic group đã phê duyệt | Privacy threshold và group nhỏ cần chú ý |
+### Bước 7 — Dựng, QA và ghi lại asset
 
-Chart là communication layer. Giữ table hoặc calculation visible khi exact value hay denominator quan trọng.
+Sau khi dựng asset, kiểm tra:
 
-### Bước 7 — Build, publish và document asset
+- property, stream, timezone, date range, field, scope và filter;
+- Data quality indicator, freshness, thresholding, sampling và cardinality;
+- table value so với chart value;
+- interpretation, limitation, owner và maintenance trigger.
 
-#### A. Tạo detail report
+Dùng evidence từ Section 08 khi cần kiểm tra collection quality. Report hoặc chart không thay thế runtime QA.
 
-Cần role **Editor** hoặc **Administrator** để tạo hoặc customize report. Dùng detail report khi question đã ổn định và cần được theo dõi lặp lại.
+## 4. Các record chuẩn
 
-1. Trong GA4, mở **Reports → Library**.
-2. Trong phần **Reports**, chọn **+ Create new report → Create detail report**.
-3. Chọn **Blank** hoặc template phù hợp. Report dựa trên template có thể nhận update từ template trong tương lai; hãy ghi rõ report còn linked hay đã unlinked.
-4. Trong **Customize report**, cấu hình dimension picker, metric, report filter và hai chart. Chỉ thêm field đã ready và compatible.
-5. Đặt default dimension, default sort metric, chart type, filter/comparison, title, description, owner và maintenance trigger.
-6. Bấm **Save**, nhập report name rõ ràng rồi lưu lại.
-7. Mở report đã lưu từ **Reports**, không chỉ từ Library, và kiểm tra report có trả lời question ban đầu hay không.
+Mỗi record có một mục đích riêng: requirement record định nghĩa câu hỏi, field-readiness record xác nhận field có thể dùng, asset record giúp tái tạo view, còn interpretation note ghi quyết định. Các định nghĩa dùng chung nên được tham chiếu thay vì lặp lại trong nhiều record.
 
-Detail report có hai chart và một table. Chart hiển thị theo data của table, nên thay dimension, filter, comparison hoặc default sort có thể làm thay đổi chart data. Hãy document table configuration và mục đích của chart, không chỉ ghi loại visual. Xem [create a detail report](https://support.google.com/analytics/answer/13844077) và [customize detail reports](https://support.google.com/analytics/answer/10445879).
+### 4.1 Report Requirement Record
 
-#### B. Tạo summary card và overview report
-
-Overview report là trang tổng quan được tạo từ các summary card. Summary card được tạo từ detail report và có thể dẫn người dùng tới detail report gốc.
-
-Để tạo summary card:
-
-1. Mở detail report liên quan và bấm **Customize report**.
-2. Trong **SUMMARY CARDS**, chọn **+ Create new card**.
-3. Chọn dimension dropdown, metric dropdown, visualization và card filter nếu cần.
-4. Bấm **Apply**, sau đó **Save → Save changes to current report**.
-
-Để tạo overview report:
-
-1. Vào **Reports → Library**.
-2. Chọn **+ Create new report → Create overview report**.
-3. Chọn **+ Add cards**, chọn card cần dùng và sắp xếp thứ tự. Một overview report có thể có tối đa 16 summary card.
-4. Lưu và đặt tên report.
-
-Custom summary card có thể chỉ xuất hiện trong tab **Summary Cards** của overview report sau khi detail report nguồn được thêm vào ít nhất một report collection. Xem [create a summary card](https://support.google.com/analytics/answer/13819308) và [create an overview report](https://support.google.com/analytics/answer/13823841).
-
-#### C. Đưa report vào left navigation
-
-Lưu report trong Library không tự động làm report xuất hiện ở left navigation của property. Editor hoặc Administrator cần thêm report vào collection:
-
-1. Trong **Reports → Library**, tạo collection mới hoặc edit collection hiện có.
-2. Tạo hoặc chọn topic.
-3. Kéo detail report hoặc overview report vào topic.
-4. Bấm **Save**, sau đó dùng **More → Publish** của collection.
-
-Dùng collection cho report mà một audience xác định cần tìm và sử dụng thường xuyên. Giữ exploratory work ở trạng thái private hoặc shared Exploration cho tới khi question, definition và owner ổn định. Xem [customize report navigation](https://support.google.com/analytics/answer/10460557).
-
-#### D. Tạo chart trong free-form Exploration
-
-Dùng Exploration cho investigation, comparison linh hoạt hoặc question chưa ổn định.
-
-1. Mở **Explore → Free form** hoặc bắt đầu từ Exploration template.
-2. Trong **Variables**, chỉ thêm dimension, metric và segment cần thiết.
-3. Trong **Tab Settings**, đặt dimension vào **Rows/Columns**, metric vào **Values**, rồi áp dụng filter hoặc segment comparison cần thiết.
-4. Trong **Visualization**, chọn table, bar, line, donut, scatterplot hoặc geo map theo analytical task.
-5. Chỉ thêm tab mới cho một follow-up question riêng; không trộn các question không liên quan trong cùng một tab.
-6. Đặt tên rõ ràng, lưu Exploration và ghi date range, configuration, limitation và owner.
-
-Kiểm tra **Data quality** indicator trước khi diễn giải kết quả. Exploration có thể được share và export, nhưng shared Exploration là view-only với user khác; muốn edit cần duplicate. Xem [free-form Exploration](https://support.google.com/analytics/answer/9327972) và [get started with Explorations](https://support.google.com/analytics/answer/7579450).
-
-#### E. Share hoặc export kết quả
-
-Với report đã lưu, mở report từ **Reports**, chọn **Share this report** rồi chọn **Share Link** hoặc **Download File**. Report có thể export thành PDF, CSV hoặc Google Sheets. Với Exploration, dùng **Share exploration** hoặc **Export data** và chọn format phù hợp. Không chia sẻ màn hình Library đang customize như thể đó là saved report. Xem [share and export reports](https://support.google.com/analytics/answer/9317657).
-
-## Chart và Report QA
-
-### Configuration checks
-
-- [ ] Đúng property, stream, timezone và date range.
-- [ ] Đúng dimension, metric, scope và compatible combination.
-- [ ] Filter/comparison/segment logic khớp written requirement.
-- [ ] Key-event definition và metric name hiện hành.
-- [ ] Custom definition đã register, available và không duplicate không cần thiết.
-- [ ] Chart title, unit, date granularity, breakdown và legend dễ hiểu.
-- [ ] Table value và chart value reconcile ở nơi cần reconcile.
-- [ ] Report không expose restricted hoặc unnecessary data.
-- [ ] Intended audience có access cần thiết.
-
-### Data-quality checks
-
-- [ ] So sánh controlled test period với Data Layer, network và DebugView evidence.
-- [ ] Kiểm tra processing delay và recent date chưa hoàn chỉnh.
-- [ ] Kiểm tra thresholding indicator và low-volume data có bị ẩn không.
-- [ ] Kiểm tra sampling indicator trong Exploration khi applicable.
-- [ ] Kiểm tra `(other)` row và high-cardinality dimension.
-- [ ] Kiểm tra report identity và attribution context.
-- [ ] Kiểm tra event count, users và key-event count có quan hệ hợp lý không.
-- [ ] Giải thích discrepancy thay vì âm thầm đổi filter hoặc date.
-
-### Interpretation checks
-
-- [ ] Conclusion trả lời original question.
-- [ ] Conclusion tách observation khỏi interpretation.
-- [ ] Association không được trình bày như causation.
-- [ ] Denominator và time period được ghi rõ.
-- [ ] Tracking defect và data limitation đã biết được disclose.
-- [ ] Decision/action và owner được ghi nhận.
-
-Mở **Data quality** indicator cạnh title của report hoặc Exploration trước khi chốt analysis. Ghi rõ kết quả là unsampled, thresholded hay sampled và giải thích ảnh hưởng của trạng thái đó tới decision. Xem [GA4 data quality](https://support.google.com/analytics/answer/12856703).
-
-## Limitations cần ghi nhận
-
-### Freshness và processing
-
-Realtime và DebugView phục vụ activity gần đây và diagnostics. Standard report và Exploration có thể dùng processed data với delay. Không đánh giá release từ ngày chưa complete hoặc so sánh current period mới process một phần với historical period đã complete nếu không có note.
-
-### Thresholding và privacy
-
-GA4 có thể giới hạn hoặc ẩn data khi report có nguy cơ expose individual user, đặc biệt với population nhỏ hoặc sensitive dimension. Kết quả trống hoặc giảm không chứng minh rằng event không xảy ra.
-
-### Sampling và data volume
-
-Phân tích lớn hoặc phức tạp có thể bị sampling tùy surface và property configuration. Ghi lại sampling indicator và không trình bày sampled result như exact count.
-
-### Cardinality
-
-High-cardinality dimension có thể khiến value bị gom vào `(other)` hoặc giảm khả năng diễn giải. Không dùng unique user ID, session ID, timestamp, raw URL hoặc free text làm routine custom dimension. Dùng controlled ID hoặc analysis surface khác khi phù hợp.
-
-### Attribution và identity
-
-Acquisition result phụ thuộc attribution setting, reporting identity, lookback window, consent, cross-domain setup và data freshness. DebugView không phải final attribution. Ghi context attribution/identity khi decision phụ thuộc source, medium, campaign hoặc cross-device behavior.
-
-### Reports và Explorations có thể khác nhau một cách hợp lệ
-
-Không nên xem mọi khác biệt giữa Report và Exploration là implementation defect. Hãy so sánh field, filter, comparison/segment, date range, data-retention window, low-user thresholding, behavioral modeling và processing time. Reports và Explorations có thể hỗ trợ field khác nhau và dùng cách filter khác nhau; hãy ghi rõ surface nào là source of truth cho decision. Xem [data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379) và [data compatibility](https://support.google.com/analytics/answer/11608978).
-
-## Report Requirements Template
-
-**Mục đích:** Dùng template này trước khi build report hoặc Exploration. Nó định nghĩa business question, decision, ai/cái gì được đưa vào, một row hoặc count đại diện cho gì, các field, GA4 area, cadence và owner để output vẫn hữu ích sau khi analyst ban đầu không còn phụ trách.
-
-| ID | Report audience | Business question | Decision | Cadence | Population (ai/cái gì được đưa vào) | Grain (mỗi row/count đại diện cho) | Dimensions | Metrics | Filter/segment | GA4 area | Owner |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R-01 | Product | Method nào có registration completion thấp hơn? | Ưu tiên UX work | Weekly | User trong registration journey | Một user | Method, device, date | Users, key events, rate | Registration events | Detail report | `[name]` |
-| R-02 | Analytics/QA | Confirmed registration có được gửi một lần không? | Approve/fix release | Per release | Event trong test period | Một event occurrence | Event name, method, form ID | Event count | QA traffic | Exploration | `[name]` |
-
-## Interpretation Note Template
-
-**Mục đích:** Dùng note này để giải thích report hoặc Exploration có ý nghĩa gì, quan sát được gì, hỗ trợ decision nào và không thể chứng minh điều gì. Nó ngăn chart được reuse mà thiếu denominator, scope, limitation hoặc attribution context.
-
-```text
-Business question:
-Decision supported:
-Report audience và owner:
-GA4 property / stream:
-Report hoặc Exploration:
-Date range và property timezone:
-Population (ai/cái gì được đưa vào):
-Grain (mỗi row/count đại diện cho):
-Filters, comparisons và segments:
-Dimensions và metrics với scope:
-Calculation/denominator:
-Observed result:
-Interpretation:
-What this does not prove:
-Freshness/processing notes:
-Thresholding/sampling/cardinality notes:
-Identity/attribution notes:
-Tracking hoặc data-quality caveats:
-Action, owner và due date:
-Review/retirement trigger:
-```
-
-## Chart và Report Template Set
-
-Các template này quản lý report sau khi Measurement Plan đã định nghĩa event và parameter contract. Dùng Report Requirements cho request, Field-readiness Inventory để kiểm tra input đã dùng được chưa, Configuration Record để lưu asset đã build, Chart Specification để giải thích lựa chọn visual và Interpretation Note để ghi conclusion được publish.
-
-| Template | Mục đích | Dùng khi |
-| --- | --- | --- |
-| Report Requirements Template | Định nghĩa question, decision, ai/cái gì được đưa vào, một row/count đại diện cho gì, field, GA4 area, cadence và owner. | Trước khi tạo report hoặc Exploration. |
-| Field-readiness Inventory | Xác nhận dimension/metric đã collect, register, process, tương thích và an toàn. | Trước khi dùng field trong report. |
-| Report Configuration Record | Ghi configuration chính xác của report/Exploration đã lưu và thông tin maintenance. | Sau khi build hoặc thay đổi đáng kể một report. |
-| Chart Specification Record | Giải thích vì sao chọn chart type, breakdown, metric và date granularity. | Khi chart hỗ trợ recurring decision hoặc được chia sẻ với stakeholder. |
-| Interpretation Note Template | Ghi observed result, interpretation, limitation và action. | Khi publish hoặc review analysis. |
-
-### Report configuration record template
-
-**Mục đích:** Dùng một record cho một detail report hoặc Exploration đã lưu. Nó giúp asset có thể reproduce và cung cấp đủ thông tin để owner tiếp theo review hoặc rebuild.
-
-```text
-Report/Exploration ID:
+| Field | Giá trị |
+|---|---|
+| Requirement ID | [stable ID] |
+| Audience / owner | [team và owner] |
+| Business question | [một câu hỏi] |
+| Decision/action | [kết quả có thể thay đổi điều gì] |
+| Cadence | [one-off, weekly, release-based] |
+| Population/exclusions | [đối tượng và loại trừ] |
+| Grain | [user/session/event/item] |
+| Dimensions và scopes | [field đã duyệt] |
+| Metrics và formula | [unit, numerator, denominator] |
+| Filters/comparisons/segments | [logic bao gồm] |
+| GA4 surface | [Detail Report, Overview hoặc Exploration] |
+| Review trigger | [thay đổi contract, product hoặc data] |
+
+### 4.2 Field Readiness Record
+
+| Field | Giá trị |
+|---|---|
+| Field-readiness ID | [stable ID] |
+| Field và meaning | [event/parameter/property và ý nghĩa] |
+| Source | [GA4 event, parameter, user property hoặc export] |
+| Scope | [user/session/event/item] |
+| Standard/custom | [standard hoặc custom] |
+| Collection confirmed | [date/evidence reference] |
+| Registration | [not required hoặc custom definition/date] |
+| Expected availability | [processing window] |
+| Compatibility/privacy | [status và caveat] |
+| Cardinality/quota | [risk và decision] |
+| Owner/status | [owner và Ready/Pending/Blocked] |
+
+### 4.3 Asset Configuration Record
+
+Dùng một record cho một Detail Report, Overview Report hoặc Exploration đã lưu:
+
+~~~text
+Asset ID:
+Requirement ID:
+Field-readiness IDs:
 Name và surface:
-GA4 property/stream:
-Collection/topic hoặc Exploration:
-Business question:
-Decision và owner:
-Population (ai/cái gì được đưa vào):
-Grain (mỗi row/count đại diện cho):
-Date range/timezone:
-Dimensions với scope (cấp độ dữ liệu):
+GA4 property/stream/timezone:
+Date range:
+Population và grain:
+Dimensions với scope:
 Metrics và formulas:
 Filters/comparisons/segments:
 Chart/table configuration:
-Custom definitions required:
-Field-readiness record (field đã sẵn sàng để reporting chưa?):
-Access/sharing:
-Report URL hoặc saved location:
+Data-quality và limitation notes:
+Access/share/export location:
 Version/last updated:
-Maintenance trigger:
+Owner và maintenance trigger:
 Retirement condition:
-Reviewer:
-```
+~~~
 
-### Chart specification record template
+### 4.4 Interpretation và Decision Note
 
-**Mục đích:** Dùng record này để làm rõ lý do chọn visual. Chart cần truyền đạt một analytical task, không chỉ làm report đẹp hơn.
+~~~text
+Asset ID:
+Requirement ID:
+Observed result:
+Interpretation:
+Decision/action:
+What the result does not prove:
+Date range và freshness:
+Thresholding/sampling/cardinality:
+Identity/consent/attribution context:
+Section 08 evidence hoặc data-quality caveat:
+Owner và due date:
+Review/retirement trigger:
+~~~
 
-| Field | Cần ghi nhận |
-| --- | --- |
-| Chart ID và report ID | ID ổn định của chart và saved report/Exploration. |
-| Analytical task | Trend, category comparison, composition, relationship, funnel, path hoặc exact values. |
-| Chart type | Line, bar, table, donut/pie, scatterplot, funnel, path hoặc map. |
-| Dimension/breakdown | Field trên axis, row, series hoặc slice, gồm cả scope. |
-| Metric và denominator | Value được hiển thị và denominator của rate/percentage. |
-| Date granularity | Day, week, month hoặc period đã document. |
-| Included population/filter | Logic include, exclude, comparison hoặc segment chính xác. |
-| Reason và caveat | Vì sao chart trả lời task và điều gì chart không được suy diễn. |
-| Owner/review date | Team/người chịu trách nhiệm maintenance và next review. |
+## 5. Triển khai thực tế
 
-Không dùng chart specification thay cho interpretation note. Specification mô tả cách build chart; interpretation note mô tả data có ý nghĩa gì đối với decision.
+### 5.1 Tạo Detail Report
 
-## Ví dụ: Registration Report và Exploration
+Dùng cho câu hỏi ổn định, được theo dõi lặp lại:
 
-### Reusable detail report
+1. Mở Reports → Library.
+2. Chọn Create new report → Create detail report.
+3. Tạo Blank hoặc chọn template phù hợp.
+4. Trong Customize report, thêm dimension, metric, filter và hai chart đã sẵn sàng, tương thích.
+5. Đặt title, default dimension, sort metric, description, owner và maintenance trigger.
+6. Save, mở Report từ Reports và kiểm tra table có trả lời đúng requirement.
+7. Ghi cấu hình vào Asset Configuration Record.
 
-```text
-Title: Product — Registration health
-Primary dimension: Event name hoặc approved registration dimension
-Secondary dimensions: Method, form ID, device category
-Metrics: Users, event count, key events
-Filter: Approved registration event family
-Charts: Line trend + bar comparison
-Table: Exact values và percentage với denominator đã document
-```
+Thay đổi dimension của table, sort metric, filter hoặc comparison có thể thay đổi chart. Ghi table và formula, không chỉ ghi loại chart.
 
-### Free-form Exploration
+### 5.2 Tạo Overview Report và summary card
 
-```text
-Question: Registration outcome khác nhau như thế nào theo method và device?
-Rows: Method
-Columns: Device category
-Values: Users, event count, key events
-Filter: Registration event family
-Visualization: Table/heat map cho exact comparison; line tab cho trend
-```
+Dùng Overview Report để tóm tắt một topic:
 
-Output phải nói rõ quan sát được gì, action nào được hỗ trợ và điều gì không thể chứng minh. Ví dụ, completion rate thấp hơn theo method có thể justify investigation; tự nó không chứng minh method đó gây ra drop.
+1. Tạo hoặc mở Detail Report.
+2. Chỉ thêm summary card đại diện cho quyết định ổn định.
+3. Mở Reports → Library và tạo hoặc sửa Overview Report.
+4. Thêm card vào topic, sắp xếp, save và publish collection.
+5. Giữ Detail Report liên kết làm nguồn của exact value.
 
-## Tài liệu tham khảo
+### 5.3 Tạo Free-form Exploration
 
-- [Reports in the Analytics app](https://support.google.com/analytics/answer/9924671)
+Dùng cho phân tích điều tra hoặc xem processed event count sau khi đã kiểm tra runtime ở Section 08:
+
+1. Mở Explore → Free form.
+2. Chỉ thêm dimension, metric và segment cần thiết.
+3. Đặt dimension vào Rows/Columns và metric vào Values.
+4. Áp dụng filter chính xác và ghi logic case-sensitive.
+5. Chọn chart phù hợp với tác vụ.
+6. Đặt tên, save và ghi date range, property, configuration, owner và limitation.
+
+Kiểm tra Data quality indicator trước khi diễn giải. Exploration được share không tự động trở thành Report chính thức.
+
+### 5.4 Share hoặc export
+
+Dùng chính Report hoặc Exploration đã lưu khi share/export. Ghi asset ID, version, date range và nơi nhận/lưu. Không share màn hình Library customization như thể đó là Report hoàn chỉnh.
+
+### 5.5 Quyền truy cập và publish
+
+Dùng mức quyền thấp nhất đủ cho từng thao tác. Tên quyền thực tế có thể bị ảnh hưởng bởi quyền kế thừa ở account/property và data restriction; hãy xác nhận role matrix hiện tại với property administrator.
+
+| Thao tác | Quyền thực tế nên có | Kiểm soát |
+|---|---|---|
+| Xem Report, Overview hoặc Exploration đã share | Viewer hoặc cao hơn | Owner cấp quyền cho đúng audience. |
+| Tạo, sửa và share Exploration | Analyst hoặc cao hơn, tùy restriction của property | Ghi rõ owner và phạm vi chia sẻ. |
+| Customize Detail/Overview Report hoặc publish collection | Editor hoặc Administrator | Review trước khi thay đổi navigation hoặc collection dùng chung. |
+| Thay custom definition hoặc setting cấp property | Editor/Administrator theo quyền property | Ghi change và processing window dự kiến. |
+| Export hoặc share dữ liệu nhạy cảm | Quyền phù hợp và approved data-handling rules | Xác nhận recipient, destination, retention và privacy approval. |
+
+Publish một Report collection sẽ thay đổi nội dung mà người dùng khác nhìn thấy; save một Exploration không tự động publish nó thành Report.
+
+## 6. QA và giới hạn
+
+### 6.1 Checklist cấu hình
+
+- [ ] Đúng property, stream, timezone và date range.
+- [ ] Dimension và metric có scope tương thích.
+- [ ] Population, filter, comparison, segment, numerator và denominator khớp requirement.
+- [ ] Custom definition đã sẵn sàng, không bị duplicate và vẫn được duyệt.
+- [ ] Table và chart reconcile ở nơi cần thiết.
+- [ ] Title, unit, date granularity, breakdown và legend dễ hiểu.
+- [ ] Quyền truy cập phù hợp với audience.
+
+### 6.2 Checklist chất lượng dữ liệu
+
+- [ ] Có collection evidence từ Section 08 khi cần.
+- [ ] Đã ghi freshness và processing status.
+- [ ] Đã kiểm tra Data quality indicator.
+- [ ] Đã ghi thresholding, sampling, cardinality hoặc (other).
+- [ ] Không coi ngày gần nhất chưa hoàn tất là kết quả cuối.
+- [ ] Đã ghi identity, consent và attribution context khi có liên quan.
+
+### 6.3 Checklist diễn giải
+
+- [ ] Kết luận trả lời đúng câu hỏi ban đầu.
+- [ ] Tách observation khỏi interpretation.
+- [ ] Ghi rõ numerator, denominator, grain và date range.
+- [ ] Không trình bày association như causation.
+- [ ] Công khai tracking defect và data limitation.
+- [ ] Ghi decision/action, owner và due date.
+
+### 6.4 Giới hạn thường gặp
+
+- **Freshness:** Realtime phản ánh hoạt động gần đây; Reports và Explorations có thể thay đổi khi GA4 xử lý dữ liệu. Không kết luận từ ngày chưa hoàn tất.
+- **Thresholding:** Population nhỏ hoặc nhạy cảm có thể bị ẩn hoặc giảm. Kết quả trống không chứng minh event không xảy ra.
+- **Sampling:** Truy vấn lớn hoặc phức tạp có thể được lấy mẫu. Ghi Data quality indicator và không trình bày sampled count như exact count.
+- **Cardinality:** Dimension có nhiều giá trị có thể tạo dòng (other) và khó diễn giải. Tránh custom dimension cho unique ID, timestamp hoặc free text.
+- **Identity và consent:** User count, attribution và cross-device phụ thuộc reporting identity, consent và cấu hình.
+- **Khác biệt surface:** Reports và Explorations có thể khác do field hỗ trợ, filter, segment/comparison, date range, low-user handling và processing. So sánh cấu hình trước khi mở defect collection.
+
+### 6.5 Giá trị thiếu và không hợp lệ
+
+- **`(not set)`:** GA4 không có giá trị dimension cho row hoặc event đó. Giữ riêng để điều tra nguồn dữ liệu; không tính như một method hợp lệ.
+- **`Unassigned`:** GA4 không map được giá trị vào grouping hoặc classification đã chọn. Xem đây là vấn đề phân loại/attribution, không đồng nhất với `(not set)`.
+- **Giá trị invalid hoặc ngoài controlled list:** Giá trị sai type, rỗng, khác casing quy định hoặc không nằm trong danh sách được duyệt là vi phạm field contract. Loại khỏi validated rate hoặc map vào category đã được phê duyệt; không tự ý đổi tên.
+- **Cách xử lý trong Report:** Đếm và báo cáo riêng các row này, liên kết issue với collection evidence ở Section 08 và ghi ảnh hưởng trong Interpretation and Decision Note.
+
+## 7. Bản đồ tham chiếu chéo
+
+| Section | Dùng cho |
+|---|---|
+| 01 — Data Layer Design | Payload event và nguồn field đã duyệt. |
+| 02 — Variable Management | Giá trị ổn định expose cho GTM. |
+| 03 — Trigger Management | Chọn event authoritative. |
+| 04 — Tag Management | Destination và mapping parameter. |
+| 05 — Consent | Collection được phép và denied behavior. |
+| 06 — Template Governance | Owner và lifecycle của template dùng lại. |
+| 07 — Measurement Plan | Business question, event contract, scope và field approval. |
+| 08 — Debug/QA | Runtime evidence cho collection và consent. |
+| 10 — Release Monitoring | Kiểm tra sau publish và ownership. |
+
+## 8. Ví dụ hoàn chỉnh — Registration Reporting Journey
+
+Phần này minh họa cách chuyển một Registration requirement thành User-level Report và Event-level QA Exploration. Giá trị trong ngoặc vuông là placeholder cho property, stream, ngày, owner và evidence đã duyệt. Setup và evidence runtime được quản lý ở Section 08 và tham chiếu bằng ID.
+
+### 8.1 Yêu cầu báo cáo Registration
+
+Loại record: Report Requirement Record.
+
+| Field | Giá trị ghi nhận |
+|---|---|
+| Requirement ID | REQ-REG-001 |
+| Audience / owner | Product team / [owner cụ thể] |
+| Business question | Phương thức đăng ký nào có completion rate được xác nhận thấp nhất? |
+| Decision/action | Điều tra method có rate thấp kéo dài; không suy ra quan hệ nhân quả chỉ từ rate. |
+| Cadence | Hàng tuần và sau release có thay đổi flow registration hoặc tracking. |
+| Population/exclusions | User production đã được phê duyệt; cohort bắt đầu bằng `registration_start` và `method` thuộc controlled list; loại test traffic chưa duyệt. |
+| Grain | Một distinct user cho mỗi method và reporting period. |
+| Cohort/sequence/completion window | User có `registration_start` trong [cohort window] và method = X; tính `sign_up` tiếp theo với method = X trong [completion window]. |
+| Dimensions and scopes | `method` (event-scoped); field bắt buộc của event và parameter theo contract đã duyệt ở Section 07; chỉ thêm breakdown tương thích khi đã ghi rõ. |
+| Metrics and formula | User metric: [Total users hoặc Active users], dùng ở cả hai phía. Numerator: user trong cohort có `sign_up`, `method = X`; denominator: user trong cohort có `registration_start`, `method = X`; rate = numerator ÷ denominator. |
+| Filters/comparisons/segments | Hai phía của rate dùng cùng property, stream, date range, reporting identity, cohort, completion window, method value và exclusions. |
+| GA4 surface | Saved Detail Report hoặc user-level Funnel Exploration đã duyệt. |
+| Review trigger | Thay đổi event contract, method values, field approval, consent behavior hoặc product flow. |
+| Section 08 reference | QA run `[QA-REG-RUN-001]` và evidence IDs được quản lý tại Section 08. |
+
+### 8.2 Mức sẵn sàng của các field Registration
+
+Loại record: Field Readiness Record, được duy trì riêng cho từng field mà asset sử dụng.
+
+| Field-readiness ID | Field và ý nghĩa | Source | Scope | Standard/custom | Collection confirmed | Registration | Expected availability | Compatibility/privacy | Cardinality/quota | Owner/status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| FR-REG-001 | `registration_start` — bắt đầu flow đăng ký | Application data layer → GTM → GA4 event | Event | Custom event | Section 08 evidence: [ID] | Không áp dụng | [processing window] | Event name và consent behavior đã duyệt | Cardinality thấp, có kiểm soát | [owner] / Ready |
+| FR-REG-002 | `sign_up` — server xác nhận tạo account | Application data layer → GTM → GA4 event | Event | Recommended GA4 event | Section 08 evidence: [ID] | Không áp dụng | [processing window] | Chỉ phát sau server confirmation | Cardinality thấp, có kiểm soát | [owner] / Ready |
+| FR-REG-003 | `method` — phương thức đăng ký thuộc controlled list | Application data layer → GTM → GA4 parameter | Event | Recommended/custom parameter; đăng ký custom dimension khi cần report | Section 08 evidence: [ID] | [custom definition ID/date, nếu cần] | [processing window] | Giá trị có kiểm soát; không free text hoặc identifier | Controlled list | [owner] / Ready |
+| FR-REG-004 | `form_id` — identifier của form đã duyệt | Application data layer → GTM → GA4 parameter | Event | Custom parameter; chỉ đăng ký khi cần | Section 08 evidence: [ID] | [custom definition ID/date, nếu cần] | [processing window] | Chỉ dùng giá trị không chứa PII đã duyệt | Giữ danh sách hữu hạn | [owner] / Ready hoặc Pending |
+
+### 8.3 Cấu hình User-level Registration Report
+
+Loại record: Asset Configuration Record.
+
+~~~text
+Asset ID: R-REG-001
+Requirement ID: REQ-REG-001
+Field-readiness IDs: FR-REG-001, FR-REG-002, FR-REG-003, FR-REG-004
+Name and surface: Registration completion by method — Detail Report (hoặc user-level Funnel Exploration đã duyệt)
+GA4 property/stream/timezone: [property] / [web stream] / [timezone]
+Date range: [start] → [end]
+Population and grain: User đã duyệt có registration_start trong [cohort window]; một distinct user cho mỗi method và reporting period; loại test traffic
+Dimensions with scope: method (event-scoped)
+Metrics and formulas: [Total users hoặc Active users] trong cùng cohort; users(sign_up, method = X trong [completion window]) ÷ users(registration_start, method = X); implementation path [Funnel Exploration / export hoặc BigQuery đã duyệt]
+Filters/comparisons/segments: Numerator và denominator dùng cùng method, property, stream, date range, identity, cohort, completion window và exclusions
+Chart/table configuration: Table hoặc bar chart theo method; giữ numerator, denominator và công thức hiển thị được
+Data-quality and limitation notes: [freshness, thresholding, sampling, (other), cardinality, identity, consent]
+Access/share/export location: [link hoặc vị trí]
+Version/last updated: v1.0 / [date]
+Owner and maintenance trigger: [owner] / review sau thay đổi contract, field, consent hoặc flow
+Retirement condition: Requirement hoặc registration flow bị loại bỏ
+~~~
+
+Chọn implementation path theo thứ tự quyết định ở Bước 5: Funnel Exploration khi UI giữ đúng cohort và sequence; nếu không, dùng phép tính từ export/BigQuery đã được duyệt. Detail Report chỉ phù hợp với metric được GA4 hỗ trợ trực tiếp và không được ngầm hiểu là cross-event rate nếu Report không tự tính công thức đó.
+
+### 8.4 Event-level Registration QA Exploration
+
+Loại record: Asset Configuration Record.
+
+~~~text
+Asset ID: EX-REG-QA-001
+Requirement ID: REQ-REG-001 (runtime acceptance hỗ trợ business question)
+Field-readiness IDs: FR-REG-001, FR-REG-002, FR-REG-003, FR-REG-004
+Name and surface: Registration event QA — Explore → Free form
+GA4 property/stream/timezone: [giống R-REG-001]
+Date range: [QA window có kiểm soát]
+Population and grain: Controlled QA traffic; một event occurrence
+Dimensions with scope: event_name, method, form_id (event-scoped)
+Metrics and formulas: event count; không tính completion rate theo user
+Filters/comparisons/segments: QA window, registration event family đã duyệt, test/build identifier
+Chart/table configuration: Table với event_name ở rows và method/form_id ở columns
+Data-quality and limitation notes: Expected một registration_start khi bắt đầu journey và một sign_up cho mỗi account được confirm; processed-count và runtime evidence tham chiếu Section 08 QA run [ID]
+Access/share/export location: [link hoặc vị trí]
+Version/last updated: v1.0 / [date]
+Owner and maintenance trigger: [owner] / review sau thay đổi event contract, mapping hoặc consent
+Retirement condition: QA workflow hoặc registration contract bị loại bỏ
+~~~
+
+Exploration này kiểm tra event duplicate, missing, sai timing, sai destination và thiếu parameter. Nó không chứng minh user-level rate hoặc request count.
+
+### 8.5 Diễn giải và quyết định cho Registration
+
+Loại record: Interpretation and Decision Note. Cấu hình chart nằm trong từng Asset Configuration Record; kết quả được ghi một lần ở note này.
+
+~~~text
+Asset ID: R-REG-001; EX-REG-QA-001
+Requirement ID: REQ-REG-001
+Observed result: [user metric]; cohort [range]; completion window [window]; [numerator] / [denominator] = [rate] theo method; event-level count [value]
+Interpretation: [mô tả chênh lệch hoặc collection defect quan sát được, không khẳng định nhân quả]
+Decision/action: [investigate, accept, rollback hoặc monitor] / [owner] / [due date]
+What the result does not prove: method gây ra chênh lệch; event-level QA chứng minh user-level rate; processed report chứng minh request count
+Date range and freshness: [range] / [freshness và processing status]
+Thresholding/sampling/cardinality: [status và impact]
+Identity/consent/attribution context: [reporting identity, consent state, attribution caveat]
+Section 08 evidence or data-quality caveat: [QA run/evidence IDs và gap chưa giải quyết]
+Owner and due date: [owner] / [date]
+Review/retirement trigger: thay đổi contract, field, consent, release hoặc reporting surface
+~~~
+
+Setup kiểm thử runtime, kết quả scenario và evidence được quản lý ở Section 08. Tham chiếu ID của chúng từ Report Requirement Record hoặc Interpretation and Decision Note.
+
+## Tài liệu tham khảo chính thức
+
+- [GA4 detail reports](https://support.google.com/analytics/answer/10659476)
+- [Overview reports](https://support.google.com/analytics/answer/10659551)
 - [Create a detail report](https://support.google.com/analytics/answer/13844077)
-- [GA4 detail report](https://support.google.com/analytics/answer/10659476)
 - [Customize detail reports](https://support.google.com/analytics/answer/10445879)
-- [Create a summary card](https://support.google.com/analytics/answer/13819308)
 - [Create an overview report](https://support.google.com/analytics/answer/13823841)
+- [Create a summary card](https://support.google.com/analytics/answer/13819308)
 - [Customize report navigation](https://support.google.com/analytics/answer/10460557)
-- [Share and export reports](https://support.google.com/analytics/answer/9317657)
-- [Get started with Explorations](https://support.google.com/analytics/answer/7579450)
 - [Free-form Exploration](https://support.google.com/analytics/answer/9327972)
-- [Path Exploration](https://support.google.com/analytics/answer/9317498)
+- [Get started with Explorations](https://support.google.com/analytics/answer/7579450)
 - [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)
 - [GA4 data freshness](https://support.google.com/analytics/answer/11198161)
 - [Data quality](https://support.google.com/analytics/answer/12856703)
-- [Data compatibility](https://support.google.com/analytics/answer/11608978)
-- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379)
-- [About data thresholds](https://support.google.com/analytics/answer/9383630)
+- [Data sampling](https://support.google.com/analytics/answer/13331292)
 - [GA4 cardinality](https://support.google.com/analytics/answer/12226705)
+- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379)

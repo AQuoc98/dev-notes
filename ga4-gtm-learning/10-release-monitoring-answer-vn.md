@@ -1,491 +1,444 @@
 # 10 — Quản lý Release GTM và Monitoring GA4
 
-## Mục đích
+## 1. Tổng quan
 
-Mọi thay đổi tracking đều là thay đổi production. Một tag có thể fire đúng trong Preview nhưng vẫn gửi nhầm property, gửi trùng event, vi phạm consent/privacy hoặc làm thay đổi reporting sau khi publish. Release management kết nối measurement contract đã được phê duyệt, implementation, bằng chứng QA, approval, publication, rollback, smoke test và monitoring.
+### 1.1 Mục tiêu
 
-Mô hình thực tế:
+Thiết lập quy trình có thể truy vết để đưa một thay đổi GTM/GA4 từ yêu cầu đã được phê duyệt đến release an toàn, theo dõi sau release và đóng release hoặc xử lý incident.
+
+Mọi thay đổi tracking đều có thể ảnh hưởng production. Preview có thể pass nhưng bản publish vẫn có thể gửi nhầm property, gửi trùng event, vi phạm consent/privacy hoặc làm thay đổi ý nghĩa báo cáo.
+
+### 1.2 Phạm vi
+
+- Phân loại change, phân công owner, quản lý workspace/environment/version, approval, publication, smoke test, monitoring, containment và rollback.
+- Các thay đổi material đối với GTM configuration, event routing, consent/privacy, destination, key event, custom definition, report hoặc data quality.
+- Release Record và Monitoring Record có liên kết với Sections 01–09.
+- Theo dõi thực tế: event volume, duplicate/missingness, chất lượng parameter, destination, consent, processed report và data quality.
+- Phân loại risk/status, lịch monitoring, escalation và nơi lưu evidence/quyền truy cập/thời hạn lưu.
+
+### 1.3 Ranh giới với các section khác
+
+| Source of truth | Phạm vi sở hữu | Section 10 sử dụng để |
+|---|---|---|
+| Section 07 — Measurement Plan | Event meaning, schema, occurrence, consent/privacy và destination decision | Xác nhận requirement và release impact |
+| Sections 01–06 | Data Layer, Variables, Triggers, Tags, Consent và Template configuration | Xác định implementation scope và object bị ảnh hưởng |
+| Section 08 — Debug/QA | Runtime test matrix, layer evidence và defect status | Xác nhận QA gate và smoke-test evidence |
+| Section 09 — Reports/Charts | Field readiness, report configuration và interpretation | Đánh giá report impact và processed-data |
+| Section 10 — Release Monitoring | Release decision, observation, incident, rollback và closure | Truy vết đầu-cuối |
+
+Section 10 không định nghĩa lại event contract, test matrix, report formula hoặc template internals. Những nội dung đó được tham chiếu từ section sở hữu và được dùng để quyết định release/closure.
+
+### 1.4 Vòng đời release
 
 ```text
-Thay đổi nhỏ, có phạm vi rõ
-  → workspace
-  → Preview/QA
-  → evidence và review
-  → version
+Phân loại change
+  → tạo Release Record
+  → kiểm tra requirement và implementation
+  → chạy QA ở Section 08
+  → tạo version và approval
   → publish vào đúng environment
   → production smoke test
-  → monitoring window
-  → close, remediate hoặc rollback
+  → observation và kiểm tra processed data
+  → Go, Hold, Accept exception, Close hoặc Incident
 ```
 
-Rollback GTM version là cơ chế khôi phục configuration của container. Nó không xóa hoặc sửa các event đã được GA4 process, và cũng không tự động đảo ngược GA4 property settings hoặc permanent data filters.
+Rollback khôi phục configuration của GTM cho hành vi phát sinh sau đó. Rollback không xóa/sửa event đã được GA4 xử lý, không hoàn tác property setting và không khôi phục dữ liệu đã bị loại bởi permanent data filter.
 
-## Cách sử dụng quy trình này
+## 2. Chuẩn bị release
 
-Dùng quy trình này cho mọi thay đổi material có thể ảnh hưởng đến tracking behavior, consent/privacy, routing, key events, destinations, schemas, reports hoặc data quality. Tạo release record trước khi implementation và cập nhật record khi có thêm evidence.
+### 2.1 Khi nào tạo Release Record
 
-### Bộ hồ sơ release tối thiểu
+Tạo Release Record trước khi implementation cho material change có thể ảnh hưởng tracking behavior, consent/privacy, routing, destination, key event, schema, report hoặc data quality. Nếu một layer hoặc downstream asset không bị ảnh hưởng, ghi `N/A` và lý do.
 
-Mỗi material change nên có:
+| Loại change | Cách xử lý release |
+|---|---|
+| Không có implementation/configuration change | Ghi nhận quyết định và dùng planning/operations workflow phù hợp. |
+| Chỉ thay đổi report | Dùng requirement/configuration/interpretation records của Section 09; không cần GTM rollback. |
+| Thay đổi GTM Variable, Trigger, Tag, consent, routing hoặc template | Dùng workspace riêng, QA ở Section 08, named version và smoke test. |
+| Thay đổi event/schema/key event hoặc GA4 property | Link decision ở Section 07, report bị ảnh hưởng, QA evidence và processed-data follow-up. |
+| Production incident hoặc containment khẩn cấp | Mở/cập nhật Release Record, ghi last known-good state và dùng các bước incident của Section 10. |
 
-- release record gồm owner, scope, environment, change type và các ID liên quan;
-- các Measurement Plan, implementation, Debug/QA, report và monitoring records có liên quan;
-- version/publish record và production smoke-test evidence;
-- observation result, final outcome hoặc incident record.
+Dùng risk level dưới đây để xác định mức review và monitoring. Team có thể điều chỉnh ví dụ sau project đầu tiên:
 
-Không cần tạo mọi template cho mọi change. Nếu một layer hoặc downstream asset không bị ảnh hưởng, ghi `N/A` và lý do. Report-only change thông thường chỉ cần configuration/review records của Section 09, không cần GTM version hoặc GTM rollback.
+| Risk level | Loại change thường gặp | Xử lý tối thiểu |
+|---|---|---|
+| Low | Thay đổi layout report, naming hoặc documentation, không ảnh hưởng collection | Owner review và record phù hợp của Section 09. |
+| Medium | Thay đổi Variable, Trigger, Tag, routing hoặc parameter không breaking | Section 08 QA, named version, approval, smoke test và observation window ngắn. |
+| High | Thay đổi event/schema, consent/privacy, destination, key event, GA4 property hoặc permanent filter | Cross-functional approval, full QA, production smoke test an toàn, escalation rõ và processed-data validation. |
 
-### Quy trình change thông thường
+### 2.2 Bộ hồ sơ release tối thiểu
 
-1. **Phân loại change.** Ghi business purpose, journey bị ảnh hưởng, change type, owner, environment và downstream impact dự kiến.
-2. **Kiểm tra Gate 0.** Xác nhận [Measurement Plan](07-measurement-plan-answer-vn.md) đã approve, event contract, schema/lifecycle decision, consent/privacy decision và reporting requirement.
-3. **Implementation trong workspace có phạm vi rõ.** Hoàn tất Gate 1 và xác định mọi variable, trigger, tag, template, destination, report, key event và consumer bị ảnh hưởng.
-4. **Chạy Debug/QA.** Hoàn tất Gate 2 bằng [Debug/QA test matrix](08-debug-qa-answer-vn.md). Bảo toàn first failing layer, evidence, defect status và retest result.
-5. **Chuẩn bị release.** Resolve workspace conflict, lưu version có tên rõ ràng, attach QA/report/monitoring records và hoàn tất Gate 3 approval.
-6. **Publish và smoke test.** Chỉ publish vào environment đã định, sau đó chạy production smoke test nhỏ nhất đã được phê duyệt.
-7. **Observe và validate.** Kiểm tra immediate signals, so sánh với baseline và validate processed reports hoặc Explorations sau expected processing delay.
-8. **Close hoặc xử lý incident.** Hoàn tất Gate 4 và ghi outcome. Nếu change không an toàn hoặc sai material, contain hoặc rollback, mở incident và ghi affected period.
+Mỗi material release cần liên kết:
 
-### Handoff map
+- Release Record có owner, scope, environment, change type và journey bị ảnh hưởng;
+- Measurement Plan/schema decision đã approve và các implementation references;
+- kết quả/evidence của Section 08;
+- report/configuration impact của Section 09 nếu reporting bị ảnh hưởng;
+- GTM version, publisher, target environment và rollback/mitigation path;
+- Monitoring Record, smoke-test result và final outcome hoặc incident.
 
-| Giai đoạn | Source/owner chính | Evidence bàn giao cho giai đoạn tiếp theo |
-| --- | --- | --- |
-| Requirement | Measurement Plan / Product và Analytics | Plan, event contract, schema/lifecycle decision, consent/privacy decision |
-| Implementation | Sections 01–06 / Developer và GTM implementer | Application/Data Layer change, workspace diff, affected consumers, expected request count |
-| QA | Debug/QA / QA reviewer | Test matrix, layer evidence, defect/retest status, release recommendation |
-| Reporting | Reports và Charts / Analytics owner | Field readiness, report configuration, interpretation hoặc impact note `N/A` |
-| Release | Section 10 / Publisher hoặc approver | Release record, named version, target environment, approval, rollback path |
-| Monitoring | Section 10 / Monitoring owner | Baseline, thresholds, observation result, incident hoặc closure decision |
-
-### Các trường hợp ngoại lệ
-
-- **Không có contract hoặc implementation change:** không tạo release giả; ghi rõ lý do và dùng report hoặc operations workflow phù hợp.
-- **QA fail trước khi publish:** hold release, bảo toàn evidence, sửa first failing layer và chạy lại đúng test case đó.
-- **Production fail:** contain surface nhỏ nhất và an toàn nhất trước; sau đó quyết định fix forward hay rollback. Không chờ processed report nếu đã thấy rõ privacy, routing hoặc duplicate key-event risk.
-- **Report-only change:** dùng report requirements, configuration, QA và interpretation records của Section 09. Không dùng GTM rollback làm recovery mechanism.
-
-## Nguyên tắc vận hành
-
-- Giữ thay đổi nhỏ, liên quan với nhau và có thể test độc lập.
-- Tách environment development/QA khỏi production destination.
-- Mọi thay đổi material về event/tag phải có reference tới Measurement Plan.
-- Duy trì một chuỗi truy vết từ Measurement Plan và schema version tới GTM objects, QA evidence, report/configuration IDs, release version và monitoring record.
-- Dùng Preview và network evidence thực tế, không chỉ dựa vào trạng thái “Tag Fired”.
-- Publish một version có tên, mô tả và owner rõ ràng.
-- Ưu tiên release có thể đảo ngược; nếu không thể thì phải ghi rõ rủi ro và cách xử lý.
-- Xác định baseline metrics và observation window trước khi publish.
-- Xem consent, privacy, routing, duplication và key-event integrity là release gates.
-- Ghi nhận affected period ngay cả khi rollback thành công.
-- Validate processed reporting data sau expected delay; Realtime và DebugView là bằng chứng chẩn đoán, không thay thế reporting validation.
-- Không tùy tiện tạo data filter hoặc quyết định xóa data; các hành động này có thể không thể đảo ngược hoặc chỉ có tác dụng từ thời điểm kích hoạt trở đi.
-
-## Vai trò và trách nhiệm
-
-| Vai trò | Trách nhiệm |
-| --- | --- |
-| Requester/product owner | Xác định lý do kinh doanh và success criterion. |
-| Developer | Implement application/Data Layer contract và cung cấp build context. |
-| GTM implementer | Cấu hình tags, triggers, variables, consent, routing và version. |
-| Analytics owner | Review event meaning, destinations, reports, key events và baselines. |
-| QA reviewer | Chạy test matrix và xác nhận evidence. |
-| Privacy/security reviewer | Review PII, consent, access và destination risk khi phù hợp. |
-| Publisher/approver | Xác nhận gates, publish và quyết định rollback. |
-| Incident owner | Điều phối impact assessment, mitigation, communication và follow-up. |
-
-Trong team nhỏ, một người có thể đảm nhiệm nhiều vai trò. Tuy nhiên, release record vẫn phải ghi rõ từng trách nhiệm.
-
-## Change Traceability (truy vết thay đổi)
-
-Với mọi material change, duy trì một chuỗi reference. Nếu một layer không bị ảnh hưởng, ghi `N/A` thay vì để không rõ impact:
+### 2.3 Release Record
 
 ```text
-Requirement / Measurement Plan
-  → schema hoặc lifecycle change
-  → Data Layer và GTM implementation
-  → consent/privacy decision
-  → Debug/QA evidence
-  → GA4 report, custom definition hoặc Exploration impact
-  → GTM release version
-  → monitoring record và affected-period assessment
+Release ID:
+Project, change hoặc incident ID:
+Status: Draft / Review / Approved / In QA / Published / Monitoring / Pending / Closed / Blocked
+Risk level: Low / Medium / High
+Risk rationale:
+Tên change và business purpose:
+Change type: New / fix / schema / consent / routing / template / report impact
+Measurement Plan và requirement IDs:
+Schema/lifecycle decision ID:
+Journey bị ảnh hưởng và downstream consumers:
+GTM account/container và workspace:
+Source/build/application version:
+Target environment và GA4 property/stream:
+GTM objects hoặc GA4 settings đã thay đổi:
+Event dự kiến và request count:
+Consent/privacy và destination impact:
+Production smoke-test method và approval:
+Section 08 QA evidence:
+Section 09 report/configuration IDs:
+Monitoring ID:
+Version, approvers, publisher và release window:
+Rollback version hoặc mitigation:
+Observation window và monitoring owner:
+Evidence location, access restriction và retention period:
+Final outcome và affected period nếu có incident:
 ```
 
-[Measurement Plan](07-measurement-plan-answer-vn.md) là source of truth cho event meaning và schema. [Debug/QA](08-debug-qa-answer-vn.md) là source of truth cho test evidence và defect status. [Reports và Charts](09-reports-charts-answer-vn.md) là source of truth cho report configuration, field readiness và interpretation.
+### 2.4 Vai trò và trách nhiệm
 
-## GTM Workspaces, Environments và Versions
+| Vai trò | Trách nhiệm trong release |
+|---|---|
+| Requester/product owner | Nêu business purpose và success criterion. |
+| Developer | Thay đổi Application/Data Layer và cung cấp build context. |
+| GTM implementer | Cấu hình Variables, Triggers, Tags, consent, routing và workspace version. |
+| Analytics owner | Đánh giá event/report impact, field readiness, baseline và interpretation. |
+| QA reviewer | Chạy Section 08 và review evidence. |
+| Privacy/security reviewer | Review PII, consent, access và destination risk khi phù hợp. |
+| Publisher/approver | Quyết định gate, publication và rollback approval. |
+| Monitoring/incident owner | Theo dõi, escalate, đánh giá impact và follow-up. |
 
-### Workspaces
+Một người có thể giữ nhiều vai trò, nhưng Release Record vẫn phải ghi rõ từng trách nhiệm.
 
-Dùng một workspace cho một nhóm thay đổi liên quan sẽ được test và version cùng nhau. Tách các initiative không liên quan để reviewer hiểu được diff và rollback không vô tình hoàn tác thay đổi khác.
+### 2.5 Chuỗi truy vết
 
-Phạm vi workspace phù hợp:
+Giữ một chuỗi reference duy nhất. Nếu layer không bị ảnh hưởng, ghi `N/A` và lý do:
 
-- một measurement journey cùng các variables/triggers/tags cần thiết;
-- một consent hoặc routing change cùng configuration hỗ trợ;
-- một vendor/template update có phạm vi hẹp;
-- một bug fix có kiểm soát.
+```text
+Measurement Plan/schema decision
+  → implementation và GTM objects bị ảnh hưởng
+  → Section 08 QA evidence
+  → Section 09 report/configuration impact
+  → named GTM version và target environment
+  → Monitoring Record và affected-period assessment
+```
 
-Tránh gom tag cleanup, ecommerce implementation mới, consent change và production hotfix không liên quan vào cùng workspace. Cách này khó test và không an toàn khi rollback.
+## 3. Triển khai release
 
-Theo [Workspaces guidance](https://support.google.com/tagmanager/answer/7059647) của Google, workspace là nơi gom một nhóm thay đổi để trở thành version; thay đổi nên nhỏ, liên quan và có tên rõ ràng.
+### 3.1 Release gates
 
-### Environments
+| Gate | Evidence tối thiểu trước khi tiếp tục |
+|---|---|
+| Gate 0 — Requirement readiness | Measurement Plan/schema decision đã approve, business outcome, report bị ảnh hưởng, consent/privacy/destination decision và rollback/mitigation approach. |
+| Gate 1 — Implementation readiness | Workspace có phạm vi rõ, routing an toàn, naming standards, expected count, overlap check, affected consumers và template review khi cần. |
+| Gate 2 — QA readiness | Kết quả positive/negative/duplicate/consent/privacy/routing ở Section 08, first-failing-layer status, evidence links và processed-data follow-up khi cần. |
+| Gate 3 — Publish readiness | Workspace hiện tại, đúng environment, named version, approval, release/observation window, rollback path và linked records. |
+| Gate 4 — Post-publish readiness | Smoke test, version/destination check, immediate signals, processed-data check theo lịch và Monitoring Record outcome hoặc incident. |
 
-Dùng các environment Dev/QA/Staging/Live rõ ràng nếu website deployment của tổ chức hỗ trợ. Mỗi environment phải có:
+Không lặp lại test matrix của Section 08 ở đây. Chỉ link scenario ID và evidence ID vào Release Record.
 
-- URL/hostname được ghi nhận;
-- container snippet hoặc preview method chính xác;
-- GA4 destination/Measurement ID đã được phê duyệt;
-- routing rule an toàn theo environment;
-- quy định về access và data handling;
-- chính sách test account/test data.
+### 3.2 Quy tắc workspace và environment
 
-Hostname không xác định không được âm thầm fallback về production. QA environment gửi data vào production là release-blocking defect.
+- Một workspace chỉ nên chứa một nhóm thay đổi liên quan, có thể test độc lập và version cùng nhau.
+- Tách cleanup, ecommerce, consent change và hotfix không liên quan thành workspace khác.
+- Ghi hostname/URL, container snippet hoặc preview method, GA4 destination, routing rule, access và test-data policy cho từng environment.
+- Hostname không xác định phải fail safely; QA gửi vào production là lỗi blocking.
+- Kiểm tra enhanced measurement hoặc legacy path có thể tạo overlap với event đang đổi.
 
-Xem [GTM environments](https://support.google.com/tagmanager/answer/6311518).
+Xem thêm [GTM Workspaces](https://support.google.com/tagmanager/answer/7059647) và [GTM Environments](https://support.google.com/tagmanager/answer/6311518).
 
-### Versions và approvals
+### 3.3 Version, approval và publication
 
 Trước khi publish:
 
-1. Review toàn bộ thay đổi trong workspace.
-2. Chạy Preview và test matrix bắt buộc.
-3. Xác nhận network destination và payload thực tế.
-4. Ghi version name, description, owner, ticket và release window.
-5. Lấy đủ approvals.
-6. Chỉ publish vào environment đã định.
-7. Lưu published version và publish history làm evidence.
+1. Review toàn bộ workspace diff và xử lý conflict.
+2. Chạy Preview và test matrix đã được approve ở Section 08.
+3. Kiểm tra Network destination và payload thực tế khi áp dụng.
+4. Lưu named version có description, owner, ticket và release window.
+5. Nhận approval đã được ghi nhận; xác nhận publisher và target environment.
+6. Chỉ publish vào environment đã định và lưu publish history làm evidence.
 
-GTM version là snapshot và có thể dùng version trước làm latest để recovery. Native approval request chỉ có trong Tag Manager 360; với account thường, dùng peer-approval có document và yêu cầu cùng bộ evidence, đồng thời tách người implement khỏi người review/publish. Xem [Publishing, versions, and approvals](https://support.google.com/tagmanager/answer/6107163).
+GTM version là snapshot có thể khôi phục. Nếu native approval request không khả dụng, dùng peer-approval có ghi nhận evidence và separation of duties tương đương. Xem [Publishing, versions và approvals](https://support.google.com/tagmanager/answer/6107163).
 
-## Release Gates
+### 3.4 Production smoke test
 
-### Gate 0 — Requirement readiness
+Chạy test nhỏ nhất nhưng vẫn đi qua đúng flow bị thay đổi. Dùng phương pháp an toàn đã được phê duyệt (ví dụ QA route, synthetic/test account hoặc allowlisted test identity) và không tạo dữ liệu khách hàng thật.
 
-- [ ] Business question và decision đã được document.
-- [ ] Measurement Plan ID/version, event contract, schema version và schema/lifecycle change ID (nếu có) đã được ghi nhận.
-- [ ] Data Layer source và authoritative business moment đã rõ.
-- [ ] Population/grain hoặc reporting requirement khác đã được ghi nhận nếu release ảnh hưởng reporting.
-- [ ] Privacy, consent, destination, key-event và custom-definition decisions đã hoàn tất.
-- [ ] Đã có phương án rollback/mitigation.
+1. Xác nhận hostname, published container version, GA4 property/stream và consent state.
+2. Dùng test identity/data đã được approve, thực hiện một business action có kiểm soát.
+3. Xác nhận application outcome và business moment dự kiến.
+4. Kiểm tra Data Layer/GTM evaluation nếu có; kiểm tra Network request, payload, destination và count.
+5. Kiểm tra Realtime/DebugView khi phù hợp. Đây là tín hiệu gần thời gian thực/chẩn đoán, không phải bằng chứng processed report.
+6. Dừng và escalate khi có PII, sai destination, duplicate key event hoặc lỗi nghiêm trọng.
+7. Ghi timestamp, browser/device, consent, kết quả, evidence và lần kiểm tra tiếp theo.
 
-### Gate 1 — Implementation readiness
+Không tạo key event hoặc conversion chỉ để kiểm tra release nếu chưa có phương pháp test an toàn được approve.
 
-- [ ] Naming, variables, triggers, tags, templates, folders và descriptions tuân theo standards.
-- [ ] Environment routing rõ ràng và fail safely.
-- [ ] Expected request count đã được document.
-- [ ] Enhanced measurement và legacy paths đã được kiểm tra overlap.
-- [ ] Custom definitions và report requirements đã được xác định.
-- [ ] Shared variables, triggers, tags, templates và downstream consumers bị ảnh hưởng đã được xác định.
-- [ ] Khi template thay đổi, source, sandbox permissions, owner và update impact đã được review.
-- [ ] Environment và destination routing fail safely với context không xác định hoặc không được hỗ trợ.
+## 4. Triển khai monitoring
 
-### Gate 2 — QA readiness
+### 4.1 Monitoring Record
 
-- [ ] Positive, negative, duplicate, boundary, SPA/navigation, consent, privacy và routing tests đều pass.
-- [ ] Data Layer, GTM, network, DebugView và report evidence đã được capture khi phù hợp.
-- [ ] Processed report validation đã được schedule nếu chưa thể có trong release window.
-- [ ] Consent denied/granted behavior khớp design đã được phê duyệt; không mặc định rằng denied nghĩa là không có network request.
-- [ ] Tất cả defect đã được fix, được accept kèm owner/date, hoặc block release theo severity.
-- [ ] Test property/stream và browser/device đã được ghi nhận.
-
-### Gate 3 — Publish readiness
-
-- [ ] Workspace chỉ chứa các thay đổi dự kiến.
-- [ ] Workspace đang current; conflict hoặc out-of-date changes đã được resolve.
-- [ ] Version name và description giải thích rõ thay đổi.
-- [ ] Environment và publisher chính xác đã được xác nhận.
-- [ ] Release window và observation period đã được thống nhất.
-- [ ] Rollback version và incident contact đã sẵn sàng.
-- [ ] QA, report và monitoring records liên quan đã được attach.
-
-### Gate 4 — Post-publish readiness
-
-- [ ] Production smoke test pass với safe data.
-- [ ] Container version và destination chính xác đã được xác nhận.
-- [ ] Không quan sát thấy request duplicate/missing bất thường.
-- [ ] Realtime/DebugView checks đã hoàn tất.
-- [ ] Processed report validation đã được schedule.
-- [ ] Monitoring owner chấp nhận kết quả hoặc mở incident.
-
-## Release Record Template
-
-```text
-Release ID / Mã release:
-Change title / Tên thay đổi:
-Business purpose / Mục đích kinh doanh:
-Change type / Loại thay đổi: New / fix / schema / consent / routing / template / report impact
-Measurement Plan ID/version / Mã và version Measurement Plan:
-Requirement/event IDs / Mã requirement và event:
-Schema/lifecycle change ID / Mã thay đổi schema/lifecycle:
-Traceability ID / Mã truy vết:
-Affected journey and downstream consumers / Journey và consumer bị ảnh hưởng:
-GTM account/container / Tài khoản và container GTM:
-Workspace / Workspace:
-Version / Version:
-Source/build/application version / Version source/build/application:
-Target environment / Environment đích:
-GA4 property/stream/Measurement ID / GA4 property/stream/Measurement ID:
-Consent/privacy impact / Ảnh hưởng consent/privacy:
-Tags/triggers/variables/templates changed / Tags/triggers/variables/templates thay đổi:
-Expected new/changed events / Event mới hoặc thay đổi dự kiến:
-Expected request count / Số request dự kiến:
-QA evidence / Bằng chứng QA:
-Report/custom-definition/configuration IDs / Mã report/custom definition/configuration:
-Monitoring specification/record ID / Mã monitoring specification/record:
-Known limitations / Giới hạn đã biết:
-Approvers / Người approve:
-Publisher / Người publish:
-Release date/timezone / Ngày release/timezone:
-Observation window / Observation window:
-Rollback version/mitigation / Version rollback/biện pháp giảm thiểu:
-Monitoring owner / Owner monitoring:
-Final outcome / Kết quả cuối:
-Affected period if incident / Khoảng thời gian bị ảnh hưởng nếu có incident:
-```
-
-## Production Smoke Test
-
-Chạy bài test nhỏ nhất nhưng đủ exercise changed path:
-
-1. Xác nhận production hostname và published container version.
-2. Xác nhận test identity/data và consent state đã được phê duyệt.
-3. Thực hiện một business action có kiểm soát.
-4. Xác nhận application outcome và business moment dự kiến.
-5. Kiểm tra Data Layer event count và payload.
-6. Kiểm tra GTM/Tag Assistant khi session cho phép.
-7. Kiểm tra network request, payload, destination và request count.
-8. Kiểm tra Realtime/DebugView khi phù hợp.
-9. Dừng test nếu phát hiện PII, wrong destination, duplicate key event hoặc severe error.
-10. Ghi evidence, timestamp, browser/device, consent state, result và next check.
-
-Không tạo production key event hoặc Google Ads conversion chỉ để chứng minh release nếu business owner hoặc privacy owner chưa phê duyệt test method an toàn.
-
-## Monitoring Specification
-
-Monitoring Specification là operating plan để theo dõi một release sau khi publish. Nó trả lời 5 câu hỏi: **theo dõi điều gì, đo bằng cách nào, kiểm tra khi nào, ai chịu trách nhiệm và phải làm gì khi kết quả bất thường**.
-
-Nó không tự nó là một release gate. Các gate sử dụng Monitoring Specification và evidence của nó để ra quyết định:
-
-```text
-Monitoring Specification = kế hoạch quan sát thay đổi
-Release Gate             = điểm ra quyết định dựa trên kế hoạch và evidence
-```
-
-Không cần tạo đầy đủ mọi field cho mọi thay đổi nhỏ. Hãy tạo specification hoàn chỉnh cho material change có thể ảnh hưởng event delivery, key events, consent/privacy, routing, ecommerce, reporting hoặc critical user journey. Với layer không bị ảnh hưởng, ghi `N/A` và lý do.
-
-### Cách sử dụng specification
-
-1. **Trước implementation:** xác định event, report, destination, business outcome, downstream consumer và source of truth bị ảnh hưởng.
-2. **Trước publish:** chọn signals, định nghĩa population/grain, ghi baseline và thresholds, chỉ định monitoring owner và đặt observation window.
-3. **Trong immediate release window:** kiểm tra destination, request count, consent, duplicate/missing behavior và journey đã thay đổi.
-4. **Sau normal processing:** validate processed Report hoặc Exploration, gồm population, grain, scope, filters, Data quality state và các indicator `(other)`/thresholding/sampling.
-5. **Khi close:** ghi kết quả vào release record. Chọn `Close`, `Incident`, `Contain`, `Rollback` hoặc `Accept exception`.
-
-### Monitoring record template
-
-Dùng một record cho mỗi material release hoặc monitored asset. Liên kết `Monitoring ID` vào Release Record.
+Dùng một Monitoring Record cho mỗi material release hoặc asset cần theo dõi. Record phải trả lời: theo dõi gì, đo như thế nào, kiểm tra khi nào, ai chịu trách nhiệm và kết quả bất thường sẽ được xử lý ra sao.
 
 ```text
 Monitoring ID:
 Release ID:
-Event/report/journey được monitor:
+Status: Draft / Review / Monitoring / Pending / Closed / Blocked
+Risk level: Low / Medium / High
+Event/report/journey được theo dõi:
 Business outcome:
 Signal và metric definition:
-Population và grain:
-Baseline period và mức độ complete:
-Expected range:
+Population, grain và scope:
+Baseline period và mức độ đầy đủ:
+Expected range hoặc seasonality:
 Warning threshold:
 Release-blocking threshold:
-Observation window:
-Check frequency:
+Observation window và check frequency:
 Source of truth:
-Monitoring owner:
-Escalation owner:
+Monitoring owner và escalation owner:
+Escalation channel và response target:
 Response action:
-Final observation result:
+Observation result và decision:
 Evidence links:
+Evidence location, access restriction và retention period:
 ```
 
-Ví dụ cho registration release:
+Material change cần record đầy đủ. Signal/layer không bị ảnh hưởng ghi `N/A` kèm lý do.
+
+### 4.2 Các tín hiệu cần theo dõi
+
+Kiểm tra nhóm tối thiểu cho mọi material release. Chỉ thêm tín hiệu tùy chọn khi asset hoặc business outcome bị thay đổi yêu cầu.
+
+#### Tín hiệu tối thiểu
+
+| Signal | Ví dụ measure | Quyết định hỗ trợ |
+|---|---|---|
+| Collection volume | Event count theo canonical event | Phát hiện thiếu event hoặc fire quá nhiều. |
+| Business outcome | Key-event/user count hoặc outcome từ hệ thống nguồn | Phát hiện thay đổi material ở kết quả kinh doanh. |
+| Duplicate/missingness | Event trên mỗi occurrence; tỷ lệ thiếu required parameter | Phát hiện duplicate tag, retry, remount hoặc schema regression. |
+| Destination | Measurement ID và hostname theo environment | Phát hiện routing sai. |
+| Consent/privacy | Hành vi tag/request khi granted hoặc denied | Phát hiện privacy regression. |
+| Report freshness | Processing delay và ngày dữ liệu chưa hoàn tất | Tránh quyết định quá sớm. |
+
+#### Tín hiệu tùy chọn
+
+| Signal | Ví dụ measure | Quyết định hỗ trợ |
+|---|---|---|
+| Vocabulary | Parameter value/casing ngoài danh sách | Phát hiện contract drift giữa Application và GTM. |
+| Data quality | Thresholding, sampling, `(other)` và field availability | Phân biệt giới hạn nền tảng/report với lỗi collection. |
+| Report semantics | Population, grain, scope, filter và source-of-truth surface | Phát hiện semantic drift sau thay đổi report. |
+| Ecommerce hoặc source critical khác | Transaction/outcome so với source of truth đã approve | Reconcile dữ liệu quan trọng khi nằm trong scope. |
+
+Monitoring phải phát hiện cả lỗi vận chuyển và lỗi ý nghĩa. Request đến GA4 chưa có nghĩa là business event đúng.
+
+### 4.3 Baseline và threshold
+
+Không dùng một ngưỡng phần trăm chung cho mọi event. Ghi rõ:
+
+- baseline period và mức độ đầy đủ;
+- metric definition, population, grain, scope và source of truth;
+- expected range, day-of-week pattern và product change đã biết;
+- warning threshold và release-blocking threshold;
+- owner, escalation path và response time.
+
+Có thể dùng chính sách severity dưới đây làm điểm bắt đầu, sau đó hiệu chỉnh theo baseline:
 
 ```text
-Signal: sign_up events trên mỗi confirmed account creation
-Population: confirmed account creations trong observation window
-Grain: một confirmed account / một sign_up dự kiến
-Source of truth: registration service và processed GA4 report
-Action: contain hoặc rollback nếu xác nhận duplicate key event hoặc material drop
+Critical: Có PII hoặc destination chưa được phép; dừng và escalate.
+High: Key event biến mất, bị duplicate ở quy mô lớn hoặc bị đếm sai material.
+Medium: Required parameter thiếu ở một phần đáng kể hoặc chỉ ảnh hưởng một route/browser.
+Low: Vocabulary/documentation drift nhỏ, chưa ảnh hưởng quyết định hiện tại.
 ```
 
-### Mối liên hệ với release gates
+### 4.4 Các observation window
 
-| Gate | Monitoring Specification được sử dụng như thế nào |
-| --- | --- |
-| Gate 0 — Requirement readiness | Quyết định có cần monitoring hay không, đồng thời định nghĩa business outcome và source of truth. |
-| Gate 1 — Implementation readiness | Xác định signals, destinations, reports, key events và downstream consumers bị thay đổi. |
-| Gate 2 — QA readiness | Kiểm tra expected request count, duplicate/missing behavior, consent behavior và evidence sẽ dùng cho monitoring. |
-| Gate 3 — Publish readiness | Xác nhận monitoring record, baseline, thresholds, owner, escalation path và observation window đã sẵn sàng. |
-| Gate 4 — Post-publish readiness | Dùng monitoring result và processed report validation để close release hoặc mở incident. |
+**Immediate release window**
 
-Monitoring phải phát hiện cả transport failure và semantic failure. Request vẫn có thể tiếp tục đến trong khi business meaning đã sai.
+- Xác nhận version, hostname, property/stream, timestamp, event thay đổi, destination, consent và request count.
+- Dùng evidence của Section 08 để xác nhận runtime; trạng thái “Tag Fired” một mình không đủ.
 
-### Signals
+**Short observation window**
 
-| Signal | Ví dụ phép đo | Ý nghĩa | Tần suất |
-| --- | --- | --- | --- |
-| Collection volume | Event count theo canonical event | Phát hiện event bị thiếu hoặc fire quá nhiều | Daily/release window |
-| Unique users | Users/key-event users | Phát hiện thay đổi lớn về delivery | Daily/weekly |
-| Key events | Key-event count/rate | Bảo vệ business outcome reporting | Release + daily |
-| Duplicate rate | Events trên mỗi confirmed business occurrence | Phát hiện double tag, retry hoặc remount | Release + daily |
-| Missingness | Tỷ lệ required parameter bị null/omitted | Phát hiện schema regression | Release + daily |
-| Vocabulary | Parameter values ngoài danh sách dự kiến | Phát hiện app/GTM contract drift | Daily/weekly |
-| Destination | QA so với production ID và hostname | Phát hiện routing error | Every release |
-| Consent behavior | Tag/request behavior khi granted/denied | Phát hiện privacy regression | Every consent change |
-| Report freshness | Data delay và incomplete period | Ngăn decision quá sớm | Daily |
-| Data quality | Thresholding, sampling, `(other)` và field availability indicators | Phân biệt platform/report limitation với collection defect | Release + daily |
-| Report configuration | Population, grain, scope, filters và source-of-truth surface | Phát hiện semantic drift sau thay đổi | Every report change |
-| Source/medium | Thay đổi direct/referral/campaign | Phát hiện attribution hoặc linker change | Daily/weekly |
-| Ecommerce | Transactions/revenue so với source of truth | Bảo vệ financial reporting | Daily |
+- So sánh volume và business outcome với baseline trước release.
+- Kiểm tra missing/invalid parameter và khác biệt theo route/browser/device.
+- Validate processed Report hoặc Exploration sau processing window dự kiến, dùng population, grain, scope, filter và data-quality rule của Section 09.
 
-### Baselines và thresholds
+**Closure**
 
-Không dùng một percentage threshold chung cho mọi trường hợp nếu chưa có baseline. Xác định giá trị bình thường theo event, environment, day-of-week, release cadence và traffic mix.
+- Ghi observation result, affected period, decision impact và follow-up còn mở.
+- Chỉ close khi processed-data check hoàn tất, hoặc exception đã được approve với owner và due date.
 
-Ghi nhận:
+Realtime và DebugView là evidence gần thời gian thực/chẩn đoán; không thay thế validation trên Report/Exploration đã xử lý.
 
-- baseline period và mức độ complete;
-- metric definition, population, grain, scope và source-of-truth surface;
-- expected range và seasonality;
-- warning threshold;
-- release-blocking threshold;
-- alert owner và response time;
-- campaign hoặc product change đã biết có thể giải thích biến động;
-- source of truth dùng để reconciliation.
+## 5. Incident và khôi phục
 
-Policy khởi điểm, cần được calibrate theo dữ liệu thực tế:
+### 5.1 Phát hiện và phân loại
 
-```text
-Critical: Có PII hoặc unauthorized destination; dừng và escalate ngay.
-High: Key event bị thiếu, duplicate ở quy mô lớn hoặc bị đếm sai material.
-Medium: Required parameter bị thiếu ở một nhóm đáng kể hoặc chỉ ảnh hưởng một browser/route.
-Low: Vocabulary/documentation drift nhỏ, chưa ảnh hưởng decision hiện tại.
-```
+Dùng cách chẩn đoán first-failing-layer và severity trong [Debug/QA](08-debug-qa-answer-vn.md). Alert chỉ là tín hiệu điều tra, chưa chứng minh GTM là root cause.
 
-Statistical anomaly detection có thể hỗ trợ review nhưng không thay thế measurement contract hoặc incident owner. Google mô tả anomaly detection là phương pháp thống kê cho time-series data; xem [Anomaly detection](https://support.google.com/analytics/answer/9517187).
+Ghi first observed time, last known-good version, property/stream/environment bị ảnh hưởng, event/report/journey, issue type (missing, duplicate, misrouted, malformed, privacy hoặc semantic), volume/period ước tính và evidence links.
 
-## Monitoring Workflow
+Với impact High hoặc Critical, phải thông báo vào escalation channel và response owner đã ghi trong Monitoring Record; không chỉ nhắn riêng mà không có incident reference.
 
-### Immediate release window
+### 5.2 Contain
 
-- Xác nhận version, hostname, stream và timestamp.
-- Kiểm tra event đã thay đổi và các event liền kề.
-- Xác nhận không có duplicate request hoặc tag ngoài dự kiến.
-- Xác nhận consent và privacy behavior.
-- Xác nhận key-event và ecommerce behavior nếu bị ảnh hưởng.
+Chọn hành động nhỏ nhất nhưng an toàn:
 
-### Short observation window
-
-- So sánh volume với pre-release baseline.
-- Kiểm tra required parameters bị null/missing và values ngoài dự kiến.
-- Kiểm tra khác biệt theo route/browser/device.
-- Kiểm tra source/medium/referral change nếu navigation hoặc domain thay đổi.
-- Validate processed report hoặc Exploration sau normal processing; kiểm tra population, grain, scope, filters, Data quality indicator và trạng thái `(other)`/thresholding/sampling.
-- So sánh business outcomes quan trọng với approved source system nếu có.
-
-### Periodic operations
-
-- Review event và parameter inventory so với configuration đang active.
-- Review tags, triggers, variables, templates, reports, audiences và exports đã obsolete.
-- Review access, owners, integrations, consent/privacy decisions và data filters.
-- Reconcile ecommerce/key-event quan trọng với source system.
-- Review report owners, field readiness, report configuration, monitoring thresholds và retirement triggers.
-
-## Incident Response
-
-### Detect và classify
-
-Dùng cách xác định first failing layer và severity guidance trong [Debug/QA](08-debug-qa-answer-vn.md). Monitoring alert là tín hiệu cần điều tra, không tự chứng minh GTM là root cause.
-
-Ghi nhận:
-
-- first observed time và timezone;
-- last known good version/configuration;
-- property, stream, environment, event, report và user journey bị ảnh hưởng;
-- vấn đề là missing, duplicated, misrouted, malformed, privacy-related hay attribution-related;
-- estimated affected volume và period;
-- evidence ở application, Data Layer, GTM, network, DebugView và report layers.
-
-### Contain
-
-Chọn hành động an toàn và nhỏ nhất:
-
-- pause hoặc block faulty tag;
-- publish last known-good GTM version;
+- pause hoặc block Tag lỗi;
 - sửa environment routing;
-- disable broken enhancement nếu an toàn;
+- publish last known-good version nếu lỗi nằm ở GTM;
 - dừng server/offline sender hoặc retry loop;
-- ngăn việc tiếp tục collect PII;
-- không kích hoạt permanent data filter như emergency shortcut nếu chưa có approval của owner phù hợp.
+- tắt enhancement hỏng nếu an toàn;
+- ngăn PII tiếp tục được thu thập;
+- không kích hoạt permanent data filter như biện pháp khẩn cấp nếu chưa có approval phù hợp.
 
-### Recover và communicate
+### 5.3 Rollback runbook
 
-- chạy lại smoke test;
-- validate event bị ảnh hưởng và các flow liền kề;
-- nói rõ data nào không thể sửa hồi tố;
-- thông báo cho report/marketing/product owners bị ảnh hưởng;
-- document affected period, decision impact và follow-up fix;
-- thêm regression test hoặc monitoring signal để giảm khả năng lặp lại.
+1. Xác nhận severity; không rollback chỉ vì một dao động nhỏ chưa giải thích được.
+2. Xác định last known-good version và nội dung của version đó.
+3. Xác định lỗi nằm ở Application/Data Layer, GTM, consent, GA4 property hay hệ thống khác.
+4. Đánh giá các thay đổi khác sẽ bị rollback cùng.
+5. Nhận quyết định từ publisher/incident owner.
+6. Publish previous version đã approve vào đúng environment.
+7. Chạy lại smoke test cho flow thay đổi và các flow critical liền kề.
+8. Kiểm tra destination, request count, consent, DebugView/Realtime và processed report về sau.
+9. Ghi thời điểm rollback, version, evidence, affected period và data-quality impact còn lại.
+10. Tạo corrective change và regression test trước khi release lại.
 
-### Không mặc định rollback sẽ sửa được data
+Nếu root cause ở application, server hoặc GA4 property, GTM rollback có thể không giải quyết được vấn đề.
 
-Rollback GTM container chỉ dừng hoặc thay đổi client-side behavior trong tương lai. Nó không xóa event đã process, không sửa key-event count sai và không khôi phục data đã bị loại bởi permanent GA4 filter. Hãy định lượng affected period và annotate các downstream decision.
+### 5.4 Data filters và developer traffic
 
-## Data Filters và Developer Traffic
+Test traffic classification và GA4 data filter trước khi activate. Ghi rule, environment, kết quả Testing mode, approval, activation time và impact không thể hoàn tác. Tách xử lý developer/internal traffic khỏi report filtering thông thường. Xem [Data filters](https://support.google.com/analytics/answer/13296761).
 
-GA4 data filter tác động lên incoming event từ thời điểm activation trở đi và có thể permanently remove excluded data khỏi Analytics và BigQuery. Hãy test filter trước khi activate và phân biệt developer/internal traffic handling với report filtering thông thường. Xem [Data filters](https://support.google.com/analytics/answer/13296761).
+Rollback GTM không xóa event đã process, không sửa key-event count sai và không khôi phục dữ liệu đã bị permanent filter loại bỏ. Phải xác định affected period và chú thích các quyết định downstream bị ảnh hưởng.
 
-Trước khi activate filter:
+### 5.5 Quyết định release và đóng hồ sơ
 
-- định nghĩa traffic classification;
-- validate Testing mode;
-- xác nhận debug/QA access vẫn hoạt động;
-- ghi nhận environment bị ảnh hưởng và IP/hostname rules;
-- lấy approval;
-- ghi activation time và irreversible impact.
+Cập nhật status của Release Record và Monitoring Record ở mỗi quyết định; không để change đã publish ở trạng thái `Approved` hoặc `In QA`.
 
-## Rollback Runbook
+- **Go:** Gates 0–3 pass; đúng version, environment, destination, QA evidence, rollback/containment owner và Monitoring Record đã sẵn sàng.
+- **Hold:** Requirement chưa rõ, chưa xác định first failing layer, routing sai, có prohibited data hoặc duplicate/missing key event chưa được giải quyết.
+- **Accept exception:** Rủi ro còn lại đã được giới hạn và không blocking, có owner, mitigation, reviewer, due date và monitoring action.
+- **Close:** Gate 4 hoàn tất sau observation window, processed-data validation, affected-period assessment và final outcome.
 
-1. Xác nhận incident và severity; không rollback chỉ vì một fluctuation nhỏ chưa giải thích được.
-2. Xác định last known-good GTM version và nội dung của version đó.
-3. Kiểm tra root cause nằm ở GTM, application/Data Layer, GA4 property configuration, consent hay external system.
-4. Đánh giá rollback sẽ đồng thời hoàn tác những thay đổi nào khác.
-5. Lấy quyết định của publisher/incident owner theo severity.
-6. Set/publish approved previous version vào đúng environment.
-7. Chạy production smoke test cho changed path và các critical path liền kề.
-8. Kiểm tra destination, request count, consent, DebugView/Realtime và report sau đó.
-9. Ghi rollback time, version, evidence, affected period và remaining data-quality impact.
-10. Tạo corrective change và regression tests trước khi re-release.
+## 6. Lưu ý vận hành và lỗi thường gặp
 
-Nếu root cause ở application-side, GA4 property-side hoặc server-side, GTM rollback có thể không giúp ích và còn làm trạng thái khó phân tích hơn.
+- Preview pass không chứng minh production routing hoặc processed GA4 reporting.
+- Realtime/DebugView chỉ chứng minh receipt gần đây hoặc chẩn đoán, không chứng minh historical completeness.
+- Report-only change không nên được recovery bằng GTM rollback.
+- Không đưa thay đổi không liên quan vào cùng workspace.
+- Không dùng threshold chung khi chưa có baseline đầy đủ.
+- Không để layer bị ảnh hưởng trống; ghi `N/A` kèm lý do.
+- Luôn lưu affected period, kể cả khi rollback thành công.
+- Ads, campaign optimization và attribution operations nằm ngoài phạm vi section này.
 
-## Release decision và closure
+## 7. Bản đồ tham chiếu chéo
 
-- **Go:** Gates 0–3 pass, QA evidence đã link, version/environment/destination chính xác đã được xác nhận và đã có owner cho rollback hoặc containment.
-- **Hold:** Business moment chưa rõ, chưa xác định được first failing layer, routing sai, có prohibited data hoặc duplicate/missing key-event behavior chưa được xử lý.
-- **Accept exception:** Risk còn lại có phạm vi rõ, không block, và có accountable owner, mitigation, due date, reviewer cùng monitoring action.
-- **Close:** Gate 4 chỉ hoàn tất sau observation window, processed report validation, affected-period assessment và final release outcome.
+| Section | Section 10 sử dụng để |
+|---|---|
+| 01 — Data Layer Design | Xác nhận nguồn payload và handoff từ application. |
+| 02 — Variable Management | Xác định Variables bị ảnh hưởng và owner. |
+| 03 — Trigger Management | Xác định authoritative Trigger và nguy cơ overlap. |
+| 04 — Tag Management | Xác định destination, mapping, sequencing và Tag impact. |
+| 05 — Consent | Xác nhận hành vi granted/denied và privacy impact. |
+| 06 — Template Governance | Review template version, permissions, consumers và rollback/export path khi cần. |
+| 07 — Measurement Plan | Xác nhận requirement, contract, schema, consent và destination đã approve. |
+| 08 — Debug/QA | Link test matrix, runtime evidence, defect status và smoke-test proof. |
+| 09 — Reports/Charts | Link report configuration, field readiness, interpretation và processed-data impact. |
+
+## 8. Journey minh họa — Release Registration
+
+Các giá trị dưới đây minh họa cách ghi nhận một thay đổi Registration trong toàn bộ vòng đời release. Event contract nằm ở Section 07, runtime test evidence ở Section 08 và report configuration ở Section 09.
+
+### 8.1 Release context
+
+```text
+Release ID: REL-REG-001
+Project, change hoặc incident ID: [ticket]
+Status: Monitoring
+Risk level: Medium
+Risk rationale: GTM mapping change có report Registration impact; không thay đổi consent hoặc destination
+Tên change và business purpose: Cập nhật mapping registration event và registration report
+Change type: GTM mapping + report impact
+Measurement Plan và requirement IDs: MP-REG-001 / REQ-REG-001
+Journey bị ảnh hưởng và downstream consumers: J-REG-001 / registration report và QA Exploration
+GTM account/container và workspace: [container] / WS-REG-001
+Source/build/application version: [build]
+Target environment và GA4 property/stream: QA → [QA property/stream], sau đó Live → [production stream đã approve]
+GTM objects hoặc GA4 settings đã thay đổi: [Variable/Trigger/Tag hoặc custom definition IDs]
+Event dự kiến và request count: registration_start khi bắt đầu; một sign_up cho mỗi account được xác nhận
+Consent/privacy và destination impact: analytics behavior đã approve; dùng QA destination khi validation
+Production smoke-test method và approval: [synthetic/test account hoặc allowlisted identity] / [approver]
+Section 08 QA evidence: QA-REG-RUN-001 / [evidence IDs]
+Section 09 report/configuration IDs: R-REG-001 / EX-REG-QA-001
+Monitoring ID: MON-REG-001
+Version, approvers, publisher và release window: [version / owners / window]
+Rollback version hoặc mitigation: [last known-good version hoặc containment]
+Observation window và monitoring owner: [window] / [owner]
+Evidence location, access restriction và retention period: [location] / [access] / [period]
+Final outcome và affected period nếu có incident: [outcome]
+```
+
+### 8.2 Tóm tắt gate
+
+| Gate | Evidence của Registration | Trạng thái |
+|---|---|---|
+| Gate 0 | Requirement, contract, destination/consent decision ở Section 07 và report impact ở Section 09 | Pass |
+| Gate 1 | Workspace riêng, QA routing, GTM objects bị ảnh hưởng, expected count và không có overlap | Pass |
+| Gate 2 | Valid/negative/duplicate/consent/routing tests của Section 08 link tới QA-REG-RUN-001 | Pass hoặc [status] |
+| Gate 3 | Named version, publisher, target environment, rollback path và MON-REG-001 | Pass hoặc [status] |
+| Gate 4 | Smoke test hoàn tất; processed Registration Report validation và observation result đã ghi nhận | Pending đến [date] hoặc [status] |
+
+### 8.3 Monitoring Record
+
+```text
+Monitoring ID: MON-REG-001
+Release ID: REL-REG-001
+Status: Monitoring
+Risk level: Medium
+Event/report/journey được theo dõi: registration_start → sign_up; R-REG-001 và EX-REG-QA-001
+Business outcome: một account được server xác nhận tương ứng với một sign_up
+Signal và metric definition: event volume, duplicate/missingness, destination, consent và processed registration completion rate
+Population, grain và scope: traffic của release đã approve; một event occurrence cho QA signal; Section 09 cohort/user metric cho rate
+Baseline period và mức độ đầy đủ: [pre-release period / completeness]
+Expected range hoặc seasonality: [range]
+Warning threshold: [calibrated threshold]
+Release-blocking threshold: duplicate key event, unauthorized destination, PII hoặc missingness material
+Observation window và check frequency: immediate smoke test → [short window] → [processed-data date]
+Source of truth: registration service, Section 08 evidence và processed GA4 asset
+Monitoring owner và escalation owner: [owners]
+Escalation channel và response target: [channel] / [target]
+Response action: contain hoặc rollback sau khi xác nhận; mở incident nếu impact material
+Observation result và decision: [result / Go, Hold, Accept exception, Close hoặc Incident]
+Evidence links: [release, QA, report, smoke-test và processed-data IDs]
+Evidence location, access restriction và retention period: [location] / [access] / [period]
+```
+
+### 8.4 Closure note
+
+Chỉ close release sau khi smoke test, immediate signal checks, processed Report/Exploration validation và affected-period assessment đã được ghi nhận. Nếu dữ liệu vẫn trong processing window đã tài liệu hóa, giữ Gate 4 và Monitoring Record ở trạng thái `Pending`, đồng thời ghi owner và ngày follow-up.
 
 ## Tài liệu tham khảo chính thức
 
 - [GTM Workspaces](https://support.google.com/tagmanager/answer/7059647)
 - [GTM Environments](https://support.google.com/tagmanager/answer/6311518)
-- [Publishing, versions, and approvals](https://support.google.com/tagmanager/answer/6107163)
-- [Preview and debug containers](https://support.google.com/tagmanager/answer/6107056)
+- [Publishing, versions và approvals](https://support.google.com/tagmanager/answer/6107163)
+- [Preview và debug containers](https://support.google.com/tagmanager/answer/6107056)
 - [Data filters](https://support.google.com/analytics/answer/13296761)
 - [Monitor events in DebugView](https://support.google.com/analytics/answer/7201382)
 - [Realtime report](https://support.google.com/analytics/answer/9271392)
-- [Anomaly detection](https://support.google.com/analytics/answer/9517187)
 - [GA4 data freshness](https://support.google.com/analytics/answer/11198161)
 - [Data quality](https://support.google.com/analytics/answer/12856703)
-- [Data compatibility](https://support.google.com/analytics/answer/11608978)
-- [Data differences between Reports and Explorations](https://support.google.com/analytics/answer/9371379)
-- [Custom dimensions and metrics](https://support.google.com/analytics/answer/14240153)

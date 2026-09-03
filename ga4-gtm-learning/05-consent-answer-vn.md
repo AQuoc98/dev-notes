@@ -1,367 +1,306 @@
-# 05 — Quản lý Consent và Governance trong Google Tag Manager
+# 05 — Quản lý Consent cho GA4 trong Google Tag Manager
 
-## Consent trong GTM là gì? (What consent means in GTM)
+## 1. Mục tiêu, phạm vi và đầu ra (Objective, scope, outputs)
 
-Consent là sự cho phép của người dùng đối với một loại storage hoặc một mục đích sử dụng dữ liệu cụ thể. Trong Google Tag Manager (GTM), các consent signal cho Google tag và những tag khác biết chúng được phép hoạt động như thế nào.
+### Mục tiêu
 
-Quản lý consent gồm ba trách nhiệm tách biệt:
+Chuẩn hóa cách nhận lựa chọn consent của người dùng, truyền lựa chọn đó vào Google Tag Manager (GTM), rồi kiểm tra để bảo đảm tag GA4 chỉ thu thập những gì policy đã phê duyệt.
 
-1. **Obtain:** Nhận lựa chọn của người dùng thông qua Consent Management Platform (CMP), banner hoặc một giải pháp consent đã được phê duyệt.
-2. **Communicate:** Truyền lựa chọn đó tới GTM và các sản phẩm Google dưới dạng consent state.
-3. **Enforce:** Áp dụng lựa chọn thông qua tag behavior có sẵn, additional consent checks, tag configuration và các governance control.
+### Phạm vi
 
-Consent không giống Trigger. Trigger xác định event nào đủ điều kiện để một tag chạy; consent xác định tag có được phép chạy hay không và, với tag có hỗ trợ consent, tag được phép sử dụng data hoặc storage ở mức nào.
+- Thiết lập consent default và consent update trong web GTM container.
+- Consent Initialization trigger, Consent Mode, built-in consent checks và additional consent checks.
+- Mapping với CMP (Consent Management Platform), lưu lựa chọn, revoke và kiểm soát environment.
+- QA cho storage, network request, destination và việc event tới GA4.
+- Ví dụ thực tế với event FD calculation_action.
 
-## Tại sao consent quan trọng? (Why consent matters)
+Quyết định pháp lý, phạm vi theo từng khu vực, lựa chọn CMP và cách triển khai advertising thuộc về privacy/business owner. Các consent type cho advertising chỉ được đưa vào khi tag inventory thực sự cần; đây không phải trọng tâm của tài liệu.
 
-Quản lý consent giúp tổ chức:
+### Đầu ra cần có
 
-- Tôn trọng lựa chọn về quyền riêng tư của người dùng và các yêu cầu pháp lý áp dụng.
-- Kiểm soát việc sử dụng cookie, identifier và dữ liệu liên quan đến advertising.
-- Ngăn việc thu thập dữ liệu chưa được phê duyệt, đồng thời vẫn duy trì privacy-safe measurement khi cơ chế đó được hỗ trợ.
+Mỗi tag có kiểm soát consent cần có:
 
-Consent Mode là một cơ chế truyền signal và điều chỉnh behavior. Consent Mode **không** tự tạo consent banner, không quyết định legal basis của tổ chức và cũng không tự động khiến mọi third-party tag trở nên compliant.
+1. Purpose, destination và consent type đã được phê duyệt.
+2. Default và đường đi của update được ghi lại.
+3. Cấu hình GTM và owner rõ ràng.
+4. QA record gồm consent state, tag behavior, storage, request và destination.
 
-## Consent Mode
+## 2. Tổng quan: Consent là điều kiện kiểm soát việc đo lường
 
-Google Consent Mode cho phép website truyền consent state của người dùng tới Google. Sau đó, Google tag điều chỉnh behavior liên quan đến cookie, identifier và measurement theo state đó.
+### 2.1 Định nghĩa dễ hiểu
 
-### Basic và Advanced Consent Mode (Basic and advanced implementations)
+| Thuật ngữ | Ý nghĩa thực tế |
+| --- | --- |
+| **Consent state** | Giá trị hiện tại của một consent type: granted, denied hoặc chưa khởi tạo. |
+| **CMP** | Banner hoặc preference center dùng để hỏi và lưu lựa chọn của người dùng. |
+| **Consent Mode** | Cơ chế của Google để truyền consent state tới Google tag, từ đó điều chỉnh cách tag dùng storage và gửi measurement. |
+| **Consent Initialization - All Pages** | Trigger chạy sớm nhất trong GTM, chỉ dành cho tag/template có nhiệm vụ set hoặc update consent. |
+| **Built-in consent check** | Cơ chế consent có sẵn trong Google tag. |
+| **Additional consent check** | Firing gate của GTM dành cho custom tag hoặc third-party tag đã được review. |
+| **Downstream** | Hệ thống ở sau GTM nhận hoặc xử lý kết quả; trong tài liệu này, GA4 DebugView là bước kiểm tra đầu tiên và GA4 Reports đã xử lý là bước kiểm tra sau. |
 
-| Implementation            | Trước khi người dùng lựa chọn                                                                | Khi người dùng từ chối                                                                                              | Ảnh hưởng đến measurement                                                   |
-| ------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **Basic Consent Mode**    | Google tag bị chặn và không load cho tới khi người dùng tương tác với banner.                | Những tag đang bị chặn không gửi data tới Google, kể cả consent status.                                             | Modeling dựa trên một mô hình tổng quát.                                    |
-| **Advanced Consent Mode** | Google tag load với default state đã cấu hình, thường là `denied` khi policy yêu cầu opt-in. | Google tag có consent awareness có thể gửi các tín hiệu cookieless giới hạn và không sử dụng storage đã bị từ chối. | Khi đủ điều kiện, có thể hỗ trợ modeling chi tiết hơn theo từng advertiser. |
+Data Layer, Variable, Trigger, Tag và GA4 đã được giải thích ở Sections 01–04. Consent không thay thế các thành phần đó; consent chỉ cung cấp bối cảnh cho phép khi tag được evaluate.
 
-Hãy lựa chọn implementation cùng privacy owner và ghi lại quyết định đó. Không được suy luận implementation chỉ từ việc banner có đang hiển thị hay không; cần kiểm tra behavior thực tế của tag và network.
+### 2.2 Vòng đời (Lifecycle)
 
-### Lưu ý quan trọng: `denied` không phải lúc nào cũng có nghĩa là không có network request
-
-`denied` nhìn chung có nghĩa là Google tag liên quan không được sử dụng storage hoặc identifier đã bị từ chối. Tuy nhiên, trong Advanced Consent Mode, tag vẫn có thể gửi các cookieless ping giới hạn, chẳng hạn consent-state signal hoặc measurement signal. Điều này phụ thuộc vào tag, consent type, configuration và behavior của sản phẩm Google.
-
-Vì vậy, QA phải kiểm tra đồng thời:
-
-- Cookie, local storage hoặc identifier có được tạo ra hay được đọc hay không.
-- Request có được gửi hay không, request chứa gì và có bị giới hạn đúng theo behavior đã được phê duyệt hay không.
-
-Basic Consent Mode có kỳ vọng khác: Google tag đã bị chặn thì không nên gửi data trước khi người dùng tương tác.
-
-## Các trạng thái consent (Consent states)
-
-Mỗi consent type cần có một operational state rõ ràng:
-
-- **`granted`:** Người dùng hoặc policy đã được phê duyệt cho phép storage hoặc mục đích sử dụng liên quan.
-- **`denied`:** Người dùng hoặc policy không cho phép.
-- **Not set / unknown:** Chưa thiết lập được state có thể sử dụng. Hãy coi đây là lỗi implementation hoặc trạng thái chưa được khởi tạo, không phải là permission.
-
-Trong Additional Consent Check của GTM, tag chỉ pass khi tất cả consent type bắt buộc đều có state là `granted`. Nếu state là `denied` hoặc vẫn chưa xác định thì additional check đó phải không pass.
-
-### Các consent type chính (Key consent types)
-
-| Consent type              | Kiểm soát                                                                                                  | Cách hiểu trong governance                                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `analytics_storage`       | Storage dùng cho analytics measurement, chẳng hạn analytics cookie.                                        | Cần được xem xét như điều kiện cho analytics storage khi policy yêu cầu opt-in.                                                 |
-| `ad_storage`              | Storage dùng cho advertising, gồm Google Ads cookie và các identifier được Google tag được hỗ trợ sử dụng. | Cần cho advertising storage; không được xem đây là thay thế cho các control về advertising data-use ở bên dưới.                 |
-| `ad_user_data`            | Việc gửi user data tới Google cho các mục đích liên quan đến advertising.                                  | Phải review riêng với cookie storage; đây là data-use signal, không đơn giản chỉ là một cookie flag.                            |
-| `ad_personalization`      | Việc sử dụng data cho personalized advertising.                                                            | Phải review riêng với collection và storage. Người dùng có thể cho phép measurement nhưng không cho phép quảng cáo cá nhân hóa. |
-| `functionality_storage`   | Storage hỗ trợ chức năng của site hoặc app, chẳng hạn ngôn ngữ hoặc session preference.                    | Thường mang tính thiết yếu hoặc chức năng, nhưng vẫn phải phân loại theo policy của tổ chức.                                    |
-| `personalization_storage` | Storage dùng cho personalization, chẳng hạn đề xuất nội dung hoặc video.                                   | Chỉ cho phép cho mục đích personalization đã được phê duyệt.                                                                    |
-| `security_storage`        | Storage dùng cho security, authentication, fraud prevention hoặc bảo vệ người dùng.                        | Thường là một security control; cần xác nhận cách xử lý với privacy owner và security owner.                                    |
-
-Bốn type đầu thường gắn với các control về Google advertising và analytics. Ba type cuối là các privacy storage type bổ sung được GTM hỗ trợ; chúng cần được map với các category tương ứng trong CMP của tổ chức.
-
-### Behavior khi `granted` và `denied` (Granted and denied behavior)
-
-Hãy dùng bảng sau như một governance model, sau đó kiểm tra behavior chính xác của từng tag và vendor.
-
-| State             | Kỳ vọng đối với Google tag                                                                                                                              | Kỳ vọng đối với third-party tag                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `granted`         | Tag có thể sử dụng storage hoặc data behavior đã được phê duyệt, tùy configuration và destination.                                                      | Tag chỉ được chạy nếu purpose của tag và consent cần thiết đã được phê duyệt.                                         |
-| `denied`          | Tag không được sử dụng storage hoặc identifier đã bị từ chối. Tag có thể bị chặn hoặc có thể gửi limited cookieless signal trong Advanced Consent Mode. | Block tag hoặc áp dụng behavior consent-aware được vendor documented. Không được mặc định cho rằng vendor tự enforce. |
-| Not set / unknown | Phải thiết lập default trước khi measurement. Tuyệt đối không dựa vào một default tình cờ.                                                              | Coi là chưa được phê duyệt cho tới khi state được giải quyết.                                                         |
-
-Cũng cần phân biệt **revoke consent** với **xóa dữ liệu đã được lưu trước đó**. Consent Mode tự nó không định nghĩa quy trình xóa cookie hoặc data retention của tổ chức. Hãy xác minh CMP, browser, vendor và server-side system xử lý việc revoke như thế nào.
-
-## Thứ tự tải trang và Consent Initialization (Page-load order and Consent Initialization)
-
-Consent phải được thiết lập trước khi các page trigger thông thường và measurement tag được evaluate.
-
-Thứ tự logic được khuyến nghị:
-
-```text
-Page starts
-   ↓
+~~~text
+CMP / policy đã phê duyệt
+        ↓
 Consent Initialization - All Pages
-   ↓
-Set consent defaults and load/read the CMP state
-   ↓
-Apply any stored user choice through the consent update
-   ↓
-Initialization and normal triggers
-   ↓
-Google tag, GA4, Ads, and other tags evaluate consent
-   ↓
-User changes preferences → update consent on the same page
-```
+        ↓
+Set default rõ ràng và áp dụng lựa chọn đã lưu
+        ↓
+Người dùng chọn hoặc đổi preference → gửi update ngay trên page hiện tại
+        ↓
+Application push business event vào Data Layer
+        ↓
+Trigger match → tag evaluate built-in/additional consent checks
+        ↓
+GA4 request, behavior giới hạn theo consent hoặc tag bị block
+~~~
 
-### Consent Initialization và Initialization
+Application vẫn có thể push event vào Data Layer khi analytics consent là denied. Event đó không chứng minh người dùng đã cho phép. Bằng chứng cần xem là consent behavior của tag và request thực tế.
 
-- Chỉ dùng **Consent Initialization - All Pages** cho tag hoặc template có nhiệm vụ set hoặc update consent, chẳng hạn CMP integration hoặc default-consent template.
-- Dùng trigger **Initialization** thông thường cho các tag khác cần chạy sớm nhưng không quản lý consent.
-- Consent Initialization được thiết kế để chạy trước các trigger khác, bao gồm cả Initialization.
+### 2.3 Chọn Basic hay Advanced Consent Mode
 
-Nếu CMP hoạt động bất đồng bộ, implementation phải xử lý race giữa CMP và measurement tag. Hãy dùng CMP integration đã được phê duyệt hoặc một waiting mechanism phù hợp. Không giải quyết race bằng cách tùy ý thêm exception trigger vào Google tag.
+Chọn mode cùng privacy owner và ghi vào consent contract. Banner đang hiển thị không cho biết chắc implementation là Basic hay Advanced; cần kiểm tra tag và Network behavior thực tế.
 
-## Default consent và consent update (Default consent and consent updates)
+| Mode | Trước khi người dùng chọn | Khi analytics consent là denied | Điều cần kiểm tra |
+| --- | --- | --- | --- |
+| **Basic** | Google tag bị block cho đến khi người dùng tương tác với banner. | Tag bị block không nên gửi data. | Trước khi có lựa chọn, không có GA4 request từ tag bị block. |
+| **Advanced** | Google tag load với default đã cấu hình, thường là denied ở nơi policy yêu cầu opt-in. | Tag có consent awareness có thể gửi limited cookieless signal nhưng không được dùng analytics storage đã bị denied. | Kiểm tra cả storage và nội dung request. |
 
-### Default consent
+Behavior cụ thể còn tùy tag, consent type, configuration và sản phẩm Google. Không được cam kết “không có network request nào” nếu chưa test đúng implementation đã chọn.
 
-Thiết lập một default rõ ràng cho mọi consent type mà implementation sử dụng. Default phải phản ánh policy đã được phê duyệt và có thể khác nhau theo từng region.
+## 3. Consent contract: quyết định trước khi cấu hình GTM
 
-Với một policy strict opt-in, default ban đầu thường dùng cho measurement và advertising là:
+Hãy ghi lại các quyết định sau trước khi tạo hoặc sửa consent tag:
 
-```text
-analytics_storage  = denied
-ad_storage          = denied
-ad_user_data        = denied
-ad_personalization  = denied
-```
+| Hạng mục | Cần quyết định |
+| --- | --- |
+| Purpose và destination | Thu thập dữ liệu gì, vì sao và gửi đi đâu. |
+| Consent type | Consent type nào kiểm soát purpose; với dự án chỉ đo GA4, bắt đầu bằng analytics_storage nếu policy yêu cầu. |
+| Region | Default và banner áp dụng ở khu vực nào. |
+| Default state | State trước khi có lựa chọn đã lưu có thể dùng được. |
+| Nguồn và thời điểm update | CMP callback hoặc template nào gửi update và gửi lúc nào. |
+| Persistence | CMP lưu lựa chọn ở đâu để dùng cho page/visit tiếp theo. |
+| Revoke | Điều gì thay đổi ngay và dữ liệu đã lưu trước đó được xử lý thế nào. |
+| Unknown/failure | Fail-safe behavior khi CMP chậm, bị block hoặc trả về giá trị sai. |
+| Mode và version | Basic hay Advanced Consent Mode; policy/implementation version nào. |
+| Owner và evidence | Người chịu trách nhiệm, ticket, approval và nơi lưu QA. |
 
-Không sao chép máy móc ví dụ này cho functionality hoặc security storage. Default là một quyết định về policy và không được làm hỏng các chức năng thiết yếu của site.
+### 3.1 Mô hình state
 
-Default phải được set trước các command hoặc tag gửi measurement data. Với custom GTM consent template, hãy dùng consent API của Tag Manager, chẳng hạn `setDefaultConsentState`, thay vì dựa vào một queued `gtag('consent', ...)` call bên trong Custom HTML.
+- **granted:** Purpose đã được cho phép dùng storage hoặc data behavior tương ứng.
+- **denied:** Không được dùng storage hoặc identifier đã bị từ chối; tag bị block hoặc chạy theo behavior đã được Consent Mode quy định.
+- **Not set / unknown:** Chưa có state đáng tin cậy. Đây là lỗi khởi tạo, không phải permission.
 
-### Consent update
+Với Additional Consent Check, mọi consent type bắt buộc phải là granted tại thời điểm tag được evaluate. Một update xảy ra sau đó không tự động hợp thức hóa lần chạy trước.
 
-Khi người dùng accept, reject hoặc thay đổi một category:
+### 3.2 Consent type trong tag inventory
 
-1. Chuyển lựa chọn của CMP thành các Google consent type đã được phê duyệt.
-2. Gửi update ngay trên page nơi lựa chọn đó xảy ra.
-3. Lưu lựa chọn trong CMP hoặc consent store đã được phê duyệt.
-4. Re-evaluate các tag và event trong tương lai bằng state mới.
+| Consent type | Kiểm soát | Cách dùng trong tài liệu GA4 này |
+| --- | --- | --- |
+| analytics_storage | Analytics storage, ví dụ analytics cookie. | Consent chính cho GA4 khi policy yêu cầu. |
+| ad_storage | Storage liên quan advertising. | Chỉ thêm khi có advertising tag đã được phê duyệt. |
+| ad_user_data | Gửi user data cho Google vì mục đích advertising. | Quyết định riêng về data use; không tự suy ra từ analytics consent. |
+| ad_personalization | Dùng data cho personalized advertising. | Quyết định riêng cho advertising. |
+| functionality_storage | Storage cần cho chức năng site, ví dụ language setting. | Phân loại cùng privacy owner; không sao chép default của analytics. |
+| personalization_storage | Storage cho personalization, ví dụ recommendation. | Chỉ thêm khi có purpose đã được phê duyệt. |
+| security_storage | Storage cho authentication, fraud prevention hoặc security. | Thường là thiết yếu, nhưng vẫn cần xác nhận policy. |
 
-Không chờ tới sau navigation hoặc page unload. Một update được gửi ngay trước khi chuyển page có thể chưa kịp hoàn tất, khiến page tiếp theo bắt đầu với state chưa đầy đủ. Consent Mode không tự lưu lựa chọn của người dùng; CMP hoặc consent solution phải thực hiện việc đó.
+## 4. Chi tiết triển khai trong GTM
 
-## CMP integration
+### 4.1 Xác định một source of truth
 
-CMP thường chịu trách nhiệm về user interface, mô tả category, lưu preference và consent record. GTM chịu trách nhiệm nhận state và áp dụng state đó cho các tag.
+Chỉ dùng một CMP hoặc consent service đã được phê duyệt làm nơi quản lý lựa chọn hiện tại. Trước khi sửa GTM, cần ghi lại:
 
-Hãy ghi lại integration contract:
+- CMP category và mapping sang Google consent type.
+- Container và environment nhận state.
+- Callback, template hoặc integration gửi update.
+- Owner và policy version.
 
-| Contract item    | Quyết định cần ghi nhận                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| Source of truth  | CMP hoặc consent service nào là nơi sở hữu lựa chọn hiện tại?                                |
-| Category mapping | CMP category nào được map với từng Google consent type?                                      |
-| Initial state    | Default nào được áp dụng trước khi CMP sẵn sàng, và áp dụng ở những region nào?              |
-| Update event     | Callback, template hoặc API call nào gửi lựa chọn đã thay đổi?                               |
-| Timing           | Làm thế nào để CMP bất đồng bộ không race với normal tag?                                    |
-| Revocation       | Sau khi người dùng withdraw, cookie, identifier và downstream permission được xử lý thế nào? |
-| Evidence         | Policy version, consent record và test evidence được lưu ở đâu?                              |
+Ưu tiên integration/template chính thức hoặc đã được review. Nếu phải tự tạo consent template trong GTM, dùng Tag Manager Consent APIs **setDefaultConsentState** và **updateConsentState**. Không thay các API này bằng lệnh gtag consent bên trong Custom HTML; Google lưu ý rằng lệnh gtag được xếp hàng có thể được xử lý sau message kế tiếp.
 
-Ưu tiên supported CMP integration hoặc community template đã được review. Nếu tổ chức duy trì custom integration, integration đó phải được đưa vào change control và phải test các consent API call, race condition, regional behavior và failure path.
+### 4.2 Đặt đúng thứ tự với Consent Initialization
 
-## Cấu hình consent trong GTM (GTM consent settings)
+1. Dùng **Consent Initialization - All Pages** cho CMP/default-consent tag hoặc template.
+2. Set default cho mọi consent type mà container sử dụng, trước khi measurement tag có thể gửi data.
+3. Áp dụng lựa chọn đã lưu hoặc gửi lựa chọn mới qua update path đã phê duyệt.
+4. Dùng **Initialization** cho tag cần chạy sớm nhưng không quản lý consent.
+5. Chỉ để application event và measurement tag chạy khi consent state đã sẵn sàng.
 
-GTM có hai cơ chế liên quan:
+Consent Initialization luôn chạy trước Initialization và các trigger khác. Đây không phải trigger “chạy sớm cho mọi tag”. Nếu CMP bất đồng bộ, dùng waiting mechanism được integration tài liệu hóa; không tùy ý thêm exception trigger để che race condition.
 
-### Built-in consent checks
+### 4.3 Default, update, persistence và revoke
 
-Google tag có consent awareness chứa logic có sẵn để thay đổi behavior theo consent state. Các Google tag thường có Consent Mode support gồm:
+**Default**
 
-- Google tag
-- Google Analytics / GA4
-- Google Ads
-- Floodlight
-- Conversion Linker
+- Set giá trị rõ ràng cho mọi consent type được dùng.
+- Chỉ dùng regional default khi policy đã yêu cầu.
+- Với strict analytics opt-in, analytics_storage = denied là điểm bắt đầu thường gặp; phải xác nhận theo policy thực tế.
+- Không để giá trị CMP bị thiếu hoặc sai biến thành granted một cách ngầm định.
 
-Với các tag này, hãy dùng built-in checks làm control chính. Review các consent type được khai báo trong consent settings của tag.
+**Update**
 
-### Additional consent checks
+- Chuyển lựa chọn của CMP thành các Google consent type đã được phê duyệt.
+- Gửi update ngay trên page người dùng vừa xác nhận hoặc đổi preference.
+- Lưu lựa chọn trong CMP hoặc consent store đã được phê duyệt cho các page sau.
+- Các tag chạy về sau phải evaluate theo state mới.
 
-Additional consent checks là các firing gate của GTM. Chúng hữu ích cho custom tag, partner tag hoặc third-party tag không có consent behavior có sẵn phù hợp.
+**Revoke**
 
-Các setting gồm:
+- Gửi update mới khi người dùng đổi từ granted sang denied.
+- Ghi lại CMP có xóa client storage hoặc yêu cầu downstream deletion hay không; Consent Mode không tự định nghĩa quy trình này.
+- Không replay business event xảy ra trước consent nếu measurement plan chưa cho phép và chưa có cơ chế chống duplicate.
 
-- **Not set** — Chưa cấu hình additional check; đây là default và phải được review.
-- **No additional consent required** — Một quyết định rõ ràng đã được review rằng không cần consent bổ sung ngoài built-in behavior.
-- **Require additional consent for tag to fire** — Tag chỉ fire khi mọi consent type được chỉ định đều là `granted`.
+### 4.4 Cấu hình consent settings của tag
 
-Quy tắc governance:
+Google tag hỗ trợ Consent Mode có built-in consent behavior. Hãy review consent type hiển thị trong từng Google tag và dùng built-in behavior làm control chính.
 
-- Không thêm additional consent checks vào Google tag chỉ để lặp lại built-in checks của tag đó.
-- Không dùng exception trigger để block Google tag khi Consent Mode đã kiểm soát behavior của tag.
-- Dùng additional checks cho third-party hoặc custom tag đã được review và không được phép fire khi thiếu một consent type cụ thể.
-- Ghi lại lý do tag được đánh dấu “No additional consent required”.
-- Enable và review GTM Consent Overview thường xuyên.
+Với custom hoặc third-party tag, chọn một Additional Consent Checks setting đã được review:
 
-Additional consent checks kiểm soát việc tag có fire hay không. Chúng không thay thế CMP, consent default, Consent Mode update hoặc legal policy.
+| GTM setting | Cách dùng |
+| --- | --- |
+| **Not set** | Trạng thái tạm thời khi tag chưa được review; không được coi là đã được phê duyệt. |
+| **No additional consent required** | Ghi rõ vì sao built-in behavior hoặc thiết kế của tag đã đủ. |
+| **Require additional consent for tag to fire** | Thêm mọi consent type phải là granted trước khi tag chạy. |
 
-## Các thành phần kết hợp với nhau như thế nào? (How the components fit together)
+Không thêm Additional Consent Check trùng lặp cho Google tag và không dùng exception Trigger để ghi đè Consent Mode. Consent check trả lời “tag có được phép chạy không?”; Trigger vẫn trả lời “event có khớp không?”.
 
-```text
-CMP / consent policy
-        │  default + update states
-        ▼
-Consent Initialization / consent APIs
-        │
-        ▼
-GTM consent state ───────────────┐
-        │                         │
-        │                         ├─ Built-in consent checks
-        │                         └─ Additional consent checks
-        ▼
-Data Layer event + variables → Trigger matches → Tag is evaluated
-                                                    │
-                                                    ▼
-                           Google tag / GA4 destination / partner endpoint
-```
+### 4.5 Environment và change control
 
-Tóm tắt mối quan hệ:
+Giữ CMP configuration, consent default, container ID, destination và policy version nhất quán giữa staging và production. Mọi consent change cần:
 
-- **Data Layer** mang các business event và value có cấu trúc. Bản thân Data Layer không phải là bằng chứng của consent.
-- **Trigger** quyết định event có khớp với điều kiện firing của tag hay không.
-- **Consent** được evaluate khi tag được xem xét để execution và có thể kiểm soát việc fire hoặc behavior.
-- **Tag** biến configuration và data thành một measurement action hoặc marketing action.
-- **Google tag** là kết nối Google measurement trung tâm; nó có thể gửi data tới các destination được liên kết như GA4 và Google Ads.
-- **GA4 destination** nhận event từ Google tag hoặc GA4 event tag theo measurement behavior và consent behavior đã được cấu hình.
+1. Cập nhật contract và inventory.
+2. Privacy/business review khi phù hợp.
+3. Test trong GTM Preview và Browser Network/storage.
+4. Publish container version có rollback reference.
+5. Theo dõi sau release để phát hiện request bất ngờ, tag bị block sai hoặc environment drift.
 
-### Trigger đã match và data thực sự đã gửi (Trigger matched versus data actually sent)
+## 5. QA và evidence
 
-Đây là những quan sát khác nhau:
+### 5.1 Thứ tự test
 
-| Quan sát                             | Điều quan sát đó chứng minh                              | Điều quan sát đó không chứng minh                                                       |
-| ------------------------------------ | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Trigger matched                      | Event và các điều kiện của trigger là đúng.              | Tag đã execute hoặc đã gửi request.                                                     |
-| Tag fired trong Preview              | GTM cho phép tag execute trong session của container đó. | Full measurement payload đã được gửi hoặc vendor đã chấp nhận payload.                  |
-| Request hiển thị trong Network panel | Một request đã được gửi tới một endpoint.                | Mọi Data Layer value đều được đưa vào request hoặc request đó được phép về mặt pháp lý. |
-| Cookie hoặc storage value tồn tại    | Đã xảy ra một thao tác storage.                          | Value đến từ đúng tag dự kiến hoặc có đúng mục đích dự kiến.                            |
+1. Dùng browser profile sạch hoặc xóa CMP storage theo hướng dẫn đã ghi nhận.
+2. Ghi expected default và behavior tương ứng với Consent Mode đã chọn.
+3. Mở GTM Preview, kiểm tra Consent Initialization trước application event.
+4. Thực hiện lựa chọn consent đã phê duyệt, sau đó chạy business event.
+5. Đối chiếu GTM status, browser storage, Network request và GA4 DebugView.
+6. Lặp lại với deny, change/revoke, CMP chậm, direct landing, SPA navigation và từng environment.
 
-Khi điều tra một discrepancy, hãy kiểm tra cùng nhau event timeline, consent state, tag status, tag parameters, browser storage và network request.
+Section 08 quy định evidence template và cách quyết định pass/fail đầy đủ. Ở đây chỉ tập trung vào evidence riêng của consent.
 
-## Quy trình quản lý (Management workflow)
+### 5.2 Ma trận tối thiểu: làm gì và kiểm tra gì
 
-Dùng workflow sau cho tag mới và các material consent change:
+Chạy mỗi dòng như một test riêng. Bắt đầu từ điều kiện browser được nêu, thực hiện action, rồi lưu evidence theo cột cuối.
 
-1. **Request** — Ghi lại business purpose, vendor, destination, event và expected outcome.
-2. **Classify** — Xác định các tác động liên quan đến storage, data use, personal data, advertising, personalization và security.
-3. **Map** — Map purpose với một hoặc nhiều consent type và ghi lại legal/privacy decision.
-4. **Inventory** — Ghi lại tag, trigger, variables, built-in checks, additional checks, owner và environment.
-5. **Implement** — Cấu hình defaults, CMP updates, built-in behavior và additional checks.
-6. **Test** — Validate Preview, browser storage, network requests, user flows, regions và failure paths.
-7. **Review** — Lấy approval từ Analytics/GTM, Engineering, Privacy và Security khi phù hợp.
-8. **Publish** — Publish một version có change description và rollback reference.
-9. **Monitor** — Kiểm tra diagnostics, tag behavior, consent rates, data quality và các vendor bất ngờ.
-10. **Review hoặc retire** — Định kỳ revalidate purpose, consent mapping, vendor terms và behavior thực tế; remove các tag không còn sử dụng.
+| Tình huống test | Thao tác | Điều kiện pass |
+| --- | --- | --- |
+| Lần đầu vào site, chưa có lựa chọn | Xóa CMP storage theo hướng dẫn, load page và kiểm tra Consent Initialization trước khi bấm banner. | Default được phê duyệt xuất hiện trước normal tag; không tag nào âm thầm coi state chưa biết là granted. |
+| Grant analytics rồi chạy business event | Chọn analytics option đã được phê duyệt, xác nhận consent update rồi chạy một business event. | Update xảy ra trên cùng page; GA4 tag dùng built-in behavior; storage được phép và một request dự kiến được ghi nhận. |
+| Deny analytics rồi chạy business event | Từ chối analytics, xác nhận state denied rồi chạy cùng event đó. | Không dùng analytics storage đã bị denied. Basic block tag hoặc Advanced chỉ có limited behavior đã tài liệu hóa. |
+| Đổi hoặc revoke consent | Bắt đầu ở granted, chạy một event, revoke analytics trong preference center rồi chạy event thứ hai. | Revoke update gửi trên page hiện tại; event thứ hai theo denied behavior; không tạo duplicate business event. |
+| CMP chậm hoặc bị block | Trong environment test, throttle hoặc block CMP rồi load page và chạy event. | Default và fail-safe behavior vẫn đúng; CMP bị thiếu không âm thầm biến thành granted. |
+| Direct landing và refresh | Mở trực tiếp một deep link rồi refresh mà không đi qua page khác. | Consent state được khởi tạo từ source đã duyệt; test không phụ thuộc Data Layer message của page trước. |
+| SPA route change | Đổi route không full reload rồi chạy event một lần. | Consent đã lưu vẫn có sẵn; không tạo duplicate consent update hoặc business event. |
+| Staging và production | Chạy flow đã duyệt ở từng environment và đối chiếu ID, destination. | CMP configuration, container, measurement ID, destination và policy version khớp environment record. |
 
-## Ownership và inventory
+### 5.3 Evidence và tiêu chí pass
 
-Phải phân công owner rõ ràng cho Privacy/Legal, Analytics/GTM, CMP/Engineering, Business/Marketing, QA/Data Quality và Security. Tối thiểu cần ghi nhận:
+Phải lưu:
 
-```text
-Tag name and ID; vendor and endpoint; business purpose; data collected and classification;
-destination; cookies/storage/identifiers; built-in and additional consent checks;
-trigger and exception configuration; CMP category mapping; regions and environments;
-owner and backup owner; last review date; change ticket, approval, and QA evidence.
-```
+- Consent state và thứ tự trong GTM Preview, gồm event Consent Initialization.
+- Tag status, built-in check, Additional Consent Check và Trigger đã match.
+- Cookie/storage và việc tạo identifier trước/sau mỗi lựa chọn.
+- Network endpoint, timing, event name, field liên quan consent, identifier và payload allowlist.
+- GA4 DebugView hoặc downstream check đã được phê duyệt. Downstream nghĩa là hệ thống ở sau GTM; nó xác nhận request đã được nhận hoặc xử lý, không chỉ xác nhận GTM cho phép tag chạy.
+- CMP record, policy version, environment, timestamp và tester.
 
-## QA, Preview và network testing
+Consent test chỉ pass khi state, storage behavior, request behavior, destination và downstream result khớp với tài liệu đã phê duyệt. “Downstream result” nghĩa là hệ thống kế tiếp xác nhận việc nhận hoặc xử lý đúng; không có nghĩa mọi report đã cập nhật ngay lập tức. Banner xuất hiện hoặc Trigger match riêng lẻ không đủ làm evidence.
 
-### Ma trận test tối thiểu (Minimum test matrix)
+## 6. Lưu ý vận hành và lỗi thường gặp
 
-| Scenario                               | Cần kiểm tra                                                                                                           |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| New visitor, chưa có lựa chọn trước đó | Đúng default state xuất hiện trước các normal tag.                                                                     |
-| Accept all                             | Các consent type update sang granted state đã được phê duyệt; approved tag và storage hoạt động.                       |
-| Reject analytics                       | Analytics storage không được sử dụng; kiểm tra network behavior tương ứng với Basic/Advanced đã chọn.                  |
-| Chỉ reject advertising                 | Advertising storage và data-use signal vẫn là `denied`, trong khi analytics behavior được phép vẫn tiếp tục hoạt động. |
-| Granular choice                        | Mỗi CMP category được map đúng với Google consent type tương ứng.                                                      |
-| Change hoặc revoke choice              | Update được gửi trên page hiện tại; behavior trong tương lai thay đổi; cleanup behavior được ghi nhận.                 |
-| Direct landing page                    | Không phụ thuộc vào page trước đó hoặc Data Layer event của page trước.                                                |
-| CMP chậm hoặc bị block                 | Default và fail-safe behavior vẫn đúng.                                                                                |
-| SPA route change                       | Consent state được duy trì và event không bị duplicate.                                                                |
-| Multiple tabs / returning visitor      | Stored choice được xử lý nhất quán và không âm thầm ghi đè một lựa chọn mới hơn.                                       |
-| Region-specific visitor                | Banner, default và tag behavior đúng với region.                                                                       |
-| Staging / production                   | Đúng container, CMP configuration, IDs và destinations.                                                                |
+### Quy tắc để implementation dễ kiểm soát
 
-### Cần kiểm tra gì? (What to inspect)
+- Consent state là context, không phải business event. Không push event giả consent_granted chỉ để làm GA4 tag fire.
+- Chỉ có một source of truth. Nhiều CMP, snippet, plugin hoặc container có thể ghi đè state của nhau.
+- State bị thiếu, sai hoặc quá cũ phải được coi là chưa được phê duyệt cho tới khi xử lý; không tự chuyển thành granted.
+- Update phải idempotent để callback lặp lại không tạo duplicate update hoặc business event.
+- Không đưa raw calculation input, email, account ID, credential hoặc user input không giới hạn vào Data Layer/GA4 nếu chưa được phê duyệt.
 
-1. **GTM Preview / Tag Assistant:** Consent state ở từng event, thứ tự Consent Initialization, trigger matches, tag fired và blocked, built-in checks và additional checks.
-2. **Browser storage:** Cookie, local storage, session storage và việc tạo identifier trước và sau mỗi lựa chọn.
-3. **Network panel:** Request timing, endpoint, consent parameters, identifiers, event name và request là limited hay full.
-4. **GA4 DebugView hoặc công cụ tương đương:** Event và parameters dự kiến có tới nơi sau khi consent state được phê duyệt hay không.
-5. **CMP record:** Choice, category, policy version và timestamp có được ghi lại theo policy hay không.
+### Lỗi thường gặp và cách xử lý
 
-Không được đánh dấu test là pass chỉ vì banner đã xuất hiện hoặc trigger đã match. Phải lưu evidence cho consent state, storage, request, destination và expected outcome.
+| Lỗi hoặc dấu hiệu | Thường có nghĩa là | Cách xử lý thực tế |
+| --- | --- | --- |
+| Tag fire trước khi thấy default | Thiếu Consent Initialization, trigger chạy quá muộn hoặc gắn nhầm tag. | Sửa Consent Initialization rồi test lại bằng browser state sạch. |
+| Đã deny nhưng vẫn tạo analytics storage | Google tag hoặc custom tag đang bypass consent control. | Kiểm tra built-in/additional check, script hard-code và plugin; loại bỏ đường bypass. |
+| Update hoặc event xuất hiện hai lần | Nhiều callback, container hoặc SPA handler cùng fire. | Dùng một source of truth và thêm idempotency/duplicate protection. |
+| GTM báo fired nhưng không thấy request | Có thể do browser restriction, ad blocker hoặc network failure. | Tách evidence cấu hình khỏi evidence delivery; test bằng browser sạch đã được duyệt và ghi nhận limitation. |
+| Staging và production gửi tới nơi khác nhau | Environment configuration bị drift. | So sánh CMP mapping, container version, ID, destination và policy version trước khi publish. |
+| Revoke nhưng cookie cũ vẫn còn | Revoke và xóa client storage là hai việc khác nhau; Consent Mode không tự làm việc này. | Ghi rõ CMP/browser cleanup behavior và test cùng privacy owner. |
+| Server-side hoặc iframe không theo state mới | Consent chưa được truyền sang downstream component. | Bổ sung propagation contract và test end-to-end riêng. |
 
-## Failure modes và edge cases
+Sau mỗi thay đổi quan trọng của tag, hãy review GTM Consent Overview để bảo đảm mọi tag đều có consent setting có chủ đích.
 
-Hãy theo dõi các tình huống sau:
+## 7. Liên kết với các section khác
 
-- **CMP timing:** CMP load quá muộn, thiếu default hoặc update bị hủy trong lúc navigation. Hãy sửa thứ tự hoặc dùng một waiting strategy đã được phê duyệt.
-- **Stale hoặc duplicate consent:** Stored consent vẫn tồn tại sau khi policy thay đổi, hoặc nhiều CMP, container, snippet hay plugin gửi các state xung đột nhau.
-- **Hard-coded hoặc ungoverned tags:** Site code, CMS, app, vendor plugin hoặc partner tag bypass thiết kế consent của GTM.
-- **Google tag bị block quá mức:** Exception trigger hoặc additional check ngăn một tag có built-in consent awareness hoạt động như dự kiến.
-- **SPA, cross-domain hoặc iframe behavior:** Route change tạo duplicate update/event, hoặc consent không được truyền nhất quán.
-- **Khoảng trống ở revocation và server-side:** State mới đã được gửi nhưng cookie, server-side record hoặc downstream enforcement không được xử lý theo policy.
-- **Sensitive data leakage:** Calculation inputs, account identifiers, email addresses hoặc personal data khác bị push hoặc gửi trước khi có state được phê duyệt.
-- **Environment drift:** Staging và production có CMP mapping, defaults, container versions hoặc destination IDs khác nhau.
+- **Section 01 — Data Layer Design:** business event và payload contract; Data Layer message không phải bằng chứng consent.
+- **Section 02 — Variable Management:** chỉ map scalar field đã duyệt; giá trị thiếu không được biến thành permission.
+- **Section 03 — Trigger Management:** Trigger match tách biệt với consent decision; event Trigger phải hẹp và authoritative.
+- **Section 04 — Tag Management:** cấu hình Google tag/GA4, parameter allowlist và kiểm tra request.
+- **Section 07 — Measurement Plan:** định nghĩa expected consent cho từng material event trước khi triển khai.
+- **Section 08 — Debug and QA:** dùng evidence template và quyết định pass/fail đầy đủ.
+- **Section 09 — Reports and Charts:** chỉ kiểm tra dữ liệu GA4 đã xử lý sau processing window được ghi nhận.
+- **Section 10 — Release Monitoring:** theo dõi consent regression và destination bất ngờ ở release production đầu tiên.
 
-## Change control
+## 8. Journey minh họa: FD calculation_action
 
-Phải yêu cầu một documented change khi:
+Ví dụ này dùng event contract của FD và không gửi raw input hoặc personal data.
 
-- Thêm, xóa hoặc đổi purpose của tag hoặc destination.
-- Thay đổi consent default hoặc regional rule.
-- Thay đổi CMP category hoặc mapping với Google consent type.
-- Chuyển Consent Mode từ Basic sang Advanced hoặc ngược lại.
-- Thay đổi built-in hoặc additional consent settings của Google tag.
-- Thay đổi event parameters có thể chứa personal data hoặc sensitive data.
-- Thêm server-side forwarding hoặc downstream vendor mới.
+### Setup record
 
-Mỗi change phải bao gồm purpose, impact assessment, inventory updates, privacy review khi được yêu cầu, test evidence, approver, publish version và rollback plan.
+~~~text
+CMP:                 approved web CMP
+Default:             analytics_storage = denied until the approved choice
+Update:              CMP callback → updateConsentState
+GA4 tag:             GA4 - Event - calculation_action
+Trigger:             CE - calculation_action - All
+Destination:         approved GA4 web stream only
+Additional check:    none; rely on the Google tag built-in analytics consent behavior
+~~~
 
-## Ví dụ theo kiểu FD: `calculation_action` (FD-style example)
+### Application message
 
-Giả sử FD có một calculator gửi GA4 event khi người dùng hoàn thành phép tính. Event đó không được chứa personal data không cần thiết.
-
-### Data Layer event
-
-```javascript
+~~~javascript
 dataLayer.push({
   event: "calculation_action",
   calculation_action: "completed",
   calculation_type: "eligibility",
-  calculation_outcome: "qualified",
+  calculation_outcome: "qualified"
 });
-```
+~~~
 
-Setup được khuyến nghị:
+### Flow dự kiến
 
-```text
-Tag:     GA4 - Event - calculation_action
-Trigger: CE - calculation_action - All
-Event:   calculation_action
-Params:  calculation_action, calculation_type, calculation_outcome
-Consent: Built-in analytics_storage behavior
-```
+1. Consent Initialization set default đã được phê duyệt.
+2. Người dùng grant hoặc deny analytics consent; CMP gửi update trên cùng page.
+3. Application hoàn tất calculation và push một message calculation_action.
+4. Trigger match và GA4 tag được evaluate.
+5. Nếu granted, event được gửi một lần với scalar parameter đã duyệt.
+6. Nếu denied, tag theo Basic/Advanced behavior đã chọn và không dùng analytics storage bị denied.
+7. Nếu consent đổi sau calculation, không replay event trừ khi measurement plan cho phép rõ ràng.
 
-### Flow dự kiến (Expected flow)
+### Evidence chấp nhận
 
-1. CMP và `CMP - Consent - Default` chạy thông qua Consent Initialization.
-2. Default đã được phê duyệt được áp dụng, chẳng hạn `analytics_storage = denied` trước khi có lựa chọn opt-in.
-3. Người dùng hoàn tất FD calculation và Data Layer event được push.
-4. Trigger `calculation_action` match.
-5. GTM evaluate GA4 tag và built-in consent behavior của tag.
-6. Nếu analytics consent là `granted`, event có thể được gửi theo Google tag và GA4 event configuration đã approve.
-7. Nếu analytics consent là `denied`, behavior phụ thuộc vào Basic hoặc Advanced Consent Mode đã chọn: tag có thể bị block hoặc có thể gửi limited cookieless signal mà không dùng analytics storage.
+- Default và update đúng, xuất hiện trước event.
+- Quan sát được đúng một application message, một Trigger match và một destination được phê duyệt.
+- Không có email, account ID, raw financial input hoặc internal request token.
+- Storage và Network behavior khớp Consent Mode đã chọn.
+- GA4 DebugView nhận event đúng theo behavior đã phê duyệt.
 
-Không được tự động replay một event đã xảy ra trước consent sau khi người dùng grant consent. Cần quyết định business event đó còn hợp lệ hay không, policy có cho phép replay hay không và phải ngăn duplicate key event, Ads conversion hoặc calculation record như thế nào.
+## Tài liệu tham khảo (References)
 
-### Tiêu chí QA cho ví dụ
-
-- Event không được gửi tới một destination chưa được phê duyệt.
-- `calculation_action` không phải là consent type; đây là business event name hoặc parameter.
-- Không có email, account ID, raw financial input hoặc personal data không cần thiết nào khác được đưa vào.
-- Khi analytics là `denied`, phải quan sát được storage behavior và network behavior đúng với Consent Mode đã chọn.
-- Khi analytics là `granted`, GA4 nhận event và các parameter đã được document đúng một lần.
-- Consent change không tạo duplicate calculation event.
+- [Google for Developers — Set up consent mode on websites](https://developers.google.com/tag-platform/security/guides/consent): default, update, timing cùng page và Tag Manager Consent APIs.
+- [Tag Manager Help — Tag Manager consent mode support](https://support.google.com/tagmanager/answer/10718549?hl=en): Consent Initialization, built-in check, Additional Consent Check, consent type và Consent Overview.
+- [Google for Developers — Consent mode overview](https://developers.google.com/tag-platform/security/concepts/consent-mode): behavior của Basic và Advanced Consent Mode.

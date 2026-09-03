@@ -1,766 +1,353 @@
 # 03 — Quản lý Trigger trong GTM
 
-## Mô hình tư duy về trigger
+## 1. Mục tiêu, phạm vi và đầu ra
 
-Trigger là một rule lắng nghe event và quyết định một tag có được phép chạy hay không. Trigger không tự gửi dữ liệu.
+Tài liệu này hướng dẫn cách chọn, cấu hình, test, publish và retire Google Tag Manager (GTM) Trigger cho quy trình đo lường GA4 ổn định.
 
-Mỗi tag cần ít nhất một firing trigger. Tuy nhiên, exception, cài đặt consent, sequencing, lỗi trình duyệt hoặc một cài đặt khác của tag vẫn có thể ngăn tag gửi dữ liệu.
+Trigger là một rule lắng nghe event và quyết định Tag có đủ điều kiện chạy hay không. Trigger không tự gửi dữ liệu. Tag, consent setting, exception, sequencing, browser và destination vẫn quyết định request có thực sự được tạo hay không.
 
-### Logic trigger nhìn nhanh
+### Trong phạm vi
 
-Với một tag có firing trigger `F1` và `F2`, exception `B1` và `B2`, cùng yêu cầu consent:
+- Chọn event source có thẩm quyền và Trigger Type phù hợp.
+- Firing logic, exception, filter, timing, Trigger Group và environment scope.
+- Naming, reuse, inventory, QA, release và retirement.
+- `calculation_action` của FD làm pattern Custom Event tham chiếu.
 
-```text
-Tag có thể fire khi:
+### Ngoài phạm vi
 
-(F1 match OR F2 match)
-AND NOT (B1 match OR B2 match)
-AND consent/settings cho phép
-AND mọi yêu cầu sequencing đã được đáp ứng
-```
+- Thiết kế source/type của Variable; xem Section 02.
+- Cấu hình Tag và GA4 destination; xem Section 04.
+- Consent implementation; xem Section 05.
+- Custom-template governance; xem Section 06.
+- Measurement plan, Debug/QA evidence, Reports và Release Monitoring; xem Sections 07–10.
+- Trigger phục vụ quảng cáo hoặc campaign.
 
-Hãy nhớ:
+### Đầu ra cần có
 
-- Nhiều firing trigger trên một tag dùng logic **OR**.
-- Nhiều điều kiện bên trong một trigger dùng logic **AND**.
-- Nhiều exception là các điều kiện chặn; chỉ cần một exception match là đủ để block tag.
+Mỗi Trigger đang active phải có:
 
-## Bắt đầu từ thời điểm nghiệp vụ
+1. Business event và source có thẩm quyền.
+2. Firing rule, filter, exception, consent và expected frequency được ghi rõ.
+3. Owner, consumer, environment scope và lifecycle status.
+4. Evidence từ Preview, Network và downstream ở mức phù hợp với Tag.
+5. Publication record có version và khả năng khôi phục.
 
-Trước khi tạo trigger, hãy ghi lại:
+## 2. Tổng quan: Trigger hoạt động như thế nào?
 
-1. **Định nghĩa nghiệp vụ:** thực tế điều gì đã xảy ra?
-2. **Nguồn có tính quyết định:** application event, native browser event, URL, visibility, timer hay nguồn khác?
-3. **Tên event chính xác:** bao gồm chữ hoa/chữ thường và các giá trị cho phép.
-4. **Điều kiện bắt buộc:** route, application, action, element hay form.
-5. **Giá trị của event:** những variable nào phải có sẵn trên cùng event?
-6. **Tần suất:** một lần cho mỗi occurrence, một lần mỗi page hay lặp lại?
-7. **Consent và timing:** điều gì phải đúng trước khi tag có thể chạy?
-8. **Bản đồ consumer:** tag nào sử dụng trigger này, và chúng có cùng ngữ nghĩa không?
-9. **Owner và quy tắc retirement:** ai phê duyệt thay đổi và khi nào trigger không còn cần thiết?
+### 2.1 Định nghĩa đơn giản
 
-### Ví dụ: chọn trigger cho signup đã xác nhận
+| Khái niệm trong GTM | Cách hiểu thực tế |
+| --- | --- |
+| Firing Trigger | Điều kiện giúp Tag đủ điều kiện chạy. Một Tag có thể có nhiều firing Trigger; chúng hoạt động theo kiểu lựa chọn thay thế (OR). |
+| Trigger condition | Một phép kiểm tra bên trong Trigger. Tất cả condition phải đúng (AND). |
+| Exception/blocking Trigger | Điều kiện chặn Tag. Chỉ cần một exception khớp là Tag bị chặn. |
+| Consent setting | Kiểm tra quyền riêng tư riêng biệt; có thể chặn Tag dù Trigger đã khớp. |
+| Trigger Group | Cổng chờ tất cả Trigger thành viên xảy ra. Nó chỉ xác nhận các Trigger đã xảy ra, không đảm bảo thứ tự và không nên dựng lại workflow của Application. |
 
-Giả sử business muốn đo việc tạo tài khoản thành công.
-
-Hành trình người dùng:
-
-```text
-Người dùng click Submit
-→ application validate form
-→ server tạo account
-→ application nhận response thành công
-→ application push `sign_up`
-→ GTM fire tag signup của GA4
-```
-
-Click Submit không phải trigger đúng cho confirmed business outcome hoặc GA4 key event. Người dùng có thể click button rồi validation thất bại, gặp lỗi server hoặc bỏ dở quy trình. Response thành công từ server mới là thời điểm nghiệp vụ có tính quyết định.
-
-Hãy dùng Custom Event do application sở hữu:
-
-```javascript
-window.dataLayer.push({
-  event: "sign_up",
-  method: "email",
-  form_id: "register",
-});
-```
-
-Sau đó cấu hình:
+Với một Tag có firing Trigger `F1`, `F2`, exception `B1`, `B2` và yêu cầu consent:
 
 ```text
-Trigger type: Custom Event
-Event name:   sign_up
-Conditions:   All Custom Events cho đúng event name
-Expected:     một lần fire cho mỗi account được tạo thành công
+Tag đủ điều kiện khi:
+(F1 khớp OR F2 khớp)
+AND KHÔNG (B1 khớp OR B2 khớp)
+AND consent/setting cho phép
+AND đáp ứng yêu cầu sequencing
 ```
 
-Không dùng click trigger cho confirmed outcome này. Click trigger vẫn hữu ích để đo ý định signup, nhưng nên gửi một event riêng như `sign_up_start` và không dùng chung tag `sign_up` thành công.
+Quy tắc thực tế: dùng Trigger có phạm vi nhỏ nhất nhưng vẫn khớp đúng business moment đã được phê duyệt. Ví dụ, FD calculation nên dùng Custom Event `calculation_action` do Application push, kèm chỉ những filter cần thiết như application và schema version. Không thay application event bị thiếu bằng click, page hoặc DOM rule quá rộng; các tín hiệu đó không chứng minh được kết quả calculation.
 
-### Ma trận quyết định trigger
+## 3. Chọn Trigger
 
-| Yêu cầu nghiệp vụ                                  | Trigger ưu tiên                    | Giải thích ngắn                                                                                                                |
-| -------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Chạy consent logic trước các tag khác              | **Consent Initialization**         | Dùng khi consent settings phải được thiết lập hoặc cập nhật trước khi các tag tracking khác chạy.                             |
-| Chạy setup logic sớm nhất có thể                   | **Initialization**                 | Dùng cho cấu hình cần chạy trước trigger page thông thường; không dùng làm trigger mặc định cho analytics event.               |
-| Theo dõi khi page được xem                         | **Page View**                      | Dùng khi việc page load là điều cần đo; page view không có nghĩa business action đã hoàn tất.                                  |
-| Tracking sau khi HTML sẵn sàng                     | **DOM Ready**                      | Dùng khi tracking phụ thuộc DOM element chưa có ở thời điểm Page View ban đầu.                                                |
-| Tracking sau khi toàn bộ page load                 | **Window Loaded**                  | Chỉ dùng khi tracking phụ thuộc resource như image hoặc script đã load xong.                                                   |
-| Theo dõi action/kết quả đã được application xác nhận | **Custom Event**                 | Dùng khi application biết một điều có ý nghĩa đã xảy ra, như calculation hoàn tất hoặc signup thành công.                     |
-| Theo dõi click button hoặc UI control              | **Click: All Elements**            | Dùng khi chính click là điều cần đo; click thể hiện ý định, không đảm bảo action thành công.                                   |
-| Theo dõi click link                                | **Click: Just Links**              | Dùng cho click vào link (`<a>`), như điều hướng sang page hoặc website khác.                                                   |
-| Theo dõi native HTML form submission               | **Form Submission**                | Dùng cho native form; với React, AJAX hoặc custom form, Custom Event từ application có thể đáng tin cậy hơn.                   |
-| Theo dõi điều hướng trong Single Page Application | **History Change**                 | Dùng khi SPA thay đổi browser history mà không reload toàn bộ page; event từ application/router vẫn được ưu tiên nếu đáng tin cậy hơn. |
-| Theo dõi khi element trở nên visible               | **Element Visibility**             | Dùng khi cần biết người dùng thực sự nhìn thấy element, section, banner hoặc component.                                         |
-| Theo dõi tương tác với nội dung page               | **Scroll Depth** hoặc **YouTube Video** | Dùng cho scroll hoặc video; không xem các tương tác này là business outcome đã xác nhận.                                   |
-| Chạy/kiểm tra sau một khoảng thời gian              | **Timer**                          | Dùng cho yêu cầu kỹ thuật theo thời gian; phải định nghĩa interval, giới hạn và điều kiện dừng.                                |
-| Chỉ fire sau khi nhiều trigger đã xảy ra           | **Trigger Group**                  | Dùng khi nhiều trigger bắt buộc phải xảy ra trước khi tag fire; xác nhận chúng đã xảy ra nhưng không đảm bảo thứ tự.           |
+### 3.1 Xác định business moment trước
 
-## Timing và khả năng có sẵn của event
-
-Các loại page-load trigger của GTM có vai trò timing khác nhau:
+Trước khi mở GTM, ghi lại:
 
 ```text
-Người dùng mở page
-     │
-     ▼
-1. Consent Initialization
-     │
-     ▼
-2. Initialization
-     │
-     ▼
-3. Page View
-     │
-     ▼
-   Đang parse HTML...
-     │
-     ▼
-4. DOM Ready
-     │
-     ▼
- Đang load image / script / resource...
-     │
-     ▼
-5. Window Loaded
+Business event và định nghĩa:
+Source và thời điểm có thẩm quyền:
+Event name và casing chính xác:
+Filter và Variable bắt buộc:
+Giá trị bắt buộc của event:
+Expected frequency:
+Yêu cầu consent và timing:
+Environment scope:
+Tag sử dụng Trigger:
+Owner và điều kiện retire:
 ```
 
-Mỗi trigger có một mục đích khác nhau:
+Input change, click, request start hoặc component render không tự động là business outcome đã xác nhận. Với FD, Application chỉ nên push `calculation_action` sau khi đã phân loại response API tương ứng (Section 01).
 
-1. Consent Initialization — chạy đầu tiên cho consent configuration cần có trước khi tracking bắt đầu.
-2. Initialization — chạy rất sớm cho setup cần hoàn tất trước các page trigger thông thường.
-3. Page View — chạy khi page bắt đầu load, phù hợp khi chỉ cần thông tin page cơ bản.
-4. DOM Ready — chạy sau khi HTML được parse; dùng khi tracking phụ thuộc DOM element.
-5. Window Loaded — chạy sau khi page và resource đã load xong; chỉ dùng khi tracking thực sự phụ thuộc resource hoàn chỉnh.
+### 3.2 Chọn Trigger Type
 
-> Dùng trigger sớm nhất tại thời điểm mọi dữ liệu bắt buộc đã có. Không chờ tới stage muộn hơn nếu requirement tracking không cần điều đó.
+| Requirement | Trigger nên dùng | Dùng khi |
+| --- | --- | --- |
+| Thiết lập consent trước tracking | Consent Initialization | Consent default/update phải sẵn sàng trước các Tag khác. |
+| Chạy cấu hình thật sớm | Initialization | Setup phải chạy trước page Trigger thông thường; không dùng mặc định cho business event. |
+| Đo lúc page bắt đầu load | Page View | Chính page load là thời điểm cần đo. |
+| Đọc element sau khi HTML parse | DOM Ready | DOM cần đọc chưa có ở Page View. |
+| Chờ toàn bộ resource của page | Window Loaded | Requirement thực sự phụ thuộc image/script/resource load xong. |
+| Đo kết quả Application đã xác nhận | Custom Event | Application push một Data Layer event có tên sau khi biết kết quả. |
+| Đo click hoặc UI intent | Click: All Elements | Câu hỏi là click; click không chứng minh action thành công. |
+| Đo click vào link | Click: Just Links | Câu hỏi là click trên thẻ `<a>`. |
+| Đo native form submit | Form Submission | Website dùng native HTML form. React/AJAX form thường nên dùng Custom Event từ Application. |
+| Đo SPA navigation | History Change | Browser history đổi nhưng không có router event đáng tin cậy hơn. |
+| Đo element xuất hiện | Element Visibility | Câu hỏi là một element cụ thể đã visible. |
+| Đo scroll/video engagement | Scroll Depth hoặc YouTube Video | Câu hỏi là engagement, không phải business result đã xác nhận. |
+| Đo điều kiện theo thời gian | Timer | Có interval và stop condition rõ ràng. |
+| Chờ nhiều điều kiện độc lập | Trigger Group | Tất cả member Trigger phải xảy ra; thứ tự không được đảm bảo. |
 
-Ví dụ:
+### 3.3 Timing
+
+Dùng Trigger sớm nhất tại thời điểm mọi dữ liệu bắt buộc đã có:
 
 ```text
-Cần cấu hình consent?
-→ Consent Initialization
-
-Cần setup sớm?
-→ Initialization
-
-Cần Page URL / Page Path?
-→ Page View
-
-Cần đọc DOM element?
-→ DOM Ready
-
-Cần resource đã load hoàn toàn?
-→ Window Loaded
+Consent Initialization → consent setup
+Initialization         → early setup
+Page View              → page bắt đầu load
+DOM Ready              → HTML đã parse
+Window Loaded          → resource của page đã load xong
+Application event      → business result đã xác nhận
 ```
 
-Dùng đúng stage giúp tránh hai vấn đề phổ biến:
+Chọn stage sớm nhất tại đó mọi giá trị bắt buộc đã có. Nếu Trigger chạy quá sớm, dữ liệu có thể chưa tồn tại. Nếu chạy quá muộn, tracking bị chậm và event có thể mất khi người dùng rời trang. Khi Application đã phát authoritative business event, không thay nó bằng Trigger DOM Ready hoặc Window Loaded muộn hơn.
 
-- Quá sớm: dữ liệu bắt buộc có thể chưa tồn tại.
-- Quá muộn: tracking bị trì hoãn không cần thiết và có thể bị bỏ lỡ nếu người dùng rời page.
+## 4. Cấu hình Trigger
 
-## Xây dựng trigger đúng cách
+### 4.1 Tìm và reuse
 
-Luồng khuyến nghị:
+Tìm trong GTM container và tracking inventory trước khi tạo Trigger. Kiểm tra event name giống nhau, page/click rule tương tự, Tag hiện có, Variable, exception, Trigger Group, sequencing và consent requirement.
+
+Chỉ reuse Trigger khi consumer cần cùng event, scope, timing, filter, consent behavior, missing-data behavior và expected frequency. Shared Trigger có thể ảnh hưởng nhiều Tag; phải review tất cả consumer trước khi sửa.
+
+### 4.2 Tạo Trigger trong GTM
+
+1. Mở **Triggers → New**.
+2. Nhập Trigger name đã được duyệt.
+3. Mở **Trigger Configuration** và chọn type phù hợp.
+4. Chọn **All** chỉ khi mọi occurrence khớp đều thuộc scope.
+5. Chọn **Some** và thêm condition giới hạn khi scope hẹp hơn.
+6. Save, chỉ attach Trigger vào Tag đã được duyệt, rồi review exception/consent.
+
+### 4.3 Filter và operator
+
+Một filter có dạng:
 
 ```text
-Define
-  ↓
-Search
-  ↓
-Create
-  ↓
-Filter
-  ↓
-Attach
-  ↓
-Preview
-  ↓
-Validate
-  ↓
-Publish & Monitor
+Variable + Operator + Expected value
 ```
 
-### Bước 1 — Chuẩn bị measurement contract
+Dùng condition nhỏ nhất đáp ứng requirement:
 
-Trước khi tạo trigger, định nghĩa chính xác business event cần đo và thời điểm event trở nên hợp lệ.
+| Nhu cầu | Nên dùng |
+| --- | --- |
+| Một giá trị chính xác | `equals` |
+| Text xuất hiện ở bất kỳ vị trí nào | `contains` |
+| Prefix/suffix đã biết | `starts with` / `ends with` |
+| Pattern có kiểm soát | `matches RegEx` |
+| Pattern không phân biệt hoa thường | `matches RegEx (ignore case)` chỉ khi contract cho phép |
+| Element cụ thể | `matches CSS selector` |
+| So sánh số | `less than`, `greater than`, v.v. |
 
-Tối thiểu cần định nghĩa:
+Trong một Trigger, các condition là AND. Trên một Tag, các firing Trigger riêng biệt là OR. Không thêm `All Pages` và page-specific Trigger với kỳ vọng AND; `All Pages` đã làm Tag đủ điều kiện trên mọi page.
 
-- ý nghĩa nghiệp vụ;
-- nguồn và timing có tính quyết định;
-- Data Layer event;
-- giá trị bắt buộc và tùy chọn;
-- cách xử lý khi thiếu dữ liệu;
-- số event kỳ vọng;
-- environment;
-- yêu cầu consent;
-- các tag consumer.
+### 4.4 URL, RegEx và CSS rule
 
-Ví dụ:
+- Dùng `Page Path` để match route, `Page URL` cho full URL, URL Variable riêng cho query parameter và `Click URL` cho link destination.
+- Anchor RegEx khi boundary quan trọng, ví dụ `^/products(?:/|$)`, và test cả match đúng lẫn near-miss.
+- Ưu tiên stable ID hoặc attribute do team sở hữu cho CSS selector. Tránh class do framework sinh ra, layout class và visible text.
+- Ghi rõ case sensitivity và test `undefined`, empty, invalid và unexpected value.
 
-```text
-Business event:
-Account creation được server xác nhận
+### 4.5 Missing và invalid value
 
-Authoritative moment:
-Application nhận xác nhận account đã được tạo thành công
-
-Data Layer event:
-sign_up
-
-Required values:
-method, form_id
-
-Missing behavior:
-Thiếu giá trị bắt buộc → không gửi / fail QA
-
-Expected count:
-Một event sign_up cho mỗi account tạo thành công
-
-Trigger:
-REG - CE - sign_up - Confirmed
-
-Consumer tag:
-REG - GA4 Event - sign_up
-
-Environment:
-Production và các environment QA/staging được phê duyệt
-
-Consent:
-Analytics consent theo thiết kế đã được phê duyệt
-```
-
-### Bước 2 — Tìm kiếm trước khi tạo
-
-Trước khi tạo trigger mới, hãy tìm trong GTM container và tracking inventory hiện có.
-
-Kiểm tra:
-
-- trigger có cùng event và scope;
-- tag đã gửi cùng GA4 event;
-- variable cung cấp giá trị bắt buộc;
-- exception hiện có;
-- yêu cầu consent;
-- Trigger Group;
-- tag sequencing;
-- trigger khác có thể tạo ra cùng business event.
-
-Ví dụ, trước khi tạo:
+Với value bắt buộc, hãy fail closed:
 
 ```text
-REG - CE - sign_up - Confirmed
-```
-
-hãy kiểm tra các trigger tương tự:
-
-```text
-REG - CE - sign_up
-REG - CE - signup
-REG - CE - account_created
-```
-
-Đồng thời kiểm tra consumer của chúng:
-
-```text
-Existing Trigger
-      ↓
-Existing GA4 Tag
-      ↓
-Đã gửi sign_up chưa?
-```
-
-Cách này giúp tránh duplicate tracking.
-
-Chỉ reuse trigger khi các consumer có cùng:
-
-```text
-Event
-Scope
-Timing
-Filters
-Consent behavior
-Missing-data behavior
-Duplicate behavior
-```
-
-Trước khi sửa shared trigger, phải review toàn bộ consumer vì thay đổi có thể ảnh hưởng nhiều tag hoặc project.
-
-### Bước 3 — Tạo và cấu hình trigger
-
-Trong GTM:
-
-1. Mở **Triggers** và chọn **New**.
-2. Nhập tên trigger đã được phê duyệt.
-3. Chọn **Trigger Configuration**.
-4. Chọn loại trigger phù hợp.
-5. Cấu hình các setting riêng của event.
-6. Chọn **All ...** chỉ khi mọi occurrence đều nằm trong scope.
-7. Nếu không, chọn **Some ...** và thêm filter bắt buộc.
-8. Lưu trigger.
-
-### Bước 4 — Định nghĩa filter cẩn thận
-
-Trigger filter quyết định trigger có match hay không.
-
-Mỗi filter gồm ba phần:
-
-```text
-Variable + Operator + Expected Value
-```
-
-Ví dụ:
-
-```text
-Page Path   equals          /pricing
-Click ID    equals          pricing-submit
-Page Path   matches RegEx   ^/products(?:/|$)
-```
-
-| Yêu cầu                              | Operator khuyến nghị          |
-| ------------------------------------ | ----------------------------- |
-| Match một giá trị chính xác          | `equals`                      |
-| Value có thể chứa text ở bất kỳ đâu  | `contains`                    |
-| Value phải bắt đầu bằng text cụ thể  | `starts with`                 |
-| Value phải kết thúc bằng text cụ thể | `ends with`                   |
-| Match nhiều value theo pattern       | `matches RegEx`               |
-| Pattern không phân biệt hoa thường   | `matches RegEx (ignore case)` |
-| Match DOM element cụ thể             | `matches CSS selector`        |
-| Loại trừ một giá trị chính xác        | `does not equal`              |
-| Loại trừ value chứa text cụ thể       | `does not contain`            |
-| Loại trừ một pattern                  | `does not match RegEx`        |
-| So sánh giá trị số                   | `less than`, `greater than`, v.v. |
-
-#### Xử lý giá trị không hợp lệ hoặc bị thiếu
-
-Với các filter quan trọng, cũng cần xem xét khi variable chứa:
-
-```text
-undefined
-null
-giá trị rỗng
-sai chữ hoa/chữ thường
-giá trị không hợp lệ
-sai kiểu dữ liệu
-```
-
-Nếu business value bắt buộc bị thiếu hoặc không hợp lệ, hành vi an toàn thường là **fail closed**:
-
-```text
-Giá trị bắt buộc bị thiếu hoặc không hợp lệ
+Variable bắt buộc bị thiếu hoặc sai
         ↓
-Trigger không match
+Trigger không khớp
         ↓
 Tag không fire
         ↓
-QA phát hiện vấn đề tracking
+QA ghi nhận contract defect
 ```
 
-### Bước 5 — Gắn trigger và review consumer
+Không đổi missing value thành `unknown`, empty string hoặc value cũ nếu contract chưa định nghĩa ý nghĩa đó.
 
-Khi gắn trigger vào tag, hãy review toàn bộ cấu hình tag.
+### 4.6 Trigger Group và tag sequencing
 
-Kiểm tra:
+Đây là hai cơ chế khác nhau:
 
-- firing trigger hiện có;
-- tag khác gửi cùng GA4 event;
-- exception;
-- consent settings;
-- tag sequencing;
-- Google tag và Measurement ID;
-- environment routing;
-- firing options;
-- nguy cơ duplicate event.
+- **Trigger Group:** chờ mọi Trigger thành viên khớp ít nhất một lần rồi mới cho Tag đủ điều kiện. Nó không đảm bảo thứ tự và không chứng minh các Trigger thành viên thuộc cùng một business transaction.
+- **Tag sequencing:** kiểm soát thứ tự chạy của các Tag, chẳng hạn chạy Tag setup trước event Tag. Nó không làm Trigger chờ API response.
 
-Ví dụ:
+Chỉ dùng Trigger Group khi thực sự cần nhiều tín hiệu độc lập cùng có mặt. Chỉ dùng tag sequencing khi có dependency giữa các Tag đã được ghi rõ. Không cơ chế nào được dùng để dựng lại workflow của Application hoặc ghép API request với response; với FD, một Custom Event do Application phát ra vẫn là pattern ưu tiên.
 
-```text
-Firing Trigger A
-OR
-Firing Trigger B
-→ Tag đủ điều kiện fire
-```
+## 5. Test và validation
 
-Vì vậy, không cấu hình:
+### 5.1 GTM Preview
 
-```text
-All Pages
-+
-Pricing Page
-```
+Dùng GTM Preview/Tag Assistant để xem event timeline, Data Layer value, Variable, Trigger match, Tags Fired, Tags Not Fired, exception và consent state:
 
-với kỳ vọng:
+1. Kết nối với QA/staging URL đã được duyệt.
+2. Thực hiện một action có kiểm soát.
+3. Chọn event tương ứng trong timeline.
+4. Xác nhận event name và value bắt buộc.
+5. Kiểm tra từng Variable mà Trigger/Tag sử dụng.
+6. Xác nhận filter đã match và điều kiện block.
+7. Lặp lại với negative case, duplicate và edge case.
 
-```text
-All Pages
-AND
-Pricing Page
-```
+### 5.2 Network và downstream validation
 
-`All Pages` đã khiến tag đủ điều kiện trên mọi page.
+Preview chứng minh GTM path; không chứng minh GA4 đã nhận đúng request. Khi Trigger dẫn tới một outbound Tag, kiểm tra Browser Network panel hoặc hit details tương đương:
 
-Nếu nhiều điều kiện phải cùng đúng, đặt chúng trong một trigger phù hợp hoặc dùng thiết kế đã được phê duyệt khác như Trigger Group khi ngữ nghĩa của nó phù hợp.
-
-Đồng thời kiểm tra trigger hoặc tag khác có thể tạo cùng business event từ cùng một hành động người dùng hay không.
-
-### Bước 6 — Test trong GTM Preview
-
-Không dừng kiểm thử chỉ vì GTM hiển thị:
-
-```text
-Tag Fired ✓
-```
-
-Hãy validate toàn bộ luồng GTM:
-
-```text
-Data Layer
-     ↓
-Variables
-     ↓
-Trigger
-     ↓
-Exceptions / Consent
-     ↓
-Tag
-```
-
-Với một hành động test có kiểm soát:
-
-1. Kết nối GTM Preview / Tag Assistant tới QA hoặc staging environment.
-2. Thực hiện một business action có kiểm soát.
-3. Chọn event liên quan trong timeline.
-4. Xác nhận Data Layer event và các giá trị.
-5. Kiểm tra mọi variable được trigger và tag sử dụng.
-6. Xác nhận điều kiện trigger.
-7. Review **Tags Fired** và **Tags Not Fired**.
-8. Kiểm tra exception và consent behavior.
-9. Lặp lại action khi cần để xác minh tần suất event.
-10. Test các case âm và edge case.
-
-Ví dụ:
-
-```text
-Data Layer:
-event = sign_up
-method = google
-
-        ↓
-
-Variable:
-REG - DLV - method
-→ google
-
-        ↓
-
-Trigger:
-REG - CE - sign_up - Confirmed
-→ matched
-
-        ↓
-
-Tag:
-REG - GA4 Event - sign_up
-→ fired
-```
-
-Tối thiểu cần test:
-
-```text
-Kết quả thành công
-Kết quả thất bại
-Thiếu giá trị bắt buộc
-Giá trị không hợp lệ
-Duplicate action/callback
-Reload/navigation
-Consent denied
-QA/staging environment
-Production environment
-```
-
-Cũng phải xác minh tần suất kỳ vọng:
-
-```text
-Một account tạo thành công
-        ↓
-Một event sign_up
-```
-
-không phải:
-
-```text
-Một account tạo thành công
-        ↓
-sign_up
-sign_up
-```
-
-### Bước 7 — Validate dữ liệu downstream
-
-Trigger match và tag fire không đảm bảo GA4 đã nhận đúng event.
-
-Hãy validate request cuối cùng.
-
-Với GA4, xác nhận:
-
-- network request đã được gửi;
-- request dùng đúng Measurement ID;
-- event name đúng spelling và case đã được phê duyệt;
-- tên và kiểu parameter đúng;
-- parameter bắt buộc có mặt;
-- parameter tùy chọn tuân theo contract;
-- số request khớp số event kỳ vọng;
-- không chứa PII, credential, token, secret hoặc user input không giới hạn;
+- request có tồn tại và count đúng contract;
+- event name, parameter name và type chính xác;
+- required value có mặt, optional value tuân theo contract;
+- Measurement ID/destination đúng với environment;
 - consent behavior đúng;
-- request được route tới đúng environment.
+- không có PII, credential, token, secret hoặc unrestricted user input.
 
-Ví dụ:
+Dùng GA4 DebugView/Realtime làm downstream diagnostic evidence. Chỉ thấy Tag Fired chưa đủ evidence. Link kết quả với Evidence Template của Section 08.
 
-```text
-Production
-→ Production Measurement ID
+### 5.3 Test coverage bắt buộc
 
-Staging
-→ Staging Measurement ID
-```
+| Case | Trigger phải làm gì |
+| --- | --- |
+| Event hợp lệ | Match một lần tại business moment có thẩm quyền. |
+| Event name/case sai | Không match. |
+| URL, selector hoặc action tương tự | Không match nhầm case khác. |
+| Required value thiếu/sai format | Không match hoặc block theo rule đã ghi. |
+| Input invalid hoặc server response fail | Không tạo success match. |
+| Double click/retry/duplicate callback | Không tạo duplicate ngoài ý muốn. |
+| SPA route/reload/back-forward/revisit | Theo route contract và không tạo duplicate page view. |
+| Consent denied/granted/updated | Match hoặc block theo consent behavior đã duyệt. |
+| Exception condition | Tag cần chặn bị block; Tag không liên quan không đổi. |
+| Trigger Group chưa đủ/đã đủ | Chỉ fire sau khi đủ member bắt buộc. |
+| Browser/navigation được hỗ trợ | Tracking không làm hỏng submit hoặc navigation. |
 
-Luồng validation khuyến nghị:
+## 6. Publish, inventory và retire
 
-```text
-GTM Preview
-     ↓
-Tag fired
-     ↓
-Network request / Hit Details
-     ↓
-Payload event đúng
-     ↓
-Measurement ID đúng
-     ↓
-GA4 DebugView
-```
+### 6.1 Naming và description
 
-Hãy dùng network request hoặc Hit Details làm bằng chứng chính ở tầng transport.
-
-GA4 DebugView có thể cung cấp xác nhận bổ sung khi có thể debug, nhưng không nên là bằng chứng duy nhất cho việc implementation đúng.
-
-### Bước 8 — Review, publish và monitor
-
-Sau khi test hoàn tất, review và publish trigger theo release process thông thường của GTM.
-
-Trước khi publish:
-
-1. Xác nhận measurement contract.
-2. Review consumer và shared dependency của trigger.
-3. Xác nhận bằng chứng QA.
-4. Xác nhận environment routing.
-5. Xác nhận consent và privacy behavior.
-6. Publish thay đổi container theo version.
-7. Thêm release note có ý nghĩa.
-8. Cập nhật trigger inventory.
-
-Ví dụ thông tin release:
-
-```text
-Container version:
-v128
-
-Change:
-Add REG - CE - sign_up - Confirmed
-
-Expected behavior:
-Một event sign_up cho mỗi account được server xác nhận tạo thành công
-
-Tested environments:
-QA và production smoke test
-
-Status:
-Active
-```
-
-Sau khi publish, monitor các hành vi bất thường như:
-
-```text
-Event tăng đột biến không mong muốn
-Event giảm bất thường
-Duplicate event
-Thiếu parameter
-Sai destination
-Rò rỉ giữa các environment
-```
-
-Với trigger reusable hoặc shared, duy trì inventory entry gồm:
-
-```text
-Trigger name
-Trigger type
-Business meaning
-Event/source
-Filters
-Consumers
-Owner
-Environment
-Consent behavior
-Expected frequency
-Status
-Last review date
-```
-
-## Đặt tên và mô tả trigger
-
-Sử dụng:
+Dùng format:
 
 ```text
 [SCOPE] - [TYPE] - [BUSINESS EVENT OR PURPOSE] - [QUALIFIER]
 ```
 
-| Type | Ý nghĩa                          | Ví dụ                                              |
-| ---- | -------------------------------- | -------------------------------------------------- |
-| `CI`   | Consent Initialization           | `SHARED - CI - Consent Defaults - All Pages`       |
-| `INIT` | Initialization                   | `SHARED - INIT - Google tag - All Pages`           |
-| `PV`   | Page View                        | `WEB - PV - Product Detail - /products/*`          |
-| `DOM`  | DOM Ready                        | `WEB - DOM - Pricing Widget - /pricing`            |
-| `WL`   | Window Loaded                    | `WEB - WL - Full Resource Load - Campaign Landing` |
-| `CE`   | Custom Event                     | `REG - CE - sign_up - Confirmed`                   |
-| `CLK`  | Click: All Elements              | `CALC - CLK - Calculator - Submit`                 |
-| `LINK` | Click: Just Links                | `DOCS - LINK - Documentation - External`           |
-| `FORM` | Form Submission                  | `CONTACT - FORM - Lead Form`                       |
-| `HC`   | History Change                   | `WEB - HC - SPA Route - Virtual Pageview`          |
-| `VIS`  | Element Visibility               | `WEB - VIS - Pricing CTA - Once Per Page`          |
-| `TMR`  | Timer                            | `SUPPORT - TMR - Chat Widget - Loaded`             |
-| `GRP`  | Trigger Group                    | `CHECKOUT - GRP - Payment + Confirmation`          |
-| `EXC`  | Exception/blocking trigger       | `SHARED - EXC - Internal Traffic - QA`             |
+Prefix khuyến nghị gồm `CI` (Consent Initialization), `INIT`, `PV`, `DOM`, `WL`, `CE` (Custom Event), `CLK`, `LINK`, `FORM`, `HC` (History Change), `VIS`, `TMR`, `GRP` và `EXC` (Exception). Không dùng `Trigger 1`, `New Trigger`, `Test` hoặc `Temp` cho item active.
 
-Không dùng `Trigger 1`, `New Trigger`, `Test` hoặc `Temp` cho item đang live.
+Description nên ghi business purpose, event/source, filter, Tag sử dụng, exception, consent, expected frequency, owner, environment và điều kiện retire.
 
-## Filter, URL, regex và selector
+### 6.2 Inventory
 
-### Chọn thành phần URL nhỏ nhất
-
-| Yêu cầu                          | Ưu tiên                              |
-| -------------------------------- | ----------------------------------- |
-| Chỉ route                        | `Page Path`                         |
-| Đầy đủ protocol, host, path, query | `Page URL`                        |
-| Query parameter                  | URL variable riêng                  |
-| Link destination                 | `Click URL`                         |
-| Fragment/history value           | History hoặc URL variable phù hợp   |
-
-Không dùng full URL equality khi query string, trailing slash, protocol hoặc host alias có thể thay đổi, trừ khi các khác biệt đó là một phần của contract.
-
-### Anchor regex khi boundary quan trọng
-
-Pattern không anchor có thể match các giá trị ngoài ý muốn. Ưu tiên:
+Duy trì một record cho mỗi Trigger:
 
 ```text
-^/products(?:/|$)
-^https://(www\.)?example\.com/checkout(?:/|$)
-^(?:Calculation|Download|Upload)$
+Trigger name và type
+Exact event hoặc page-load source
+Toàn bộ filter, operator, value, regex flag và selector scope
+Tag sử dụng và event được gửi
+Exception, Trigger Group và sequencing
+Consent behavior và timing risk
+Expected frequency
+Owner/reviewer và environment
+Workspace/published version
+Status và điều kiện retire
 ```
 
-Ghi lại cả giá trị được match và near-miss. Ví dụ `/products(?:/|$)` phải match `/products` và `/products/item`, nhưng không match `/productivity`.
+### 6.3 Review và publish
 
-Chỉ dùng “ignore case” khi application contract cho phép không phân biệt hoa thường. Nếu không, khác biệt về case phải fail QA để sửa source contract.
+Trước khi publish Trigger shared hoặc phụ thuộc environment:
 
-### CSS selector
+1. Xác nhận Measurement Plan và Trigger contract.
+2. Review toàn bộ consumer và duplicate path.
+3. Test environment bị ảnh hưởng, consent state, negative case và request count.
+4. Đính kèm evidence từ Preview/Network/DebugView.
+5. Publish GTM change có version, owner, release note và rollback point.
+6. Cập nhật inventory và thông báo owner bị ảnh hưởng.
 
-Ưu tiên ID ổn định hoặc attribute do team sở hữu rõ ràng. Tránh class do framework sinh tự động, class layout và selector dựa trên visible text. Test cả element cần match và các element lân cận không được match.
+### 6.4 Retirement
 
-## Inventory, reuse và change control
+Chỉ retire sau khi Tag sử dụng đã được xóa/thay thế, không còn dependency trong Trigger Group/sequencing, replacement đã pass positive/negative/duplicate/consent/downstream test và version có thể khôi phục đã được giữ lại.
 
-### Mẫu inventory
+## 7. Bản đồ tham chiếu chéo
 
-Duy trì một row cho mỗi trigger. Không thay đổi shared trigger trước khi xác định toàn bộ consumer.
+- [Section 01 — Data Layer Design](01-data-layer-design-answer-vn.md): application-owned event timing và business truth.
+- [Section 02 — Variable Management](02-variable-management-answer-vn.md): Variable source, nested path và missing-data behavior.
+- [Section 04 — Tag Management](04-tag-management-answer-vn.md): attach Trigger vào Google/GA4 Tag và kiểm tra destination.
+- [Section 05 — Consent Management](05-consent-answer-vn.md): consent default, update và denied-state behavior.
+- [Section 06 — Template Governance](06-template-governance-answer-vn.md): governance cho custom template.
+- [Section 07 — Measurement Plan](07-measurement-plan-answer-vn.md): business definition, expected frequency và owner.
+- [Section 08 — Debug/QA](08-debug-qa-answer-vn.md): Preview, evidence, defect và retest.
+- [Section 09 — Reports and Charts](09-reports-charts-answer-vn.md): downstream interpretation sau collection.
+- [Section 10 — Release Monitoring](10-release-monitoring-answer-vn.md): release gate, observation và rollback.
 
-| Field                | Cần ghi nhận                                                                    |
-| -------------------- | ------------------------------------------------------------------------------ |
-| Trigger ID và name   | Tên GTM và container trigger ID nếu có                                         |
-| Type/event           | Loại trigger và exact event name hoặc page-load event                          |
-| Conditions           | Mọi variable, operator, value, regex flag, selector và route scope             |
-| Consuming tags       | Tất cả tag tham chiếu trigger và event mỗi tag gửi                             |
-| Exceptions           | Blocking trigger gắn với từng tag consumer                                    |
-| Group/sequencing     | Trigger Group chứa nó và dependency tag sequencing                            |
-| Timing risk          | Giá trị sớm/muộn, mất navigation, container load muộn, SPA hoặc browser risk   |
-| Consent              | Built-in và additional consent requirements                                    |
-| Frequency            | Một lần/event, một lần/page, lặp lại hoặc application deduplication             |
-| Owner/reviewer       | Team chịu trách nhiệm và approver                                              |
-| Environment/version  | QA/staging/production, workspace và published container version                |
-| Status               | Proposed, Active, Verified, Deprecated hoặc Retired                            |
-| Retirement condition | Replacement, date, migration hoặc business condition                          |
+## 8. Journey hoàn chỉnh: FD `calculation_action`
 
-### Trước khi thay đổi shared trigger
+Đây là walkthrough cụ thể duy nhất. Thay các project identifier bằng giá trị đã được phê duyệt.
 
-1. Ghi lại published version hiện tại hoặc export một bản có thể khôi phục.
-2. Review **References to this Trigger** và mọi tag exception/sequencing.
-3. Ghi rõ behavior cũ, behavior mới, consumer bị ảnh hưởng và số lượng kỳ vọng.
-4. Test case thay đổi và mọi case hiện có của consumer.
-5. Review Preview, network evidence, consent behavior và GA4 DebugView.
-6. Publish với version name, owner, evidence và rollback point rõ ràng.
-7. Cập nhật inventory và thông báo cho owner của mọi consumer bị ảnh hưởng.
-
-### Retirement
-
-Chỉ retire trigger khi:
-
-- tag consumer đã được xóa, thay thế hoặc remap rõ ràng;
-- không còn Trigger Group hoặc sequencing dependency đang hoạt động;
-- replacement đã pass test positive, negative, duplicate, consent và downstream;
-- đã giữ một version/export có thể khôi phục;
-- inventory ghi rõ replacement và lý do retirement.
-
-## Test plan và record
-
-### Phạm vi test bắt buộc
-
-Test ở các tầng application/Data Layer, GTM, browser Network và GA4 DebugView. Tag xuất hiện trong **Tags Fired** tự nó chưa phải bằng chứng đủ.
-
-| ID  | Test case                                 | Behavior trigger kỳ vọng                              | Behavior downstream kỳ vọng                         |
-| --- | ----------------------------------------- | ----------------------------------------------------- | --------------------------------------------------- |
-| T01 | Event hợp lệ và đúng kỳ vọng              | Trigger match một lần                                 | Tag đúng và một request đúng                        |
-| T02 | Sai event name hoặc case                  | Trigger không match                                   | Không có key-event/business-outcome request          |
-| T03 | URL, selector hoặc action tương tự         | Trigger không match                                   | Không có event không liên quan                       |
-| T04 | Thiếu hoặc sai giá trị bắt buộc           | Tag bị block hoặc theo rule đã ghi nhận               | Không có business outcome gây hiểu nhầm              |
-| T05 | Form không hợp lệ hoặc server response lỗi | Không có success trigger                              | Không có successful-outcome request                  |
-| T06 | Double click, retry, submit lặp lại       | Không có duplicate ngoài ý muốn                       | Số request khớp tracking plan                       |
-| T07 | SPA route, revisit, back/forward, reload  | Route behavior khớp contract                          | Không duplicate virtual pageview                    |
-| T08 | Consent denied, granted và updated        | Consent rule allow/block đúng thiết kế               | Request có consent behavior đúng                     |
-| T09 | Exception condition                       | Tag tương ứng bị block                                | Tag không liên quan không bị ảnh hưởng               |
-| T10 | Trigger Group theo các thứ tự khác nhau   | Group chỉ fire khi mọi member bắt buộc đã fire       | Không fire khi group chưa hoàn tất                   |
-| T11 | Downstream request                        | Có thể trace trigger/tag path                         | Event, parameter, destination, type, count đúng      |
-| T12 | Browser và navigation được hỗ trợ         | Link/form vẫn hoạt động                               | Tag không ngăn navigation hoặc submission            |
-
-### Mẫu test record
-
-Hoàn thành bảng này cho từng trigger trong scope. Không đánh dấu Pass nếu chưa có evidence.
+### 8.1 Contract
 
 ```text
-Environment:            [QA/staging URL]
-GTM container:          [container]
-Workspace/version:      [workspace / published version]
-GA4 property/stream:    [test property and web stream]
-Browser/device:         [browser and version]
-Consent state:          [state before and during test]
-Tester/date:            [name / YYYY-MM-DD]
-Evidence location:      [Preview, Network, DebugView links hoặc sanitized capture]
+Business event: calculation_action
+Thời điểm có thẩm quyền: response API FD tương ứng đã được phân loại
+Expected frequency: một event cho mỗi lần tính hợp lệ được chấp nhận
+Required values: event_schema_version, app_name, solution_found, input đã duyệt
+Trigger: FD - CE - calculation_action - Approved
+Consumer: FD - GA4 Event - calculation_action
+Environment: QA/staging/production theo routing
 ```
 
-| Test ID | Trigger               | Setup/action                                           | Expected result                                                  | Actual result                                         | Evidence     | Status  |
-| ------- | --------------------- | ------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------- | ------------ | ------- |
-| T01     | `FD-T01`              | Approved input action on approved FD route             | Input tag fires once; request matches plan                       | **Chưa chạy — cần Preview evidence**                 | `[add link]` | Pending |
-| T02     | `FD-T02`              | `Product_Selected_Action` on approved FD route         | Product Selected tag fires once                                  | **Chưa chạy — cần Preview evidence**                 | `[add link]` | Pending |
-| T03     | `FD-T03`              | Generic FD `webApps` event                             | Generic tag chỉ fire nếu purpose khác biệt                        | **Chưa chạy — cần so sánh consumer/event**           | `[add link]` | Pending |
-| T04     | FD triggers           | Wrong action, missing action, unrelated route          | Tag liên quan không fire                                          | **Chưa chạy — cần Preview evidence**                 | `[add link]` | Pending |
-| T05     | FD triggers           | Repeat action, retry, hoặc double submit               | Count theo tracking plan; không duplicate ngoài ý muốn             | **Chưa chạy — cần Preview và Network**               | `[add link]` | Pending |
-| T06     | SPA/FD route          | Initial load, route change, back/forward, revisit      | Route behavior đúng, không duplicate pageview                    | **Chưa chạy — cần application và Preview evidence**  | `[add link]` | Pending |
-| T07     | Consuming tags        | Consent denied, granted, rồi updated                    | Tag theo consent behavior đã phê duyệt                            | **Chưa chạy — cần consent test**                     | `[add link]` | Pending |
-| T08     | Consuming tags        | Từng exception condition đã cấu hình                   | Tag cần block bị block; tag không liên quan không đổi             | **Chưa chạy — cần tag settings**                     | `[add link]` | Pending |
-| T09     | Trigger Group, nếu có | Fire từng member rồi các member còn lại theo hai thứ tự | Group chưa đủ không fire; group đủ thì fire                     | **Chưa chạy — cần group membership**                 | `[add link]` | Pending |
-| T10     | Consuming tags        | Kiểm tra Network và DebugView                          | Event, parameter, destination, type, consent, count đúng          | **Chưa chạy — cần Network/DebugView**                | `[add link]` | Pending |
+### 8.2 Application message
 
-Do source material không bao gồm bằng chứng GTM Preview hoặc network, các row FD ở trên là completion record bắt buộc, không phải tuyên bố rằng test đã pass.
+```javascript
+window.dataLayer.push({
+  event: "calculation_action",
+  event_schema_version: "1.0",
+  app_name: "fd",
+  solution_found: true,
+  inputs: {
+    connection_type: "clt_floor_floor_half_lap_joint",
+    unit_system: "metric",
+    fx: 1,
+    fy: 0,
+  },
+});
+```
+
+### 8.3 Trigger configuration
+
+```text
+Name: FD - CE - calculation_action - Approved
+Type: Custom Event
+Event name: calculation_action
+Conditions:
+  app_name equals fd
+  event_schema_version equals 1.0
+Expected: một match cho mỗi lần tính hợp lệ được chấp nhận
+```
+
+### 8.4 Test decision
+
+```text
+Response có output hợp lệ
+    → một Data Layer event
+    → Trigger match một lần
+    → một GA4 Tag fire/request
+
+Response hợp lệ nhưng không có output
+    → một Data Layer event với solution_found = false
+    → cùng expected count
+
+Input invalid, timeout, server failure, response stale, duplicate callback,
+environment không xác định hoặc consent denied
+    → xử lý theo contract và test record của Section 08
+```
 
 ## Tài liệu tham khảo
 
-- [Tag Manager Help — About triggers](https://support.google.com/tagmanager/answer/7679316?hl=en): behavior của trigger, trigger filter và yêu cầu tag phải có trigger.
-- [Tag Manager Help — Custom event trigger](https://support.google.com/tagmanager/answer/7679219?hl=en): dùng custom event được push vào data layer để trigger tag.
-- [Tag Manager Help — Best practices for trigger configuration](https://support.google.com/tagmanager/answer/7679102?hl=en): test, giới hạn filter và các lưu ý về Consent Initialization.
-- [Tag Manager Help — Preview and debug containers](https://support.google.com/tagmanager/answer/6107056?hl=en): dùng Tag Assistant để kiểm tra firing status, thứ tự và dữ liệu được xử lý trước khi publish.
+- [Tag Manager Help — About triggers](https://support.google.com/tagmanager/answer/7679316?hl=en)
+- [Tag Manager Help — Custom event trigger](https://support.google.com/tagmanager/answer/7679219?hl=en)
+- [Tag Manager Help — Best practices for trigger configuration](https://support.google.com/tagmanager/answer/7679102?hl=en)
+- [Tag Manager Help — Preview and debug containers](https://support.google.com/tagmanager/answer/6107056?hl=en)

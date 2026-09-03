@@ -1,48 +1,42 @@
-# Subtask 09: Design, Build, and Interpret GA4 Reports and Charts
+# 09 — GA4 Reports, Explorations, Charts, and Interpretation
 
 ## Objective
 
-Define a practical workflow for turning validated GA4 data into reports, charts, and Explorations that answer a clear business question and support a documented decision.
+Turn an approved measurement requirement into a reproducible GA4 Report or Exploration that answers one business question and supports a documented decision.
 
-## Scope — Included Items
+## Scope
 
-- Shared terminology: **population** (who/what is included), **grain** (what one row or count represents), **scope** (user/session/event/item level), and **field readiness**.
-- GA4 Reports: detail reports, overview reports, summary cards, collections, customization, publishing, sharing, and export.
-- Explorations: free-form, funnel, path, cohort, and other suitable investigation techniques.
-- Dimension/metric selection, filters, comparisons, segments, denominators, chart choice, interpretation, and ownership.
-- QA and limitations: processing delay, data quality, thresholding, sampling, incompatible fields, attribution/identity, and `(other)`/cardinality effects.
+- Population, grain, scope, dimensions, metrics, formulas, filters, charts, ownership, and maintenance.
+- GA4 Detail/Overview Reports, summary cards, Free-form/Funnel/Path Explorations, sharing, and export.
+- Rate design: cohort, event sequence, completion window, user metric, and consistent numerator/denominator.
+- Separation of user-level reporting from event-level collection QA.
+- Field readiness, data quality, missing/invalid values, consent/identity context, and access/publish controls.
+- Canonical records: Report Requirement, Field Readiness, Asset Configuration (including chart/table configuration), and Interpretation/Decision.
 
-## Scope — Excluded Items
+## Outputs
 
-- A complete reporting suite for every stakeholder.
-- External BI dashboards such as Looker Studio or Power BI.
-- Business conclusions unsupported by validated tracking data or an agreed analytical question.
+1. A workflow from question → population/grain/scope → field readiness → GA4 surface → formula → chart → interpretation.
+2. A canonical record set for each maintained Report or Exploration.
+3. A Registration example with a cohort, completion window, consistent user metric, and method on both sides of the rate.
+4. Separate user-level reporting and event-level QA, with runtime evidence referenced from Section 08.
+5. Synchronized English and Vietnamese answer documents.
 
-## Workflow
+## Acceptance criteria
 
-1. Define the audience, business question, decision, cadence, and owner.
-2. Define the population, grain, date range, filters, comparison/segment, numerator, and denominator.
-3. Confirm field readiness: collected, registered when required, processed, compatible, safe, and approved for the question.
-4. Choose the GA4 surface: Reports for recurring monitoring; Explorations for flexible investigation.
-5. Select dimensions, metrics, and chart types that match the analytical task.
-6. Build, publish, share, or export the asset; document its configuration and maintenance trigger.
-7. QA the result using Data Layer, network, DebugView, processed data, and the GA4 Data quality indicator. Record limitations and interpretation.
+- The asset has an approved requirement, audience, owner, population, grain, scope, date range, and decision.
+- Fields are collected, registered when needed, processed, compatible, privacy-safe, and approved.
+- A cross-event rate defines the cohort, event sequence, completion window, user metric, and matching numerator/denominator rules.
+- The implementation path is explicit: native Detail Report, Funnel Exploration, or approved export/BigQuery fallback.
+- Chart/table configuration, freshness, thresholding, sampling, cardinality, consent, identity, and limitations are recorded.
+- `(not set)`, `Unassigned`, and invalid values are handled explicitly and their impact is documented.
+- Runtime collection evidence comes from Section 08; a Report or chart does not replace Debug/QA.
+- Access, publish responsibility, maintenance trigger, and review owner are recorded.
 
-## Deliverables / Outputs
+## Out of scope
 
-- One report-requirements matrix containing audience, question, decision, population, grain, dimensions, metrics, filters, GA4 area, cadence, and owner.
-- One field-readiness inventory for the dimensions and metrics used.
-- One reusable detail report and one fit-for-purpose Exploration based on validated data.
-- Chart specification and interpretation note for the published analysis.
-- One QA/configuration record covering data quality, freshness, identity, attribution, privacy, sampling, cardinality, discrepancies, sharing, and maintenance.
+Event and collection design is covered in Section 07. Detailed Data Layer, GTM, consent, Network, and DebugView validation is covered in Section 08. Production release monitoring is covered in Section 10. Ads, campaign optimization, attribution operations, and external BI dashboards are excluded.
 
-## Dependencies
+## Source
 
-- Completed Measurement Plan and validated event flow from Sections 01–08.
-- Correct GA4 property and web stream, sufficient processed data, and approved business question.
-- GA4 Editor or Administrator access for report customization/publishing, or an approved operator with that access.
-- Stakeholder agreement on the decision, reporting cadence, owner, and source-of-truth surface.
-
-## Instructions / Answer
-
-See [09-reports-charts-answer.md](./09-reports-charts-answer.md).
+- Detailed English implementation: [09-reports-charts-answer.md](./09-reports-charts-answer.md).
+- Vietnamese implementation: [09-reports-charts-answer-vn.md](./09-reports-charts-answer-vn.md).

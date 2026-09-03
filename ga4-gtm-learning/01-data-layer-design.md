@@ -1,20 +1,40 @@
-# Jira Work Request: Research Data Layer Design
+# 01 — Data Layer Design
 
 ## Objective
 
-Research and document how a Data Layer connects an application to GTM and GA4. Define a simple, reusable design that is independent of the UI and suitable for projects of any size.
+Define how the frontend application publishes one reliable, privacy-safe business event that GTM can read and GA4 can receive.
+
+The Application owns business truth, the Data Layer carries the structured message, GTM maps and routes approved fields, and GA4 receives and processes the event.
 
 ## Scope
 
-- Define the roles of the Data Layer, GTM, and GA4.
-- Explain five principles: business-focused events, reliable timing, a stable contract, self-contained events, and safe/useful data.
-- Describe the fields a contract should define: names, types, allowed values, sources, timing, and schema version.
-- Include guidance for UI-independent values, asynchronous outcomes, data minimization, PII, secrets, and unrestricted input.
-- Use generic examples such as `sign_up` and `calculation_completed`; do not define an enterprise-wide schema or implement tracking.
+- Business-event naming and valid-occurrence rules.
+- A self-contained, versioned event contract.
+- Field types, allowed values, required/optional fields, and missing-data behavior.
+- Application-owned snapshots for asynchronous API flows and SPA safety.
+- Data minimization, consent boundary, duplicate prevention, and handoff to GTM.
+- FD calculation_action as the reference pattern.
 
-## Deliverables / Outputs
+## Outputs
 
-- A short Data Layer design document with a simple application → Data Layer → GTM → GA4 flow.
-- A clear explanation of the five principles.
-- Contract examples showing field definitions, valid/invalid events, correct types, complete context, and privacy-safe data.
-- The detailed response and reference: [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).
+1. A simple Application → Data Layer → GTM → GA4 lifecycle.
+2. A contract record for event name, schema version, fields, types, allowed values, source, timing, and privacy classification.
+3. A complete dataLayer.push message for each valid occurrence.
+4. Frontend adapter and contract-test guidance for asynchronous responses and duplicate callbacks.
+5. A privacy-safe FD calculation_action Journey and validation checklist.
+
+## Acceptance criteria
+
+- The event describes a confirmed business fact, not a click or UI state.
+- One valid occurrence produces one complete message.
+- A valid no-output result is distinct from invalid input, timeout, cancellation, or server failure.
+- The message contains only approved fields and no unnecessary PII, secrets, or unrestricted input.
+- GTM receives stable scalar fields; business logic remains in the Application.
+
+## Out of scope
+
+Detailed GTM Variable, Trigger, Tag, consent, reporting, or release configuration; use Sections 02–05 and 07–10. Advertising and campaign optimization are excluded.
+
+## Source
+
+Detailed implementation: [01-data-layer-design-answer.md](./01-data-layer-design-answer.md).

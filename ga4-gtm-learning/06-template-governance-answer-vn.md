@@ -1,297 +1,262 @@
-# 06 — Tài liệu Quản trị & Quản lý Template trong GTM
+# 06 — Quản trị Template trong GTM
 
-## Lý thuyết (Theory)
+## 1. Mục tiêu, phạm vi và đầu ra (Objective, scope, outputs)
 
-### GTM template là gì?
+### Mục tiêu
 
-Template định nghĩa **giao diện cấu hình** và **phần triển khai chạy trong sandbox** cho một **tag type** hoặc **variable type** trong GTM. Template quyết định người dùng có thể cấu hình những field nào, các field được validation ra sao, phần implementation có thể thực hiện gì và cần những permission nào.
+Đưa ra quy trình gọn và an toàn để quyết định khi nào cần GTM custom template, review code và permission, test các Tag/Variable sử dụng template, rồi retire template khi không còn cần.
 
-Khu vực Templates chứa các tag template và variable template tùy chỉnh hoặc được import trong container. Đây không phải là danh sách của tất cả tag hoặc variable đã được cấu hình.
+### Phạm vi
 
-### Template khác Tag và Variable như thế nào?
+- Custom Tag Template và Custom Variable Template trong web GTM container.
+- Template built-in, Community Template Gallery và template do team tự phát triển.
+- Field, validation, sandboxed JavaScript, API, permission, endpoint, consent, test, version và owner.
+- Ảnh hưởng của template tới các Tag/Variable instance đang sử dụng nó.
+- FD calculation_action làm pattern tham chiếu.
 
-Template định nghĩa **cách một loại hoạt động**. Tag hoặc variable là một **instance đã được cấu hình** và được tạo từ template đó.
+Chi tiết về Data Layer, Variable, Trigger, Tag và Consent đã nằm ở Sections 01–05. Section này chỉ quản lý lớp template dùng lại, không thay thế quy tắc của từng cấu hình được tạo từ template.
 
-```text
-Template: "Vendor Analytics Tag"
-        ↓ định nghĩa
-Các field cấu hình, validation, permission và sandboxed implementation
-        ↓ tạo ra
-Các tag instance
+### Đầu ra cần có
+
+Mỗi template active trong production cần có:
+
+1. Requirement đã được phê duyệt và lý do cần dùng template.
+2. Template contract gồm field, validation, data, endpoint, consent, permission và behavior khi hoàn tất.
+3. Owner, source/version, consumer inventory, test và rollback/export record.
+4. Review record cho mỗi lần update và các Tag/Variable instance phụ thuộc.
+
+## 2. Tổng quan: GTM template là gì?
+
+### 2.1 Template và instance khác nhau thế nào?
+
+Template định nghĩa cách một Tag type hoặc Variable type hoạt động. Tag hoặc Variable là instance đã được cấu hình và tạo ra từ template đó.
+
+| Đối tượng | Ý nghĩa thực tế |
+| --- | --- |
+| **Template** | Định nghĩa field cấu hình, validation, sandboxed code, API và permission. |
+| **Tag instance** | Thực hiện action khi Trigger và consent settings cho phép. |
+| **Variable instance** | Trả về một giá trị để Trigger hoặc Tag sử dụng. |
+
+Sửa một Tag instance thường chỉ ảnh hưởng Tag đó. Sửa template nền có thể ảnh hưởng mọi instance phụ thuộc, nên phải coi đây là code change và dependency change.
+
+Custom template phù hợp khi requirement đã được phê duyệt nhưng không thể giải quyết bằng Tag, Variable built-in hoặc cấu hình đơn giản. Google mô tả custom template là lựa chọn an toàn hơn so với Custom HTML hoặc Custom JavaScript không giới hạn.
+
+### 2.2 Hai loại template
+
+| Loại | Template phải làm gì? |
+| --- | --- |
+| **Tag Template** | Thực hiện action đã duyệt, chỉ gửi tới endpoint đã duyệt và báo success/failure rõ ràng. |
+| **Variable Template** | Đọc input đã duyệt, validate/transform và trả về một giá trị; không tự gửi request. |
+
+### 2.3 Thứ tự chọn phương án
+
+Dùng phương án đơn giản và được hỗ trợ nhất:
+
+1. Built-in option do Google cung cấp.
+2. Community Template Gallery đã được review.
+3. Custom template của tổ chức, có source và security review.
+4. Custom HTML hoặc Custom JavaScript chỉ là exception đã được ghi nhận.
+
+Không import hoặc build template chỉ vì template đang có sẵn. Luôn bắt đầu từ business/measurement requirement đã được duyệt.
+
+## 3. Template contract và review
+
+### 3.1 Các nội dung bắt buộc
+
+Ghi lại các mục sau trước khi approve:
+
+| Hạng mục | Cần ghi nhận |
+| --- | --- |
+| Purpose và type | Vì sao template tồn tại và là Tag hay Variable Template. |
+| Field và default | Input hiển thị trong GTM, required/optional, help text và safe default. |
+| Validation | Type, allowed value, normalization và behavior khi input sai. |
+| Data handling | Data được đọc, transform, lưu hoặc gửi; loại trừ data bị cấm. |
+| Endpoint | Exact HTTPS destination và URL riêng theo environment. |
+| API và permission | Từng sandbox API được dùng và lý do cần dùng. |
+| Consent | Consent bắt buộc, behavior khi denied/unknown và khi update. |
+| Completion behavior | Tag success/failure, timeout, retry, duplicate; Variable trả về gì khi thiếu hoặc sai. |
+| Consumer | Tag/Variable phụ thuộc và mức độ quan trọng. |
+| Owner và lifecycle | Owner, reviewer, version, status, ngày review và điều kiện retire. |
+
+### 3.2 Sandbox và permission
+
+Custom template chạy trong GTM sandboxed JavaScript, không chạy như page JavaScript tự do. Template chỉ truy cập capability thông qua sandbox API và permission đã khai báo.
+
+Sandbox giúp giới hạn quyền truy cập nhưng không có nghĩa template tự động an toàn. Cần áp dụng least privilege:
+
+- Chỉ yêu cầu API/permission thực sự cần cho purpose đã mô tả.
+- Giới hạn network permission bằng exact HTTPS URL match pattern.
+- Không yêu cầu page, cookie, storage hoặc Data Layer access nếu template không cần.
+- Không đặt credential, secret hoặc user input không giới hạn trong code/field.
+- Review Community Template như third-party code: publisher, source, maintenance, license, endpoint và lịch sử update.
+
+### 3.3 Production gate
+
+Chỉ approve khi tất cả câu trả lời là “có”:
+
+1. Requirement đã được duyệt và built-in option không đáp ứng được?
+2. Source đáng tin cậy, còn được maintain và có version?
+3. Field, validation, code, endpoint, consent và permission đã được hiểu rõ?
+4. Đã biết consumer, owner, test và rollback/export record?
+5. Có thể test trong non-production workspace?
+
+Nếu có câu trả lời “không”, template chưa được đưa vào production.
+
+## 4. Quy trình triển khai
+
+### 4.1 Import hoặc build
+
+1. Tạo inventory record trước khi import hoặc viết code.
+2. Dùng các khu vực Info, Fields, Code và Permissions trong Template Editor.
+3. Đặt label, help text, type, required/optional rule và safe default rõ ràng cho từng field.
+4. Validate input ngay tại boundary của template.
+5. Giới hạn implementation vào action hoặc value đã được phê duyệt.
+6. Khai báo endpoint và permission chính xác.
+7. Export hoặc commit source/version đã approve để có thể khôi phục.
+
+Tag Template phải dùng success/failure callback của GTM để báo hoàn tất. Variable Template phải trả về giá trị xác định hoặc undefined theo behavior đã ghi nhận.
+
+### 4.2 Test trước khi publish
+
+Dùng unit test của template khi có, sau đó test các consumer đại diện:
+
+1. Input hợp lệ thông thường.
+2. Input thiếu hoặc sai.
+3. Consent denied hoặc unknown.
+4. Gọi trùng, timeout và network failure.
+5. Đúng endpoint, environment, payload và request count.
+6. Behavior của các Tag/Variable quan trọng trong GTM Preview.
+
+Unit test của GTM có thể chạy code với sample input và assertion. Tuy nhiên, unit test không thay thế validation check hoặc test permission/network thực tế.
+
+### 4.3 Inventory và ownership
+
+Mỗi non-built-in template cần có một record tập trung:
+
+~~~text
+name | type | purpose | source/repository | approved version
+permissions | endpoints | consent | consumers
+owner | reviewer | last review | status | replacement/retirement condition
+~~~
+
+Owner chịu trách nhiệm về maintenance, security/privacy review, consumer impact, incident response, update và retirement. Template không có owner không được active trong production.
+
+### 4.4 Update và ảnh hưởng tới dependency
+
+Mọi template update đều phải được coi là code change:
+
+1. Xác định toàn bộ Tag/Variable phụ thuộc.
+2. Review source diff, exact version, field, default, validation, permission, endpoint và consent behavior.
+3. Retest consumer quan trọng và có volume cao.
+4. Ghi approved version, owner, evidence và rollback/export path.
+5. Chỉ publish sau khi đạt cùng tiêu chuẩn review như template mới.
+
+Không chấp nhận Gallery update tự động nếu chưa kiểm tra impact.
+
+### 4.5 Retire
+
+Trước khi xóa template:
+
+1. Tìm toàn bộ Tag/Variable phụ thuộc.
+2. Migrate hoặc remove các consumer đó.
+3. Xác nhận không còn requirement đã duyệt phụ thuộc template.
+4. Giữ lại version cuối, decision, evidence và rollback record.
+5. Đánh dấu Deprecated hoặc Retired theo lifecycle policy.
+
+## 5. Lưu ý và anti-pattern thường gặp
+
+| Anti-pattern | Rủi ro | Cách làm nên dùng |
+| --- | --- | --- |
+| Import template không có requirement hoặc review | Code và permission không rõ trở thành production-active. | Chạy production gate trước. |
+| Dùng Custom HTML khi đã có option được hỗ trợ | Tăng maintenance và access risk không cần thiết. | Ưu tiên built-in hoặc custom template đã review. |
+| Permission rộng hoặc endpoint wildcard | Template có thể đọc/gửi data vượt purpose. | Dùng least privilege và HTTPS allowlist chính xác. |
+| Không có consumer inventory | Update/xóa template làm hỏng Tag/Variable phụ thuộc. | Inventory consumer trước approve, update hoặc retire. |
+| Không có owner/version/rollback | Không kiểm soát được incident hoặc update. | Ghi owner chịu trách nhiệm và version có thể khôi phục. |
+| Template đọc DOM để suy ra business result | UI đổi làm measurement đổi âm thầm. | Giữ business truth ở Application/Data Layer (Section 01). |
+| Gửi PII, secret hoặc raw input | Tạo rủi ro privacy và security. | Tuân thủ data contract và payload allowlist đã duyệt. |
+
+Template governance không thay thế controls ở Sections 01–05: Application giữ business truth, Variable đọc giá trị, Trigger chọn business moment, Tag gửi data đã duyệt và Consent kiểm soát permission.
+
+## 6. Liên kết với các section khác
+
+- **Section 01 — Data Layer Design:** event contract và payload an toàn.
+- **Section 02 — Variable Management:** ưu tiên native Variable; ghi nhận consumer của Variable Template.
+- **Section 03 — Trigger Management:** dùng application event authoritative; template không tự suy ra success từ UI rule rộng.
+- **Section 04 — Tag Management:** Tag type, parameter allowlist, destination, request count và validation.
+- **Section 05 — Consent:** Consent Initialization và consent behavior của template/Tag phụ thuộc.
+- **Section 07 — Measurement Plan:** requirement đã duyệt để biện minh cho template.
+- **Section 08 — Debug and QA:** evidence và pass/fail record.
+- **Section 10 — Release Monitoring:** theo dõi production sau template hoặc dependency update.
+
+## 7. Journey minh họa: FD calculation_action
+
+### Requirement
+
+Gửi event FD calculation_action đã được duyệt tới GA4 bằng Google tag và GA4 Event tag.
+
+### Quyết định governance
+
+Không cần Custom Tag Template. Built-in Google tag và GA4 Event tag đã đáp ứng destination, event configuration, consent behavior và validation trong Preview/GA4. Dùng native Data Layer Variable của Section 02 và Custom Event Trigger authoritative của Section 03.
+
+~~~text
+FD event contract đã duyệt
         ↓
-Vendor Analytics — Purchase
-Vendor Analytics — Sign Up
-```
-
-| Đối tượng    | Vai trò                                                                    | Ví dụ                              |
-| ------------ | -------------------------------------------------------------------------- | ---------------------------------- |
-| **Template** | Định nghĩa một tag type hoặc variable type có thể tái sử dụng              | Template gửi event đến vendor      |
-| **Tag**      | Instance đã cấu hình, thực hiện một action khi đủ điều kiện chạy           | Gửi `purchase` đến vendor          |
-| **Variable** | Instance đã cấu hình, trả về hoặc biến đổi một giá trị để nơi khác sử dụng | Chuẩn hóa giá trị product category |
-
-Thay đổi một tag instance thông thường chỉ ảnh hưởng đến instance đó. Thay đổi template nền có thể ảnh hưởng đến mọi tag hoặc variable instance phụ thuộc vào template, vì vậy mọi thay đổi template đều cần phân tích dependency và regression test.
-
-### Vì sao cần template?
-
-Template cung cấp một cách có kiểm soát để đóng gói chức năng cho người dùng GTM. Template có thể:
-
-- cung cấp giao diện cấu hình rõ ràng thay vì yêu cầu người dùng tự sửa implementation code;
-- validation input trước khi tag hoặc variable được sử dụng;
-- chạy implementation logic trong GTM sandboxed environment;
-- khai báo các API và permission mà template cần;
-- chuẩn hóa vendor integration và các pattern nội bộ;
-- hỗ trợ review, testing, ownership, versioning và retirement.
-
-Template giúp tăng tính nhất quán và giảm các rủi ro implementation có thể tránh được. Tuy nhiên, template không loại bỏ nhu cầu review về security, privacy, consent hoặc vận hành.
-
-## Các loại Template (Template Types)
-
-GTM custom template chủ yếu được dùng để định nghĩa hai loại sau:
-
-| Loại                  | Mục đích                                                                           | Ví dụ                                               |
-| --------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Tag Template**      | Định nghĩa một action mà tag instance có thể thực hiện                             | Gửi một event đã được phê duyệt đến vendor endpoint |
-| **Variable Template** | Định nghĩa cách một variable instance tính toán, chuẩn hóa hoặc trả về một giá trị | Trả về campaign value đã được chuẩn hóa             |
-
-Mental model hữu ích:
-
-```text
-Tag Template      → thực hiện một action
-Variable Template → trả về một giá trị
-```
-
-Sự khác biệt này quan trọng trong quá trình review. Tag template phải mô tả execution, destination, consent và success/failure behavior. Variable template phải mô tả source của input, transformation rule, validation và giá trị trả về khi input bị thiếu hoặc không hợp lệ.
-
-## Nguồn của Template (Template Sources)
-
-| Nguồn                          | Ý nghĩa                                            | Yêu cầu quản trị                                                                                  |
-| ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Built-in**                   | Template hoặc GTM option được Google cung cấp      | Ưu tiên khi đáp ứng requirement; vẫn áp dụng các bước cấu hình và testing thông thường            |
-| **Community Template Gallery** | Template do bên thứ ba phát hành thông qua Gallery | Review publisher, source, license, maintenance, code, permission, endpoint, consent và update     |
-| **Custom**                     | Template do tổ chức tự phát triển và duy trì       | Cần owner, source history, security/privacy review, test, version control và lifecycle management |
-
-### Thứ tự lựa chọn ưu tiên
-
-Sử dụng phương án được hỗ trợ và an toàn nhất nhưng vẫn đáp ứng requirement đã được phê duyệt:
-
-1. Google-provided built-in template đáp ứng requirement.
-2. Community Template Gallery template đã được review cẩn thận.
-3. Custom template có maintainer cụ thể, đã được code/security review và có test.
-4. Custom HTML hoặc Custom JavaScript chỉ được dùng như một exception đã được ghi nhận, khi các lựa chọn được hỗ trợ và an toàn hơn không đáp ứng được requirement.
-
-Lựa chọn cuối cùng là exception path, không phải shortcut để bỏ qua template governance.
-
-## Cấu trúc của một Template (Anatomy of a Template)
-
-Một template dùng trong production phải có thể được giải thích thông qua các thành phần dưới đây. Nếu một thành phần không áp dụng, hãy ghi rõ `None` hoặc `Not applicable` thay vì để hành vi của nó không rõ ràng.
-
-| Thành phần                   | Câu hỏi cần trả lời                                                                                                  |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Purpose**                  | Vì sao template này tồn tại và nó đáp ứng business hoặc measurement requirement nào đã được phê duyệt?               |
-| **Type**                     | Đây là tag template hay variable template?                                                                           |
-| **Fields**                   | Người dùng cung cấp những cấu hình nào? Label, help text và default có rõ ràng không?                                |
-| **Validation**               | Giá trị nào được chấp nhận, từ chối, bắt buộc hoặc chuẩn hóa?                                                        |
-| **Sandboxed implementation** | Template code thực hiện những gì, theo từng bước?                                                                    |
-| **APIs**                     | Template sử dụng những GTM sandboxed API nào và vì sao?                                                              |
-| **Permissions**              | Implementation có thể truy cập resource hoặc capability nào?                                                         |
-| **Endpoints**                | Tag có thể gửi data đến đâu? Destination có rõ ràng và được phê duyệt không?                                         |
-| **Data handling**            | Template có thể đọc, biến đổi, lưu trữ hoặc gửi data nào? Data cá nhân bị cấm có được loại trừ không?                |
-| **Consent**                  | Cần consent state nào và điều gì xảy ra khi consent bị denied, unknown hoặc thay đổi?                                |
-| **Success/failure**          | Khi success, timeout, input không hợp lệ hoặc network failure thì tag xử lý thế nào? Variable trả về gì khi failure? |
-| **Consumers**                | Những tag, variable, team, report hoặc downstream system nào phụ thuộc vào template?                                 |
-| **Owner**                    | Ai maintain, approve change, trả lời câu hỏi và xác nhận retirement?                                                 |
-| **Version**                  | Version imported, released hoặc source commit nào đang được phê duyệt?                                               |
-| **Lifecycle**                | Template đang ở trạng thái Proposed, Under Review, Approved, Active, Deprecated hay Retired?                         |
-
-```text
-Template
-├── Configuration UI và fields
-├── Validation
-├── Sandboxed implementation
-├── APIs và permissions
-├── Data, endpoints và consent behavior
-├── Tests
-└── Metadata về ownership, version và lifecycle
+Built-in Google tag + GA4 Event tag đáp ứng requirement
         ↓
-Các tag hoặc variable instance phụ thuộc
-```
-
-## Sandboxing và Permissions
-
-Custom template chạy trong GTM sandboxed JavaScript environment thay vì unrestricted page JavaScript. Sandbox giới hạn những gì template code có thể trực tiếp thực hiện. Quyền truy cập đến các capability nhạy cảm được cung cấp thông qua sandboxed API đã được phê duyệt và template permission.
-
-Về mặt khái niệm:
-
-```text
-Template code
-      ↓
-Sandboxed API
-      ↓
-Permission check
-      ↓
-Resource hoặc action được cho phép
-```
-
-### Least privilege
-
-> Template chỉ nên được cấp những permission cần thiết để thực hiện đúng purpose đã được mô tả.
-
-Ví dụ, một template chỉ cần gửi request đã được phê duyệt đến `analytics.vendor.example` thì không nên yêu cầu thêm các capability không liên quan như storage, cookie, page hoặc network. Mỗi permission phải có business justification và technical justification rõ ràng.
-
-### Nguyên tắc security quan trọng
-
-```text
-Sandboxed ≠ tự động an toàn
-```
-
-Sandbox làm giảm phạm vi truy cập của implementation, nhưng template vẫn có thể không an toàn hoặc không phù hợp nếu có permission quá rộng, gửi data đến endpoint không rõ ràng, xử lý data sai, có source độc hại hoặc không được maintain, hoặc tự thay đổi behavior mà không qua review. Vì vậy, Community Template phải được review như third-party code.
-
-## Hướng dẫn quyết định về Template (Template Decision Guide)
-
-Trước khi import, approve hoặc tạo template, hãy sử dụng production gate sau:
-
-1. **Đã có requirement được phê duyệt chưa?**  
-   Nếu chưa, không import hoặc build template.
-2. **Built-in template có đáp ứng requirement không?**  
-   Nếu có, sử dụng built-in option.
-3. **Đã có Community Template được review chưa?**  
-   Nếu có, evaluate template đó trước khi tự build custom code.
-4. **Source có đáng tin cậy và còn được maintain không?**  
-   Nếu không, reject hoặc tìm một alternative an toàn hơn.
-5. **Tất cả permission được yêu cầu có cần thiết không?**  
-   Nếu không, giảm permission hoặc reject template.
-6. **Endpoint và data handling đã được hiểu và phê duyệt chưa?**  
-   Nếu chưa, không approve.
-7. **Consent behavior đã được định nghĩa chưa?**  
-   Nếu chưa, phải định nghĩa trước khi dùng trong production.
-8. **Đã biết các tag và variable phụ thuộc chưa?**  
-   Nếu chưa, inventory consumers trước khi release hoặc update.
-9. **Có thể test template và các consumer đại diện không?**  
-   Nếu không, không publish.
-10. **Đã có owner, version record và kế hoạch update/rollback chưa?**  
-    Nếu chưa, phải phân công ownership và định nghĩa quy trình vận hành trước.
-
-## Tiêu chuẩn thiết kế (Design Standards)
-
-Mọi template được approve phải tuân theo các tiêu chuẩn sau:
-
-- Bắt đầu bằng business hoặc measurement requirement đã được ghi nhận.
-- Ưu tiên implementation được hỗ trợ và có mức quyền hạn thấp nhất nhưng vẫn đáp ứng requirement.
-- Sử dụng field label, help text, safe default và behavior required/optional rõ ràng.
-- Validation input ngay tại boundary của template; không chỉ dựa vào downstream system để reject giá trị sai.
-- Giới hạn permission ở phạm vi hẹp và giải thích từng permission.
-- Làm rõ endpoint, phân biệt environment và đảm bảo destination đã được phê duyệt.
-- Mô tả data nào được đọc, biến đổi, lưu trữ và gửi đi.
-- Định nghĩa consent behavior trước khi implementation được active trong production.
-- Định nghĩa behavior rõ ràng cho missing input, invalid input, denied consent, duplicate, timeout và network failure.
-- Không đặt secret trong template code, field, example hoặc configuration.
-- Không approve việc thu thập hoặc truyền prohibited personal data.
-- Lưu trữ source, version, change history, test, owner và dependent consumer ở nơi có thể tra cứu.
-- Mọi update phải có thể review và rollback.
-
-## Ví dụ thực tế — Đánh giá một Community Tag Template
-
-### Tình huống
-
-Team cần gửi event `purchase_completed` đến **Vendor X Analytics** khi một purchase đã hoàn tất. GTM không có built-in tag hỗ trợ request format bắt buộc của Vendor X.
-
-### Quy trình đánh giá
-
-```text
-Requirement:
-Gửi một purchase_completed event đã được phê duyệt đến Vendor X
+Không import hoặc build custom template
         ↓
-Built-in template có sẵn không?
-Không
-        ↓
-Community Template Gallery có template phù hợp không?
-Có — Vendor X Analytics Tag
-        ↓
-Review publisher, repository, license, maintenance và documentation
-        ↓
-Review field, code, permission, endpoint, data handling và consent
-        ↓
-Import vào non-production workspace
-        ↓
-Test normal, invalid, duplicate, denied-consent và network-failure case
-        ↓
-Approve đúng version và ghi nhận consumer, owner cùng rollback plan
-```
+Validate một event, một request, parameter được duyệt, consent và destination
+~~~
 
-### Review record cụ thể
+Nếu sau này có requirement không dùng được built-in option, hãy dùng flow triển khai custom template ở mục 8 bên dưới.
 
-| Khu vực review   | Evidence hoặc quyết định                                                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Purpose          | Gửi một `purchase_completed` event sau khi application xác nhận purchase hoàn tất                                                         |
-| Type             | Tag Template                                                                                                                              |
-| Data input       | `transaction_id`, `currency`, `value` và item summary đã được phê duyệt từ data layer                                                     |
-| Trigger contract | Authoritative `purchase_completed` event; không dùng generic button click                                                                 |
-| Endpoint         | `https://collect.vendor-x.example/events`; production và staging destination được tách biệt rõ ràng                                       |
-| Permission       | Chỉ dùng sandboxed capability cần thiết để đọc approved value và gửi request                                                              |
-| Consent          | Chỉ gửi khi đáp ứng analytics/marketing consent requirement đã được phê duyệt; denied hoặc unresolved consent sẽ ngăn request             |
-| Success/failure  | Xử lý theo success path đã được mô tả; không retry theo cách tạo duplicate purchase nếu retry behavior chưa được thiết kế và test rõ ràng |
-| Consumer         | Tag `Vendor X — Purchase Completed` và downstream Vendor X conversion workflow                                                            |
-| Decision         | Chỉ approve version đã review; reject nếu permission rộng hơn mức cần thiết hoặc maintenance không rõ ràng                                |
+## 8. Journey: triển khai khi thực sự cần custom template
 
-## Inventory & Ownership
+### Tình huống và khoảng trống
 
-Hãy duy trì một inventory tập trung cho mọi non-built-in template và các dependent instance của chúng.
+Team cần gửi summary của calculation_action đã được phê duyệt tới một endpoint non-GA4 được phê duyệt cho workflow đo lường nội bộ. Built-in Google tag và GA4 Event tag gửi được tới GA4 nhưng không thể gửi tới endpoint này hoặc dùng request envelope đã được review. Vì vậy, Custom Tag Template là cần thiết cho destination riêng này.
 
-| Template | Type           | Purpose              | Origin/source      | Version         | Permissions | Endpoints                 | Consent               | Consumers          | Owner           | Last review  | Status | Replacement             |
-| -------- | -------------- | -------------------- | ------------------ | --------------- | ----------- | ------------------------- | --------------------- | ------------------ | --------------- | ------------ | ------ | ----------------------- |
-| `[name]` | Tag / Variable | `[approved purpose]` | Gallery / `[repo]` | `[SHA/version]` | `[summary]` | `[approved destinations]` | `[required behavior]` | `[tags/variables]` | `[team/person]` | `YYYY-MM-DD` | Active | `[replacement or None]` |
+Template không được tự tính kết quả FD. Application vẫn chịu trách nhiệm về solution_found và Data Layer contract; template chỉ map và gửi các scalar field đã được duyệt.
 
-Ownership không chỉ là người đã import template. Owner chịu trách nhiệm về maintenance, review cadence, consumer impact analysis, quyết định update, incident response và retirement. Template không có owner cụ thể không nên được active trong production.
+### Deployment record
 
-## Quy trình Test (Test Workflow)
+> Đây là biểu mẫu governance do team tự chuẩn hóa, không phải biểu mẫu Google cung cấp. Các trường được tổng hợp từ template contract và production gate ở trên, Tag/Consent contract của Sections 04–05 và chuỗi evidence QA ở Section 08.
 
-1. Chỉ import hoặc edit template trong dedicated non-production workspace.
-2. Review field, validation, implementation, API, permission, endpoint, data handling, consent và test trước khi tạo consumer.
-3. Test trực tiếp template khi được hỗ trợ, bao gồm normal, missing, invalid, denied-consent và failure case.
-4. Test các tag hoặc variable phụ thuộc đại diện trong GTM Preview.
-5. Kiểm tra network behavior: destination, payload, request count và environment.
-6. Test negative case và duplicate case để bảo đảm một business occurrence không tạo ra duplicate request ngoài dự kiến.
-7. Lưu evidence, defect, approved version, owner và rollback/export information.
-8. Chỉ publish thông qua version control thông thường sau khi được review và approve.
+~~~text
+Requirement:       một calculation_action summary → endpoint đã duyệt
+Built-in gap:      GA4 tag không gửi được tới endpoint/envelope bắt buộc
+Source:            Community Template đã review hoặc source do tổ chức sở hữu
+Input allowlist:   calculation_action, calculation_type, solution_found
+Consent:           cần analytics/measurement consent; denied hoặc unknown thì block
+Endpoint:          HTTPS staging và production URL chính xác
+Permission:        chỉ đọc field đã duyệt và gửi tới endpoint trong allowlist
+Owner/version:     owner, source revision, ngày review và rollback export
+~~~
 
-## Ảnh hưởng của Template Update (Template Update Impact)
+### Các bước triển khai
 
-Template update là một code change và dependency change, không chỉ là thay đổi metadata. Một template có thể được nhiều tag hoặc variable instance sử dụng:
+1. Ghi requirement, destination, payload allowlist, expected count, consent rule, owner và environment.
+2. Xác nhận built-in Tag, Variable hoặc cấu hình đơn giản không đáp ứng được requirement.
+3. Ưu tiên Community Template đã review; nếu không có thì tạo template do tổ chức sở hữu và lưu source history.
+4. Trong Template Editor, định nghĩa field rõ ràng, validation, safe default, sandbox code, endpoint permission chính xác và success/failure behavior.
+5. Cấu hình Tag phụ thuộc với application Trigger authoritative và Additional Consent Check đã duyệt. Không dùng Trigger click hoặc DOM quá rộng.
+6. Chạy unit test cho input hợp lệ, thiếu, sai và duplicate. Bổ sung test timeout, denied-consent và network failure khi template hỗ trợ các path này.
+7. Test Tag phụ thuộc trong non-production container: GTM Preview → payload/request count → endpoint receipt.
+8. Review source/version, permission, endpoint, data handling, consent, consumer inventory và evidence với owner.
+9. Publish version có rollback/export record rồi theo dõi release production đầu tiên.
 
-```text
-Community Template v1
-        ↓
-Tag A   Tag B   Tag C
+### Evidence chấp nhận
 
-Template được update lên v2
-        ↓
-Behavior của A, B và C đều có thể thay đổi
-```
+- Requirement và built-in gap được ghi nhận.
+- Template chỉ gửi scalar field đã duyệt tới đúng endpoint của environment.
+- Denied hoặc unknown consent ngăn request theo contract.
+- Một calculation occurrence hợp lệ tạo một template execution và một request.
+- Behavior với invalid, no-output, duplicate, timeout và network failure được ghi nhận và test.
+- Lưu đủ GTM Preview, Network, endpoint receipt, owner approval, version và rollback evidence.
 
-Update có thể ảnh hưởng đến mọi dependent instance thông qua thay đổi về implementation code, field, default, validation, permission, endpoint, data handling, consent behavior hoặc success/failure behavior. Trước khi accept update:
+## Tài liệu tham khảo (References)
 
-1. Xác định tất cả dependent tag và variable.
-2. Review change detail, source diff và exact version.
-3. Review permission và endpoint được thêm, xóa hoặc thay đổi.
-4. Review field, default, validation và consent behavior.
-5. Retest các consumer đại diện, bao gồm consumer quan trọng và có volume cao.
-6. Ghi nhận approved version và rollback path.
-7. Chỉ publish update sau khi đạt cùng tiêu chuẩn approval như một code change mới.
-
-Hãy coi Gallery update là một code change mới, ngay cả khi update được cung cấp dưới dạng automatic hoặc routine update.
-
-## Các Anti-pattern Thường gặp (Common Anti-patterns)
-
-| Anti-pattern                                  | Vấn đề                                                              | Cách tiếp cận nên dùng                                                       |
-| --------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Import Gallery template mà không review       | Code và permission của bên thứ ba được tin tưởng một cách ngầm định | Review publisher, source, permission, endpoint, data, consent và maintenance |
-| Dùng custom code khi đã có supported template | Tạo thêm implementation và maintenance risk không cần thiết         | Tuân theo preferred selection order                                          |
-| Permission quá rộng                           | Template có thể truy cập nhiều hơn purpose yêu cầu                  | Áp dụng least privilege và justify từng permission                           |
-| Network endpoint không rõ                     | Không thể quản trị hoặc validation destination của data             | Ghi nhận và approve exact endpoint cùng environment                          |
-| Automatic update không review                 | Dependent instance có thể thay đổi behavior bất ngờ                 | Coi mỗi update là một code change mới                                        |
-| Không có consumer inventory                   | Update hoặc retirement có thể làm hỏng tag/variable phụ thuộc       | Inventory consumer trước khi approve, update hoặc remove                     |
-| Không có owner                                | Quyết định về security, maintenance và retirement bị bỏ ngỏ         | Chỉ định named accountable owner                                             |
-| Chỉnh sửa trực tiếp trong production          | Khó test, review và rollback hơn                                    | Dùng non-production workspace và version control thông thường                |
-| Đặt secret trong template code hoặc field     | Credential có thể bị lộ và khó rotate an toàn                       | Không đặt secret; dùng server-side hoặc platform mechanism đã được approve   |
-| Đọc DOM để bù cho data contract còn thiếu     | UI change có thể âm thầm làm hỏng measurement                       | Ưu tiên authoritative data-layer contract                                    |
-| Xóa template trước khi migrate consumer       | Tag hoặc variable phụ thuộc có thể fail hoặc trở nên unmanaged      | Migrate consumer trước và lưu rollback record                                |
+- [Google for Developers — Custom templates quick start guide](https://developers.google.com/tag-platform/tag-manager/templates)
+- [Google for Developers — Sandboxed JavaScript](https://developers.google.com/tag-platform/tag-manager/templates/sandboxed-javascript)
+- [Google for Developers — Custom template permissions](https://developers.google.com/tag-platform/tag-manager/templates/permissions)
+- [Google for Developers — Custom template tests](https://developers.google.com/tag-platform/tag-manager/templates/tests)

@@ -1,34 +1,42 @@
-# 07 — Measurement Plan for GA4/GTM
+# 07 — GA4/GTM Measurement Plan
 
 ## Objective
 
-Create a practical Measurement Plan that connects a business question to a maintainable event contract, Data Layer signal, GTM mapping, consent/privacy behavior, QA evidence, and reporting requirement.
+Define before implementation what business question to measure, which business moment is authoritative, how the event and parameter contract works, how valid occurrences are deduplicated, which consent and destination rules apply, and who owns the schema version.
 
-The answer should help frontend developers and GTM owners decide what to measure, when an event is true, which parameters are allowed, and how the change will be reviewed and maintained.
+This is a design and approval document; it is not a runtime Debug/QA guide or a Reports/Charts build guide.
 
 ## Scope
 
-### Included
-
-- Stable web client-side collection through GTM and GA4.
-- Business decision, authoritative business moment, event naming/type, parameters, schema, occurrence, deduplication, and ownership.
-- Data Layer, variables, triggers, tags, Google tag routing, environment destination, consent, privacy, cardinality, and custom-definition decisions.
-- Canonical records: Project Context/Baseline, Journey/Event Coverage Matrix, Event Contract, Parameter Dictionary, Traceability Matrix, Consent/Data Classification Matrix, Key-Event/Custom-Definition Decision Record, and Schema Lifecycle Register.
-- Practical frontend/GTM handoff, ecommerce addendum, anti-patterns, and links to Section 08 QA and Section 09 reporting.
-- A single completed Registration Journey example placed at the end of the answer documents.
-- Matching English and Vietnamese structure and terminology.
-
-### Excluded
-
-- Media buying, campaign optimization, attribution strategy, and Google Ads operations.
-- Building or operating a complete automated analytics framework.
-- Redefining the product Measurement Plan, consent policy, or reporting requirements outside this section.
-- Treating a GA4 report as the source of truth for transactional accounting.
-- Release approval and post-release monitoring, which remain in Section 10.
+- Stable client-side web collection with Google Tag Manager (GTM) and Google Analytics 4 (GA4).
+- Business questions, authoritative moments, event type/name, parameter schema, occurrence, deduplication, consent/privacy, and destination.
+- Measurement decisions for Data Layer/GTM handoff, key events, custom definitions, identity, cardinality, and data minimization.
+- Canonical records: Project Context, Journey/Event Coverage, Event Contract, Parameter Dictionary, Traceability, Decision Record, Consent/Data Classification, and Schema Lifecycle.
+- Handoff requirements for Sections 01–06 and the worked Registration Journey.
 
 ## Outputs
 
-- [English answer](./07-measurement-plan-answer.md): cleaned and reordered as Overview → Measurement-Plan workflow → Canonical records/templates → Implementation handoff/practical notes → Registration Journey example → Official references; the Journey instantiates the canonical records in Section 3.
-- [Vietnamese answer](./07-measurement-plan-answer-vn.md): same structure, scope, canonical-record coverage, and GA4/GTM terminology.
-- A lean set of canonical planning records, with derived views clearly separated from source-of-truth records.
-- A worked Registration Journey showing how business meaning, event contracts, parameters, consent, mapping, reporting, traceability, and approval connect without adding ad-focused content.
+1. A standard workflow: business question → authoritative moment → event/parameter contract → Data Layer/GTM handoff → review and version.
+2. An Event Contract, Parameter Dictionary, mapping, consent, destination, owner, and lifecycle status for each canonical event, applied in the documented P0–P2 priority order.
+3. Explicit decisions for key events, custom definitions, identity, and data classification where required.
+4. A handoff that Section 08 can test and Section 09 can use for Reports/Charts without redefining the event.
+5. A reproducible Registration Journey at the end of the detailed answer.
+
+## Acceptance criteria
+
+- Every event has a business question and an authoritative Application or server moment.
+- One valid occurrence produces one message under documented count/deduplication rules; validation failure, timeout, cancellation, and server failure are separate outcomes.
+- Required parameters have documented types, allowed values, and missing-data behavior; optional parameters are not invented.
+- The Data Layer message is self-contained; GTM maps only approved scalar fields and has an authoritative Trigger, consent behavior, and destination.
+- PII, secrets, raw input, and request tokens are excluded from GA4 unless covered by a separate approved contract.
+- Owner, reviewer, schema version, effective date, and migration/retirement status are recorded.
+- Debug/QA and Reports/Charts are referenced but their execution procedures are not embedded in this plan.
+
+## Out of scope
+
+Detailed Data Layer, Variable, Trigger, Tag, Consent, and Template configuration; see Sections 01–06. Runtime Debug/QA is covered in Section 08, Reports/Charts in Section 09, and Release Monitoring in Section 10. Ads, campaign, attribution, and Google Ads operations are excluded.
+
+## Source
+
+Detailed implementation: [07-measurement-plan-answer.md](./07-measurement-plan-answer.md).
+Vietnamese counterpart: [07-measurement-plan-answer-vn.md](./07-measurement-plan-answer-vn.md).

@@ -1,71 +1,40 @@
-# Jira Work Request: Research Consent Management and Governance in GTM
+# 05 — Consent Management for GA4 in GTM
 
 ## Objective
 
-Research and document how consent should be collected, communicated, enforced, tested, and governed in Google Tag Manager (GTM) for GA4, Google Ads, and approved third-party Tags.
-
-The guide must explain how the Consent Management Platform (CMP), Consent Mode, GTM consent settings, Triggers, Tags, and downstream destinations work together. Privacy or legal owners must approve the policy and regional defaults.
+Define how a visitor’s consent choice is received, applied to GTM, and verified so GA4 Tags collect only what the approved policy allows.
 
 ## Scope
 
-- Explain the three consent responsibilities: obtain, communicate, and enforce.
-- Distinguish consent from Trigger logic and Tag execution.
-- Explain Basic and Advanced Consent Mode, including why `denied` does not always mean zero Network requests.
-- Define the states `granted`, `denied`, and unknown/uninitialized.
-- Document the main consent types:
-  - `analytics_storage`;
-  - `ad_storage`;
-  - `ad_user_data`;
-  - `ad_personalization`;
-  - `functionality_storage`;
-  - `personalization_storage`;
-  - `security_storage`.
-- Separate storage consent from advertising data-use consent.
-- Define the correct order: Consent Initialization → consent defaults/CMP state → consent updates → normal Triggers and Tags.
-- Document explicit and region-aware defaults, same-page updates, persistence, revocation, and CMP category mapping.
-- Explain GTM built-in consent checks for Google Tags and additional consent checks for reviewed custom or third-party Tags.
-- Explain how Data Layer events, Variables, Triggers, consent state, Tags, Google tag, and GA4 destinations connect.
-- Distinguish Trigger matched, Tag fired, browser storage, Network request, and downstream GA4 receipt.
-- Define naming, ownership, inventory, environment, lifecycle, change-control, release, monitoring, and rollback requirements.
-- Include QA and failure cases such as CMP race conditions, missing defaults, stale or duplicate consent, SPA navigation, cross-domain/iframe behavior, ad blockers, server-side tagging, revocation, and environment drift.
-- Include an FD `calculation_action` example without unnecessary personal or sensitive data.
+- Consent defaults and updates in a web GTM container.
+- CMP (Consent Management Platform), Consent Mode, Consent Initialization, built-in consent checks, and Additional Consent Checks.
+- Consent contract: purpose, destination, consent type, region, default, update timing, persistence, revocation, unknown/failure behavior, owner, and version.
+- Environment control, QA evidence for storage/Network/destination, and practical failure handling.
+- FD calculation_action consent Journey.
 
-## Deliverables / Outputs
+Legal wording, regional policy, CMP selection, and advertising implementation remain with the relevant owners. Advertising consent types are included only when a tag inventory requires them.
 
-- A concise GTM consent-management and governance guide.
-- Basic versus Advanced Consent Mode comparison.
-- Consent-state and granted/denied behavior model.
-- Consent Initialization and CMP integration flow.
-- CMP integration contract covering source of truth, category mapping, timing, updates, persistence, revocation, and evidence.
-- Built-in versus additional consent-check guidance.
-- Consent inventory and ownership template.
-- QA matrix covering:
-  - first visit and default state;
-  - accept, reject, granular choice, change, and revoke;
-  - storage, Network, and destination behavior;
-  - direct landing, slow CMP, SPA, multiple tabs, and regions;
-  - staging, production, browsers, and downstream GA4 validation.
-- Failure-mode guidance, change-control requirements, and audit checklist.
-- FD `calculation_action` implementation and QA example.
-- Detailed answer: [05-consent-answer.md](./05-consent-answer.md).
+## Outputs
 
-## Acceptance Criteria
+1. A consent lifecycle: CMP/policy → Consent Initialization → default/stored state → same-page update → application event → tag consent evaluation → GA4 behavior.
+2. A Basic versus Advanced Consent Mode decision note and an explicit state model: granted, denied, and unknown.
+3. A CMP mapping and consent inventory for each consent-controlled Tag.
+4. GTM guidance for Consent APIs, built-in checks, Additional Consent Checks, persistence, revocation, and environment alignment.
+5. A QA matrix and evidence record covering consent state, Tag status, storage, request, destination, and downstream GA4 receipt.
 
-- Consent defaults are explicit and established before measurement Tags run.
-- Unknown or uninitialized consent is not treated as permission.
-- Basic and Advanced Consent Mode behavior is clearly distinguished and verified through storage and Network evidence.
-- `analytics_storage`, advertising storage, and advertising data-use signals are handled separately.
-- Google built-in consent checks are used as the primary control; redundant exception Triggers are avoided.
-- Third-party and custom Tags have explicit consent behavior and do not assume automatic Google Consent Mode enforcement.
+## Acceptance criteria
+
+- Defaults are explicit and established before measurement Tags are evaluated.
+- Unknown or malformed consent is not treated as granted.
 - Consent updates occur on the same page as the user’s choice and are persisted by the CMP or approved solution.
-- QA verifies consent state, Tag behavior, storage, request content, destination, event payload, and expected outcome.
-- The Data Layer and requests contain no unnecessary PII, credentials, secrets, account identifiers, or unrestricted user input.
-- Region, browser, environment, SPA, race-condition, revocation, and server-side behavior is addressed.
-- Every Tag has a documented purpose, vendor, destination, consent requirement, owner, inventory record, and review date.
-- Changes include privacy review when required, test evidence, approver, published version, monitoring, and rollback plan.
+- Google Tags use built-in consent behavior; Additional Consent Checks are reserved for reviewed custom or third-party Tags.
+- QA distinguishes a Trigger match, a Tag firing, a Network request, and downstream GA4 receipt.
+- Data Layer and GA4 payloads contain no unnecessary PII, secrets, raw calculation inputs, or unrestricted user input.
 
-## Out of Scope
+## Out of scope
 
-- Making legal or jurisdiction-specific decisions.
-- Selecting the final CMP, legal basis, retention policy, or regional policy without privacy/legal approval.
-- Publishing live changes to GTM, GA4, CMP, server-side tagging, or vendor configurations.
+Legal decisions, final CMP/vendor selection, detailed advertising or campaign optimization, custom-template development beyond the approved Consent APIs, and publishing live production changes without review.
+
+## Source
+
+Detailed implementation: [05-consent-answer.md](./05-consent-answer.md).

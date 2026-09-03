@@ -1,27 +1,37 @@
-# Subtask 02: Manage GTM Variables
+# 02 — GTM Variable Management
 
 ## Objective
 
-Define a practical system for creating, naming, choosing, reusing, testing, documenting, and retiring GTM variables across projects.
+Define a small, reusable system for creating, naming, configuring, testing, publishing, and retiring GTM Variables used by stable GA4 tracking.
 
-## Scope — Included Items
+## Scope
 
-- What GTM variables are, how Tags and Triggers use them, and how Data Layer values are evaluated.
-- The key management principles: clear purpose, correct type, clear naming, reuse, Data Layer first, simple transformations, environment separation, missing-data behavior, privacy, testing, and cleanup.
-- Data Layer Variables, Constants, Lookup Tables, RegEx Tables, URL Variables, cookies, DOM variables, and Custom JavaScript.
-- Multi-project scope, namespaces, folders, shared versus project-specific variables, ownership, and a central inventory.
-- Variable contracts, nested Data Layer paths, allowed values, fallbacks, consent, environment routing, and privacy controls.
-- Custom JavaScript restrictions, testing, review, publishing, deprecation, and retirement.
-- The scoped FD calculation example and audit cases; not a full-container refactor.
+- Variable source selection and native type preference.
+- Data Layer Variables, nested paths, constants, lookup/RegEx tables, URL/cookie values, DOM values, and limited Custom JavaScript.
+- Variable contracts, naming, folders, scope, reuse, owners, environments, consent, and missing-data rules.
+- Search-before-create, inventory, QA, deprecation, and retirement.
+- FD calculation_action Variable setup.
 
-## Deliverables / Outputs
+## Outputs
 
-- One GTM variable-management guideline covering Data Layer evaluation, variable principles, types, naming, folders, ownership, reuse, environments, consent, testing, publishing, and lifecycle.
-- One variable inventory containing scope, name, type, exact source, business meaning, consumers, owner, environment, fallback, privacy classification, risk, and lifecycle status.
-- One variable-type decision matrix and lookup/RegEx safeguards with practical examples.
-- One step-by-step FD calculation variable-management example covering the Data Layer contract, inventory search, canonical variables, routing, tag mapping, missing data, testing, and publishing.
-- One audit section covering duplicates, DOM dependencies, environment leaks, masked missing values, unused variables, risky Custom JavaScript, and temporary variables.
+1. A Variable decision workflow: classify → search → contract → choose type → configure → test → publish → maintain.
+2. A type/source decision matrix that prefers application/Data Layer values and uses DOM or Custom JavaScript only when justified.
+3. A Variable contract and inventory containing source, type, meaning, consumers, allowed values, fallback, privacy, owner, environment, and lifecycle status.
+4. Practical rules for nested Data Layer paths, environment routing, missing required values, and consent-aware use.
+5. An FD example mapping approved fields to the GA4 Tag and a focused audit checklist.
 
-## Instructions / Answer
+## Acceptance criteria
 
-See [02-variable-management-answer.md](./02-variable-management-answer.md).
+- Variables read approved values; they do not recreate application business logic.
+- Required missing values cause a documented QA failure or block; optional values are omitted or handled as specified.
+- Environment routing fails closed for unknown hosts.
+- Shared Variables are reused only when source, semantics, consent, and lifecycle are compatible.
+- New or changed Variables are tested in GTM Preview and, when needed, the browser Network panel before publishing.
+
+## Out of scope
+
+Detailed Trigger, Tag, consent, measurement-plan, Debug/QA, report, or release design; use Sections 03–10. Advertising-specific Variables are excluded.
+
+## Source
+
+Detailed implementation: [02-variable-management-answer.md](./02-variable-management-answer.md).

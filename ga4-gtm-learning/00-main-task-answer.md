@@ -15,7 +15,7 @@ Business question
   → interpretation, QA evidence, and decision
 ```
 
-The numbered guides explain the theory and work required to operate the supporting GTM/GA4 configuration, define a verified measurement contract, validate collection, handle common scenarios, release changes safely, and turn validated data into useful GA4 reports and charts.
+The numbered guides define the practical work required to operate the supporting GTM/GA4 configuration, approve a measurement contract, validate collection, handle common scenarios, release changes safely, and turn validated data into useful GA4 reports and charts.
 
 The core scope is stable web client-side GTM implementation and governance for frontend teams. GA4 is used to validate downstream collection and reporting impact. This guide does not teach media buying, campaign optimization, or Google Ads operations. Ads-related settings appear only when they affect consent, destination governance, key-event use, or measurement quality. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation require a separate project addendum.
 
@@ -99,12 +99,12 @@ Required access:
 ### Phase 3 — Validate the existing state
 
 - [ ] Prepare the workflow in [08-debug-qa-answer.md](./08-debug-qa-answer.md).
-- [ ] Audit one existing flow using the approved tracking-flow audit artifact, if that supporting artifact is in scope.
+- [ ] Audit one existing flow using the Section 08 layer/evidence workflow; record findings and evidence IDs in the project’s QA or audit record.
 - [ ] Turn findings into Must/Should/Could remediation items.
 
 ### Phase 4 — Prove and decide
 
-- [ ] Build the non-production POC using the approved POC artifact, if that supporting artifact is in scope.
+- [ ] Build the non-production POC using Sections 01–08 and record the application, Data Layer, GTM, Network, consent, and GA4 evidence IDs.
 - [ ] Capture Data Layer, GTM, network, DebugView, consent, and negative-test evidence.
 - [ ] Allow for GA4 processing, then confirm that the required dimensions and metrics are reportable.
 - [ ] Complete [09-reports-charts-answer.md](./09-reports-charts-answer.md) using the validated POC data.
