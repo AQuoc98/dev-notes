@@ -306,7 +306,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     connection_type: "clt_floor_floor_half_lap_joint",
     unit_system: "metric",
@@ -337,7 +337,7 @@ Valid output response
     → one GA4 Tag firing/request
 
 Valid response without output
-    → one Data Layer event with solution_found = false
+    → one Data Layer event with solution_found = "No"
     → same expected count
 
 Invalid input, timeout, server failure, stale response, duplicate callback,

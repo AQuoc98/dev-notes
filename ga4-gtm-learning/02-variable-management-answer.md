@@ -362,7 +362,7 @@ This is the only concrete FD walkthrough. Replace project IDs and hostnames with
 | `event` | string | Yes | Block | Custom Event Trigger |
 | `event_schema_version` | string | Yes | Fail QA | Trigger and GA4 Event Tag |
 | `app_name` | string | Yes | Fail QA | Trigger and GA4 Event Tag |
-| `solution_found` | boolean | Yes | Fail QA | GA4 Event Tag |
+| `solution_found` | string (`"Yes"`/`"No"`) | Yes | Fail QA | GA4 Event Tag |
 | `inputs.connection_type` | string | Yes | Fail QA | GA4 Event Tag |
 | `inputs.fx` | number | Conditional | Omit when not applicable | GA4 Event Tag |
 | `inputs.fy` | number | Conditional | Omit when not applicable | GA4 Event Tag |
@@ -374,7 +374,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     connection_type: "clt_floor_floor_half_lap_joint",
     unit_system: "metric",

@@ -70,7 +70,7 @@ Before implementation, write down when a business event counts as having happene
 - a purchase accepted with an authoritative transaction;
 - one accepted FD input snapshot whose matching calculation response has been classified.
 
-An input change, click, request start, or component render is not enough on its own. For FD, a valid response that produces no solution is still one valid calculation (`solution_found = false`). Invalid input, cancellation, timeout, or server failure means that the calculation did not complete; do not record it as a successful calculation. If failures need to be measured, define a separate error event.
+An input change, click, request start, or component render is not enough on its own. For FD, a response with `length > 0` is a calculation with a solution (`solution_found = "Yes"`); response `[]` is a calculation with no solution (`solution_found = "No"`). API failure, timeout, cancellation, or a stale response also emits an error event with `solution_found = "No"` under this contract. Input validation emits no event.
 
 ### 3.3 Make every message self-contained
 
@@ -125,10 +125,10 @@ An `event envelope` is the outer frame of a message. It tells us which event the
 | `event`                | string  | Yes      | Application constant; exact value `calculation_action`.                                                                  |
 | `event_schema_version` | string  | Yes      | Application constant; current version `1.0`.                                                                             |
 | `app_name`             | string  | Yes      | Application constant; exact value `fd`.                                                                                  |
-| `solution_found`       | boolean | Yes      | Matching API response; `true` only when that response produced output, `false` only for a valid response with no output. |
+| `solution_found`       | string  | Yes      | Response with `length > 0` → `"Yes"`; response `[]` or API error → `"No"`. The Application is the only source that decides this value. |
 | `inputs`               | object  | Yes      | Complete approved snapshot associated with the matching API request.                                                     |
 
-If a business system requires literal `Yes`/`No` strings instead of Boolean values, change the contract deliberately and update the schema version, GTM Variables, QA matrix, and reports together. Do not silently convert types in GTM.
+The current FD contract uses literal `"Yes"`/`"No"` strings for `solution_found`. The Application must emit exactly these two values; do not silently convert types in GTM.
 
 ### 4.3 FD `inputs` schema
 
@@ -196,8 +196,8 @@ If the user has entered a newer value, treat the earlier response as stale and d
 Automate at least these checks:
 
 - a confirmed success emits one event with the exact name, version, types, and allowed values;
-- a valid no-output response emits the agreed event with `solution_found = false`;
-- validation failure, API failure, timeout, cancellation, and abandoned UI emit no successful event;
+- a valid no-output response emits the agreed event with `solution_found = "No"`;
+- API failure, timeout, cancellation, and stale response emit an error event with `solution_found = "No"`; input validation and abandoned UI emit no event;
 - stale responses, retries, duplicate callbacks, remounts, and Strict Mode do not create duplicates;
 - the message contains the complete approved snapshot and no prohibited field;
 - optional fields are omitted rather than invented.
@@ -282,7 +282,7 @@ type AnalyticsEvent =
       event: "calculation_action";
       event_schema_version: "1.0";
       app_name: "fd";
-      solution_found: boolean;
+      solution_found: "Yes" | "No";
       inputs: {
         connection_type: string;
         unit_system: "metric" | "imperial";
@@ -318,7 +318,7 @@ User changes an FD input
 → application sends that snapshot to the calculation API
 → API returns a response for that snapshot
 → application determines whether the response produced output
-→ application sets solution_found to true or false
+→ application sets solution_found to "Yes" or "No"
 → application pushes one complete calculation_action message
 → GTM maps approved fields and sends the event to GA4
 ```
@@ -330,7 +330,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     country: "gb",
     language: "en",
@@ -356,7 +356,7 @@ window.dataLayer.push({
 });
 ```
 
-For a valid response with no output, keep the same complete snapshot and set `solution_found: false`. Do not emit this successful event for invalid input, timeout, cancellation, or server failure unless a separately approved error contract exists.
+For response `[]`, keep the same complete snapshot and set `solution_found: "No"`. For API failure, timeout, cancellation, or a stale response, emit an error event under this contract and also set `solution_found: "No"`. Emit no event when the UI has input validation.
 
 ### 9.4 Optional ecommerce shape
 

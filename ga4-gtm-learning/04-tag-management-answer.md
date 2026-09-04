@@ -321,7 +321,6 @@ event_schema_version → {{FD - DLV - event_schema_version}}
 app_name             → {{FD - DLV - app_name}}
 solution_found       → {{SHARED - DLV - solution_found}}
 connection_type      → {{FD - DLV - inputs - connection_type}}
-unit_system          → {{FD - DLV - inputs - unit_system}}
 fx                   → {{FD - DLV - inputs - fx}}
 fy                   → {{FD - DLV - inputs - fy}}
 ```
@@ -344,7 +343,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     connection_type: "clt_floor_floor_half_lap_joint",
     unit_system: "metric",
@@ -364,7 +363,7 @@ Valid output response
     → one request reaches the QA/production Measurement ID
 
 Valid response with no output
-    → same flow with solution_found = false
+    → same flow with solution_found = "No"
 
 Invalid input, API failure, stale response, duplicate callback,
 unknown host, or denied consent

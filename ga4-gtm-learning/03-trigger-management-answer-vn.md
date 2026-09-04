@@ -306,7 +306,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     connection_type: "clt_floor_floor_half_lap_joint",
     unit_system: "metric",
@@ -337,7 +337,7 @@ Response có output hợp lệ
     → một GA4 Tag fire/request
 
 Response hợp lệ nhưng không có output
-    → một Data Layer event với solution_found = false
+    → một Data Layer event với solution_found = "No"
     → cùng expected count
 
 Input invalid, timeout, server failure, response stale, duplicate callback,

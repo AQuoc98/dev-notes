@@ -70,7 +70,7 @@ Trước khi triển khai, cần ghi rõ thời điểm một business event đ�
 - purchase được chấp nhận với transaction hợp lệ;
 - một bộ input FD được chấp nhận và API đã trả về response tương ứng.
 
-Thay đổi input, click, bắt đầu request hoặc component render chưa đủ để ghi nhận event. Với FD, response hợp lệ nhưng không tạo ra solution vẫn là một lần tính hợp lệ (`solution_found = false`). Ngược lại, input không hợp lệ, request bị hủy, timeout hoặc server lỗi nghĩa là phép tính chưa hoàn tất; không được ghi nhận như một calculation thành công. Nếu cần theo dõi lỗi, hãy định nghĩa một error event riêng.
+Thay đổi input, click, bắt đầu request hoặc component render chưa đủ để ghi nhận event. Với FD, response có `length > 0` là một lần tính có solution (`solution_found = "Yes"`); response `[]` là một lần tính không có solution (`solution_found = "No"`). API failure, timeout, cancellation hoặc stale response cũng phát event theo error contract với `solution_found = "No"`. Input validation không phát event.
 
 ### 3.3 Mỗi message phải tự chứa đủ thông tin
 
@@ -125,10 +125,10 @@ Record này là nguồn cho Measurement Plan (Section 07), thiết kế GTM asse
 | `event`                | string  | Có       | Application constant; giá trị chính xác `calculation_action`.                                                         |
 | `event_schema_version` | string  | Có       | Application constant; version hiện tại `1.0`.                                                                         |
 | `app_name`             | string  | Có       | Application constant; giá trị chính xác `fd`.                                                                         |
-| `solution_found`       | boolean | Có       | API response tương ứng; `true` chỉ khi response đó tạo output, `false` chỉ khi response hợp lệ nhưng không có output. |
+| `solution_found`       | string  | Có       | Response có `length > 0` → `"Yes"`; response `[]` hoặc API error → `"No"`. Chỉ Application quyết định giá trị này. |
 | `inputs`               | object  | Có       | Snapshot đầy đủ đã được phê duyệt, gắn với API request tương ứng.                                                     |
 
-Nếu business system bắt buộc dùng chuỗi `Yes`/`No` thay cho Boolean, hãy thay đổi contract một cách có chủ đích và cập nhật schema version, GTM Variables, QA matrix và reports cùng lúc. Không âm thầm convert type trong GTM.
+Contract FD hiện tại dùng chuỗi literal `"Yes"`/`"No"` cho `solution_found`. Application phải phát đúng hai giá trị này; không âm thầm convert type trong GTM.
 
 ### 4.3 Schema `inputs` của FD
 
@@ -196,8 +196,8 @@ Nếu người dùng đã nhập giá trị mới, response cũ phải được 
 Tự động hóa tối thiểu các kiểm tra sau:
 
 - confirmed success phát đúng một event với name, version, type và allowed value chính xác;
-- valid no-output phát event đã thống nhất với `solution_found = false`;
-- validation failure, API failure, timeout, cancellation và abandoned UI không phát successful event;
+- valid no-output phát event đã thống nhất với `solution_found = "No"`;
+- API failure, timeout, cancellation và stale response phát error event với `solution_found = "No"`; input validation và abandoned UI không phát event;
 - stale response, retry, duplicate callback, remount và Strict Mode không tạo duplicate;
 - message chứa full approved snapshot và không có prohibited field;
 - optional field được omit thay vì tự tạo giá trị.
@@ -282,7 +282,7 @@ type AnalyticsEvent =
       event: "calculation_action";
       event_schema_version: "1.0";
       app_name: "fd";
-      solution_found: boolean;
+      solution_found: "Yes" | "No";
       inputs: {
         connection_type: string;
         unit_system: "metric" | "imperial";
@@ -318,7 +318,7 @@ Người dùng thay đổi một input FD
 → application gửi snapshot đó tới calculation API
 → API trả response cho đúng snapshot
 → application xác định response có tạo output hay không
-→ application đặt solution_found là true hoặc false
+→ application đặt solution_found là "Yes" hoặc "No"
 → application push một complete calculation_action message
 → GTM map field được phê duyệt và gửi event tới GA4
 ```
@@ -330,7 +330,7 @@ window.dataLayer.push({
   event: "calculation_action",
   event_schema_version: "1.0",
   app_name: "fd",
-  solution_found: true,
+  solution_found: "Yes",
   inputs: {
     country: "gb",
     language: "en",
@@ -356,7 +356,7 @@ window.dataLayer.push({
 });
 ```
 
-Với response hợp lệ nhưng không có output, giữ nguyên snapshot đầy đủ và đặt `solution_found: false`. Không phát successful event cho invalid input, timeout, cancellation hoặc server failure trừ khi có error contract riêng đã được phê duyệt.
+Với response `[]`, giữ nguyên snapshot đầy đủ và đặt `solution_found: "No"`. Với API error, timeout, cancellation hoặc stale response, phát error event theo contract và cũng đặt `solution_found: "No"`. Không phát event khi UI có input validation.
 
 ### 9.4 Shape ecommerce tùy chọn
 
