@@ -3,6 +3,8 @@
 > Checked on: `2026-09-04`  
 > Đây là registry của nguồn đã dùng cho planning draft, không phải danh sách đầy đủ.
 
+Danh mục nguồn đang follow được lưu ở [knowledge hub](../knowledge/README.md). Registry này chỉ giữ các nguồn dùng để support claim hoặc design decision trong research.
+
 ## Official platform docs
 
 | Source | Relevance |
@@ -45,4 +47,3 @@
 | [jellydn/tiny-coding-agent](https://github.com/jellydn/tiny-coding-agent) | Small multi-provider coding agent with MCP, skills, plugins, hooks | Community implementation; verify locally before relying on it |
 | [tinyagent.page](https://tinyagent.page/) | Persistent shareable UI/data surface controlled through MCP | Product page; behavior and availability need trial |
 | [alchemiststudiosDOTai/tinyAgent](https://github.com/alchemiststudiosDOTai/tinyagent) | Lightweight Python agent loop candidate | Community beta; APIs may change |
-

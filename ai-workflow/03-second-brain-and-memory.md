@@ -125,9 +125,15 @@ Nguyên tắc: câu trả lời tốt có thể được truy ngược về page
 
 ```text
 knowledge/
-├── raw/
+├── README.md
+├── index.md
+├── taxonomy.md
+├── search-keywords.md
+├── inbox.md
+├── sources/             # curated source library
+├── raw/                 # future immutable source artifacts
 │   └── assets/
-├── wiki/
+├── wiki/                # future generated second-brain pages
 │   ├── index.md
 │   ├── log.md
 │   ├── concepts/
@@ -135,8 +141,7 @@ knowledge/
 │   ├── sources/
 │   ├── decisions/
 │   └── syntheses/
-└── schema.md
+└── schema.md            # future wiki operating manual
 ```
 
-Đây là proposal để thử nghiệm, chưa tự động áp dụng vào `dev-notes`.
-
+Source library đã được tạo ở `knowledge/sources/`. Các nhánh `raw/`, `wiki/` và `schema.md` vẫn là phần second-brain implementation sẽ triển khai sau khi chốt schema.
