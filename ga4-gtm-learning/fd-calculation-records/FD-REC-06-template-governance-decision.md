@@ -11,6 +11,9 @@
 | Document type | `PROJECT RECORD` |
 | Phase | Phase 3 — Template governance |
 | Source of truth | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md), [`FD-REC-04`](FD-REC-04-gtm-tag-inventory.md) |
+| Change reading status | **Context only — not changed** |
+| Linked Change Requests | [`FD-CR-002`](FD-CR-002-runtime-readiness-hardening.md), [`FD-CR-001`](FD-CR-001-solution-found-value-change.md) — context only |
+| Why this matters | Both changes remain within native Variables/Tags and introduce no custom template. No CR reading is required for normal template-governance use. |
 | Status | **Completed — simulation documentation** |
 | Decision | Native Google tag + native GA4 Event tag; no custom template |
 | Value/evidence boundary | Governance decision is simulated; no Template Editor or dependency evidence exists |
@@ -78,10 +81,3 @@ If a future destination is a separate internal endpoint, create a new template d
 - [x] Template exception criteria are documented for future scope changes.
 - [x] No template permission, endpoint or version is claimed as configured.
 - [x] Simulation boundary is explicit and no runtime Pass is claimed.
-
-## 5. Cross-references
-
-- Section 02 / [`FD-REC-02`](FD-REC-02-gtm-variable-inventory.md): native Variables and no business logic in templates.
-- Section 04 / [`FD-REC-04`](FD-REC-04-gtm-tag-inventory.md): native Tag inventory and GA4 mapping.
-- Section 05 / [`FD-REC-05`](FD-REC-05-consent-decision.md): consent boundary for any future dependent Tag.
-- Section 08: runtime evidence is required only after a template is actually deployed.

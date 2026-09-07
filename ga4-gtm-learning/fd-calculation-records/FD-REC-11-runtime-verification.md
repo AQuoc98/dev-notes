@@ -14,10 +14,14 @@
 | Document type | `PROJECT RECORD` |
 | Purpose | Prove one approved event flow across Application, Data Layer, GTM, Network, consent and GA4 |
 | Project / journey | `FD web application / J-FD-CALC-001` |
-| Source of truth | `FD-REC-07` Event Contract and `FD-REC-08` QA Run/Evidence Record |
+| Source of truth | `FD-REC-07` schema `3.0` after `FD-CR-002` and `FD-REC-08` QA Run/Evidence Record |
+| Change reading status | **Required — affected** |
+| Linked Change Requests | [`FD-CR-002 — Runtime-readiness hardening`](FD-CR-002-runtime-readiness-hardening.md); [`FD-CR-001`](FD-CR-001-solution-found-value-change.md) for historical lineage |
+| Why this matters | Future verification must prove the schema `3.0` minimized payload, the same opaque `event_id`, strict admission and consent lifecycle end to end. |
 | Runtime verification ID | `[RV-FD-YYYYMMDD-001]` |
-| Linked test run / scenario | `[QA run ID]` / `[TC-FD-01]` |
-| Status | `Not applicable — simulation-only` / `Draft` / `In review` / `Completed — verified` / `Blocked` |
+| Linked test run / scenario | `[QA run ID]` / `[TC-FD-01]`; future runtime must validate schema `3.0`, `Yes`/`No_solution` and no current-schema use of legacy fields |
+| Current status | `Not applicable — simulation-only` |
+| Future runtime statuses | `Draft` / `In review` / `Completed — verified` / `Blocked` |
 | Runtime environment | `[QA/staging/production]` |
 | Application/build | `[commit, build or deploy ID]` |
 | GTM container/workspace/version | `[container] / [workspace] / [version]` |
@@ -46,6 +50,7 @@ This is a future-project record that combines the runtime evidence and release-g
 Mark each item before collecting evidence:
 
 - [ ] Section 07 event contract and parameter allowlist are approved.
+- [ ] `FD-OPEN-001` through `FD-OPEN-004` in the master journey are resolved; key-event configuration remains off unless explicitly approved.
 - [ ] Application build and GTM version are identified and accessible.
 - [ ] Target hostname, GA4 property/stream and consent state are approved.
 - [ ] Test account/data is synthetic or explicitly allowlisted.
@@ -61,11 +66,11 @@ Use one row for each layer. Every artifact must include the runtime verification
 
 | Layer | Expected proof | Observed result | Artifact ID/link | Result |
 |---|---|---|---|---|
-| Application | Approved business state reached once; response belongs to the expected snapshot | `[actual state/result]` | `[sanitized app log or test evidence]` | `Pass/Fail/Pending` |
-| Data Layer | One self-contained `calculation_action` message with approved schema and values | `[event/count/payload summary]` | `[Data Layer capture]` | `Pass/Fail/Pending` |
+| Application | Approved business state reached once; response belongs to the expected internal snapshot; one opaque `event_id` created | `[actual state/result/event_id]` | `[sanitized app log or test evidence]` | `Pass/Fail/Pending` |
+| Data Layer | One self-contained minimized `calculation_action` message with approved schema, required values and the same `event_id` | `[event/count/payload summary]` | `[Data Layer capture]` | `Pass/Fail/Pending` |
 | GTM Preview / Tag Assistant | Authoritative Trigger matched once; Variables resolved; intended Tag fired once; no blocking reason | `[timeline/count/variable summary]` | `[Preview session]` | `Pass/Fail/Pending` |
 | Consent | Current consent state produced the approved allow/block behavior | `[state and tag/request behavior]` | `[consent evidence]` | `Pass/Fail/Pending` |
-| Browser Network | Expected request count, destination, Measurement ID, event name, types and allowlisted parameters | `[request count and redacted payload]` | `[redacted Network capture]` | `Pass/Fail/Pending` |
+| Browser Network | Expected request count, destination, Measurement ID, event name, same `event_id`, types and nine allowlisted parameters | `[request count and redacted payload]` | `[redacted Network capture]` | `Pass/Fail/Pending` |
 | GA4 DebugView / Realtime | Intended property received the expected recent event and parameters | `[event/count/parameters]` | `[DebugView or Realtime capture]` | `Pass/Fail/Pending` |
 | Processed data | Report/Exploration result is available and supports the approved use, when required | `[result or processing state]` | `[report evidence/follow-up]` | `Pass/Fail/Pending/N/A` |
 
@@ -81,6 +86,7 @@ Use one row for each layer. Every artifact must include the runtime verification
 | DebugView/Realtime events | `[n]` | `[n]` | `Pass/Fail/Pending` |
 | Intended destination only | `[QA/prod stream]` | `[observed destination]` | `Pass/Fail` |
 | Duplicate/secondary source | `0` or approved count | `[actual]` | `Pass/Fail` |
+| Unique `event_id` reconciliation | One occurrence ID appears once at Application, Data Layer and Network; processed/export check when approved | `[actual]` | `Pass/Fail/Pending` |
 
 Do not call the event verified when counts disagree. Open a Section 08 Defect and Retest Record and link it here.
 
@@ -128,7 +134,7 @@ Link this record from the Section 08 Scenario Execution Summary and the Section 
 > This record is a reusable runtime template. Do not mark an item complete from a simulation. Each checked item must reference a retained runtime artifact or an approved decision.
 
 - [ ] Entry criteria, environment and consent state are recorded.
-- [ ] Application/Data Layer evidence matches the approved snapshot and outcome contract.
+- [ ] Application evidence matches the complete internal snapshot; Data Layer evidence contains only the minimized analytics subset and same opaque `event_id`.
 - [ ] GTM Preview/Tag Assistant evidence shows the authoritative Trigger and Tag behavior.
 - [ ] Network evidence reconciles request count, payload, destination and consent behavior.
 - [ ] GA4 DebugView/Realtime or processed-data evidence is recorded according to the approved processing window.

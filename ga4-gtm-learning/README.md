@@ -1,6 +1,8 @@
 # GTM Management and GA4 Validation — Learning and Standardization
 
-This folder keeps the reviewed answer documents and the project-specific FD journey records. The short requirement/task brief files were intentionally removed to keep one maintained documentation source.
+This folder keeps the FD project Change Request governance, reviewed research/reference documents, and project-specific FD journey records. The short requirement/task brief files were intentionally removed to keep one maintained documentation source.
+
+Sections 01–10 are research/reference material: knowledge, reusable templates, record structures, and examples. The 00-change-request-governance documents apply that material to the FD journey; they are not a new implementation section that every research file must reference.
 
 This curriculum is written for frontend developers who manage GTM across team projects. It focuses on stable, maintainable web practices: clean Data Layer contracts, governed Variables/Triggers/Tags, consent, templates, QA, release, and monitoring. GA4 is the downstream validation layer when a GTM change affects collection, custom definitions, key events, DebugView, reports, or Explorations. Google Ads is mentioned only when it is a downstream consumer or affects consent and measurement integrity; media buying, campaign optimization, and Ads operations are outside scope. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation are also outside the core scope unless a project explicitly adds them.
 
@@ -12,7 +14,7 @@ For this research package, every setup, QA, reporting, release, and monitoring s
 
 | Prefix | English answer | Vietnamese answer |
 | ------ | -------------- | ---------------- |
-| `00` | `00-main-task-answer.md` | — |
+| `00` | `00-change-request-governance.md` | `00-change-request-governance-vn.md` |
 | `01` | `01-data-layer-design-answer.md` | `01-data-layer-design-answer-vn.md` |
 | `02` | `02-variable-management-answer.md` | `02-variable-management-answer-vn.md` |
 | `03` | `03-trigger-management-answer.md` | `03-trigger-management-answer-vn.md` |
@@ -24,13 +26,13 @@ For this research package, every setup, QA, reporting, release, and monitoring s
 | `09` | `09-reports-charts-answer.md` | `09-reports-charts-answer-vn.md` |
 | `10` | `10-release-monitoring-answer.md` | `10-release-monitoring-answer-vn.md` |
 
-Vietnamese counterparts are available for Sections `01`–`10` using the `-answer-vn.md` suffix. Section `00` currently has an English answer only.
+Vietnamese counterparts are available for Sections `00`–`10` using the existing `-answer-vn.md` or `-vn.md` suffix shown in the table.
 
 ## Recommended Sequences
 
 ### Learning order for frontend developers
 
-1. Start with `00` for the operating model and team vocabulary.
+1. Start with `01`–`10` to learn the research/reference material. When applying it to FD, open `00` and `11`.
 2. Learn `07` first so every implementation starts with an approved business question and event contract.
 3. Learn the application-owned Data Layer and frontend adapter pattern in `01`.
 4. Learn GTM Variables, Triggers, and Tags in `02`–`04`.
@@ -41,27 +43,32 @@ Vietnamese counterparts are available for Sections `01`–`10` using the `-answe
 
 ### Execution order for a real tracking change
 
-1. Define a lightweight requirement/event contract using `07`.
-2. Implement the application signal and Data Layer contract using `01`.
-3. Configure or reuse Variables, Triggers, and Tags using `02`–`04`.
-4. Apply Consent or Template controls from `05`–`06` when relevant.
-5. Test from application code through Data Layer, GTM, Network, and GA4 using `08`.
-6. Confirm reporting impact with the relevant parts of `09`.
-7. Release and monitor through `10`.
+1. For the FD project, create and classify the Change Request using `00`.
+2. Define a lightweight requirement/event contract using `07`.
+3. Implement the application signal and Data Layer contract using `01`.
+4. Configure or reuse Variables, Triggers, and Tags using `02`–`04`.
+5. Apply Consent or Template controls from `05`–`06` when relevant.
+6. Test from application code through Data Layer, GTM, Network, and GA4 using `08`.
+7. Confirm reporting impact with the relevant parts of `09`.
+8. Release and monitor through `10`.
 
 ## First-project baseline
 
 Use the following as the default team process until the project defines a stricter one:
 
-1. Select one journey, application environment, GTM container/workspace, GA4 property/stream, and named owners.
-2. Complete the Section `07` requirement and Event Contract before editing GTM.
-3. Implement the application/Data Layer handoff in `01`; configure only approved Variables, Triggers, Tags, Consent controls, and Templates in `02`–`06`.
-4. Run Section `08` QA in a non-production destination. Do not publish when the first failing layer, prohibited data, wrong destination, or duplicate key event is unresolved.
-5. Build or update Section `09` reports/Explorations only after fields and collection evidence are ready.
-6. Create the Section `10` Release Record, obtain approval, publish the named version to the intended environment, and run the production smoke test.
-7. Complete the Monitoring Record, processed-data check, affected-period assessment, and closure or incident follow-up.
+1. Create a Change Request Record with a unique ID, requester, owners, risk, scope, acceptance criteria, and target dates.
+2. Select one journey, application environment, GTM container/workspace, GA4 property/stream, and named owners.
+3. Complete the Section `07` requirement and Event Contract before editing GTM.
+4. Complete the shared impact assessment; mark unaffected layers `N/A` with a reason.
+5. Implement the application/Data Layer handoff in `01`; configure only approved Variables, Triggers, Tags, Consent controls, and Templates in `02`–`06`.
+6. Run Section `08` QA in a non-production destination. Do not publish when the first failing layer, prohibited data, wrong destination, or duplicate key event is unresolved.
+7. Build or update Section `09` reports/Explorations only after fields and collection evidence are ready.
+8. Create the Section `10` Release Record, obtain approval, publish the named version to the intended environment, and run the production smoke test.
+9. Complete the Monitoring Record, processed-data check, affected-period assessment, and closure or incident follow-up.
 
 ## Minimum record set by change type
+
+For the FD journey, the Section 00 Change Request Record is the project-level wrapper for every material change. The table below lists the detailed reference records selected inside that request.
 
 | Change type | Required records | Conditional records |
 |---|---|---|
@@ -74,7 +81,7 @@ Use the following as the default team process until the project defines a strict
 
 ## Team operating rules
 
-- One source of truth per decision: `07` owns event meaning, `08` owns runtime evidence, `09` owns report configuration, and `10` owns release/monitoring outcome.
+- One Change Request ID must connect the FD request, FD project records, QA evidence, release, monitoring, and closure decision. It does not need to be added to the research/reference files.
 - When runtime is explicitly authorized, tag the end-to-end summary `[RUNTIME VERIFICATION]` and link it from `08` and `10`; do not apply that tag to simulated examples.
 - Keep development/QA destinations separate from production; an unknown hostname must fail safely.
 - Keep workspaces small and independently testable; do not mix unrelated cleanup or hotfixes.
@@ -98,7 +105,7 @@ Use one status vocabulary across project records:
 
 ## How to Use These Files
 
-- Start with `00`, then use the reviewed answer document for the GTM or GA4 area being implemented.
+- Start with the relevant research/reference document in `01`–`10`. Use `00` and `11` when applying the references to the FD project.
 - Use the Vietnamese `-answer-vn.md` counterpart when the team needs Vietnamese explanations.
 - Replace bracketed placeholders and complete each answer checklist with links to sanitized evidence.
 - Re-check linked official Google documentation during implementation because platform limits and interfaces can change.

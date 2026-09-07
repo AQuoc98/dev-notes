@@ -13,16 +13,19 @@
 | Project / journey | FD web application / `J-FD-CALC-001` |
 | Phase | Phase 0 — System inventory and access |
 | Source of truth | This record for the Phase 0 baseline; semantic event decisions belong to `FD-REC-07` |
+| Change reading status | **Required — affected** |
+| Linked Change Requests | [`FD-CR-002 — Runtime-readiness hardening`](FD-CR-002-runtime-readiness-hardening.md); [`FD-CR-001`](FD-CR-001-solution-found-value-change.md) for historical lineage |
+| Why this matters | `FD-CR-002` changes the duplicate-control baseline, analytics data boundary, consent readiness and QA scope owned by Phase 0. |
 | Owner | FD Analytics/GTM Lead — simulated owner |
 | Approver / reviewer | Analytics/GTM Lead; Privacy reviewer; Leadership |
-| Version | `0.2-management-ready` |
-| Status | **Completed — simulation documentation** |
+| Version | `0.4-management-ready` — `FD-CR-002` simulation update |
+| Status | **Simulation baseline updated; runtime blocked** |
 | Value/evidence boundary | Hostnames were supplied by the requester; IDs, accounts, permissions and platform setup are simulated values |
 | Dependencies | QA/staging and production hostnames supplied by the requester |
-| Open items / risks | GTM/GA4/QA/release phases are documented as simulation only; no live verification is in scope |
-| Next action | Keep this baseline as the dependency for any future runtime project |
+| Open items / risks | `FD-OPEN-001`–`004`, real accounts/access, consent implementation, duplicate audit, active-runtime baseline and schema `3.0` rollout path remain unresolved |
+| Next action | Resolve Phase 0 runtime facts and blockers before authorizing the schema `3.0` release packet |
 | Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
-| Created / last updated | `2026-09-06` / `2026-09-06` |
+| Created / last updated | `2026-09-06` / `2026-09-07` — `FD-CR-002` |
 
 ## 0.1 Source of the record format
 
@@ -30,7 +33,7 @@ This is a project record based on the Phase 0 system-inventory structure in the 
 
 | Record component | Reference |
 |---|---|
-| Environment, GA4/GTM foundation and access fields | [FD calculation journey — Phase 0](../11-fd-calculation-journey.md), [Main task completion sequence](../00-main-task-answer.md) |
+| Environment, GA4/GTM foundation and access fields | [FD calculation journey — Phase 0](../11-fd-calculation-journey.md), [FD Change Request Governance](../00-change-request-governance.md) |
 | Consent baseline | [Section 05 — Consent Management](../05-consent-answer.md), [`FD-REC-05`](FD-REC-05-consent-decision.md) |
 | QA URL, synthetic data and browser matrix | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
 | Simulated values in this record | Hostnames supplied by the requester and the approved FD simulation assumptions |
@@ -128,7 +131,7 @@ The desired baseline is one authoritative source for each business fact:
 | Application manual GA4/Measurement Protocol sender | 0, out of scope | Source code, server configuration |
 | Enhanced Measurement creating `calculation_action` | 0 | GA4 Events, DebugView |
 | Legacy click/DOM Tag for the same business fact | 0 | GTM Tags/Triggers |
-| One calculation occurrence | 1 Data Layer push → 1 Trigger match → 1 GA4 request | GTM Preview + Network |
+| One calculation occurrence | 1 opaque `event_id` → 1 minimized Data Layer push → 1 Trigger match → 1 GA4 request only when consent permits; denied/unknown → 0 analytics requests | Application evidence + GTM Preview + Network; approved export when exact production deduplication is required |
 
 The live duplicate audit was not performed in Phase 0 because it is outside the simulation scope.
 
@@ -141,13 +144,15 @@ The live duplicate audit was not performed in Phase 0 because it is outside the 
 | Source of truth | CMP consent store |
 | Purpose | Analytics measurement for FD |
 | Google consent type | `analytics_storage` |
+| Region/banner scope | `[TBD — privacy approval required before runtime]` |
 | Default before choice | `denied` |
 | User grants analytics | `granted` |
 | User rejects analytics | `denied` |
 | CMP delay/failure/unknown | Fail-safe: `denied` |
 | Consent Mode | Basic Consent Mode — simulated baseline |
 | `ad_storage`, `ad_user_data`, `ad_personalization` | Out of scope |
-| Policy status | Simulated baseline; real privacy approval is pending |
+| Update/persistence/revocation | Defined as runtime-blocking details in `FD-REC-05`; real values are pending |
+| Policy status | Simulated baseline; `FD-OPEN-003` real privacy approval is pending |
 | Value state | Simulated |
 
 Collection to GA4 is allowed only when the consent policy allows it. `denied` or `unknown` must suppress the analytics event under the approved decision.
@@ -177,7 +182,7 @@ Real permissions, inherited access, active administrators and access-review date
 | Primary QA URL | `https://app-staging.strongtie.com/fd` |
 | Tag Assistant session | Expected to be used only on QA if a future project opens runtime; not run in this project |
 | Test run reference | `QA-FD-CALC-RUN-001` |
-| Build reference | `fd-web-simulated-build-001` |
+| Build reference | `fd-web-simulated-build-003` |
 | Test identity | `fd-qa-synthetic-001` — internal label; never sent to GA4 |
 | Consent reset | Fresh browser profile or reset consent according to the test record |
 
@@ -188,13 +193,13 @@ The values below are safe examples for setup/QA design. Do not use real user dat
 | Scenario | Simulated API result | Event expectation |
 |---|---|---|
 | `TC-FD-01` valid output | Response has `length > 0` for the snapshot | 1 event, `solution_found: "Yes"` |
-| `TC-FD-02` valid no-output | Response is `[]` | 1 event, `solution_found: "No"` |
+| `TC-FD-02` valid no-output | Response is `[]` | Schema `3.0`: one event with `No_solution` and an opaque `event_id`; schemas `1.0`/`2.0` remain history |
 | `TC-FD-03` invalid input | UI shows input validation | No `calculation_action` |
-| `TC-FD-04` server failure | HTTP 5xx or network error | 1 error event, `solution_found: "No"` |
+| `TC-FD-04` server failure | HTTP 5xx or network error | Schema `3.0`: one event with combined `No_solution` and an opaque `event_id` |
 | `TC-FD-05` stale response | Attempt terminalized by stale/cancellation | 1 error event; late callback ignored |
 | `TC-FD-06` retry/duplicate callback | Multiple callbacks for one occurrence | Exactly 1 event |
 
-The snapshot example is inherited from the supplied payload. Correlation tokens, API response bodies and sensitive data do not belong in the Data Layer or GA4 payload.
+The complete API snapshot remains in the Application/controlled QA evidence. The analytics Data Layer contains only the minimized schema `3.0` subset and opaque `event_id`; internal correlation tokens, API response bodies and sensitive data do not belong in the analytics Data Layer or GA4 payload.
 
 ### 8.3 Browser matrix
 
@@ -230,6 +235,6 @@ The project copy must attach the relevant account, container, consent and access
 | Acceptance decision | Phase 0 reviewed/approved at the simulated-baseline level |
 | Reviewer | Requester |
 | Review date | `2026-09-04` |
-| Phase 1 entry | Approved |
+| Phase 1 entry | Approved for simulation only; runtime entry blocked by `FD-OPEN-001`–`004` |
 
-This record is a management baseline, not evidence of an account, platform configuration, runtime collection or QA execution. A real deployment must replace `Simulated` with `Configured`/`Verified` and attach the corresponding evidence in the applicable phase record.
+This record is a management baseline, not evidence of an account, platform configuration, runtime collection or QA execution. `FD-CR-001` records the historical v1→v2 outcome rename; `FD-CR-002` updates the current schema `3.0` data, consent, duplicate and QA baselines. A real deployment must replace `Simulated` with `Configured`/`Verified`, close all runtime blockers and attach the corresponding evidence in the applicable phase record.
