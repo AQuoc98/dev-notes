@@ -17,6 +17,10 @@ Business question
 
 The numbered guides define the practical work required to operate the supporting GTM/GA4 configuration, approve a measurement contract, validate collection, handle common scenarios, release changes safely, and turn validated data into useful GA4 reports and charts.
 
+For the current FD journey, these phases are documentation-only. The POC, evidence, QA outcomes, reports, release, and monitoring values are simulated happy-path examples; no live Application, GTM, GA4, browser, publish, or production monitoring action is implied.
+
+Trong gói research này, các bước setup, QA, report, release và monitoring chỉ là prompt để viết tài liệu với giá trị giả lập. Không thực hiện thao tác trên hệ thống thật; negative case chỉ được ghi như guardrail của contract, còn walkthrough hiện tại tập trung vào happy path đã được duyệt.
+
 The core scope is stable web client-side GTM implementation and governance for frontend teams. GA4 is used to validate downstream collection and reporting impact. This guide does not teach media buying, campaign optimization, or Google Ads operations. Ads-related settings appear only when they affect consent, destination governance, key-event use, or measurement quality. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation require a separate project addendum.
 
 ## Core Theory
@@ -104,12 +108,12 @@ Required access:
 
 ### Phase 4 — Prove and decide
 
-- [ ] Build the non-production POC using Sections 01–08 and record the application, Data Layer, GTM, Network, consent, and GA4 evidence IDs.
-- [ ] Capture Data Layer, GTM, network, DebugView, consent, and negative-test evidence.
-- [ ] Allow for GA4 processing, then confirm that the required dimensions and metrics are reportable.
+- [ ] Document the non-production POC using Sections 01–08 and record simulated application, Data Layer, GTM, Network, consent, and GA4 evidence IDs.
+- [ ] Create sanitized simulated Data Layer, GTM, Network, DebugView, consent, and negative-test examples.
+- [ ] Document the expected GA4 processing window and expected dimensions/metrics; do not claim processed data was observed.
 - [ ] Complete [09-reports-charts-answer.md](./09-reports-charts-answer.md) using the validated POC data.
 - [ ] Complete [10-release-monitoring-answer.md](./10-release-monitoring-answer.md) before production rollout.
-- [ ] Create and QA one reusable detail report and one analysis-oriented Exploration.
+- [ ] Document one reusable detail report and one analysis-oriented Exploration with simulated values.
 - [ ] Record reviewer sign-off and an explicit adopt/revise/reject decision.
 - [ ] Create the rollout backlog, owners, dependencies, and rollback approach.
 
@@ -117,12 +121,12 @@ Required access:
 
 - [ ] All available `01`–`10` checklists are complete or exceptions are documented.
 - [ ] Every event has a business definition, trigger point, source, owner, and test.
-- [ ] The POC is traceable from application action to GA4 DebugView.
-- [ ] No missing or duplicate event is observed in the agreed test cases.
+- [ ] The simulated POC is traceable from application action to expected GA4 DebugView behavior.
+- [ ] No missing or duplicate event is expected under the agreed happy-path contract; runtime observation is out of scope.
 - [ ] Values and types agree at the Data Layer, GTM, and GA4 request layers.
 - [ ] Reported dimensions and metrics use the correct scope and answer a documented business question.
 - [ ] Report filters, comparisons, segments, date range, attribution context, and chart choices are documented.
-- [ ] Report results were checked for processing delay, thresholding, sampling, and high-cardinality effects where applicable.
+- [ ] Report limitations for processing delay, thresholding, sampling, and high-cardinality are documented where applicable.
 - [ ] No PII, secrets, raw form values, or fine-grained location are collected.
 - [ ] Relevant granted and denied consent states have been tested.
 - [ ] Evidence identifies date, environment, container version/workspace, GA4 stream, tester, and result.
@@ -130,6 +134,8 @@ Required access:
 - [ ] A versioned rollout plan and prioritized backlog exist.
 
 ## Evidence Index Template
+
+For the current FD journey, rows in this template are simulated examples, not runtime proof.
 
 | ID | Layer | Evidence | Location | Owner | Date | Result |
 | --- | --- | --- | --- | --- | --- | --- |

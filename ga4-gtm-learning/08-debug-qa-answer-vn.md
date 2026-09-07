@@ -73,6 +73,7 @@ QA là một gói record. Không tạo một template mới cho từng scenario.
 | P0 | Required Test Matrix | Mọi thay đổi behavior hoặc configuration. | Scenario, action và expected outcome. |
 | P0 | Scenario Execution Summary | Mọi scenario được chạy trong material run. | Kết quả ngắn, evidence link và trạng thái follow-up. |
 | P1 | Evidence Template | Material event hoặc boundary bị thay đổi. | Bằng chứng theo từng layer, gắn với test ID. |
+| P1 | **[RUNTIME VERIFICATION] Runtime Verification Record** | Khi thực sự chạy flow Application → Data Layer → GTM → Network → GA4, đặc biệt trước material release. | Một quyết định runtime đầu-cuối, count đã đối soát, artifact index và reviewer sign-off. |
 | P2 | Debug Session Record | Không rõ layer lỗi đầu tiên hoặc behavior không ổn định. | State được giữ, đường điều tra và kết luận. |
 | P2 | Defect and Retest Record | Có failure, production risk hoặc cần retest. | Reproduction, containment, fix, retest và residual impact. |
 
@@ -86,6 +87,7 @@ Test Run Setup
 → Required Test Matrix
 → Scenario Execution Summary
 → Evidence rows cho boundary material
+→ **[RUNTIME VERIFICATION] Runtime Verification Record** khi có run thật
 → Debug Session hoặc Defect/Retest nếu cần
 ~~~
 
@@ -173,7 +175,47 @@ Dùng một dòng cho mỗi layer liên quan của scenario:
 
 Evidence nên có run ID, ngày, environment, version, property/stream, browser, tester, result và limitation đã biết. Redact identifier và sensitive value.
 
-### 2.8 Record dùng theo điều kiện
+### 2.8 [RUNTIME VERIFICATION] Runtime Verification Record
+
+Chỉ tạo record này khi thực sự đã chạy flow runtime. Đây là record kiểm soát đầu-cuối, dùng để nối các Evidence Template chi tiết; không thay thế artifact gốc và không được ghi simulated value như kết quả thật.
+
+`[RUNTIME VERIFICATION]` là nhãn quản trị tài liệu, không phải tên GTM Tag.
+
+~~~text
+Runtime verification ID: [RV-...]
+Linked test run/scenario: [run ID] / [test ID]
+Event contract/schema: [Section 07 ID/version]
+Environment/hostname/URL: [QA hoặc production]
+Application/build: [commit/build/deploy ID]
+GTM container/workspace/version: [values]
+GA4 property/stream/Measurement ID: [values]
+Browser/device/date/time: [values]
+Consent state: [state theo category]
+Tester/reviewer: [names]
+
+Application proof: [artifact ID/link]
+Data Layer proof: [artifact ID/link]
+GTM Preview/Tag Assistant proof: [artifact ID/link]
+Consent proof: [artifact ID/link]
+Network proof: [artifact ID/link]
+DebugView/Realtime proof: [artifact ID/link]
+Processed-data proof hoặc Pending follow-up: [artifact ID/link, owner/date]
+
+Expected count theo layer: [values]
+Actual count theo layer: [values]
+Destination/Measurement ID reconciliation: [result]
+Duplicate-source check: [result]
+First failing layer: [layer hoặc N/A]
+Final result: Pass / Fail / Pending / Blocked
+Defect/retest reference: [ID hoặc —]
+Section 10 release reference: [ID hoặc —]
+Artifact access/retention: [location, owner, period]
+Approver/date: [values]
+~~~
+
+Runtime Verification chỉ là **Pass** khi business state, count, payload, destination, consent và downstream check bắt buộc đều có runtime evidence khớp nhau. Chỉ dùng **Pending** cho processing window GA4 đã được ghi rõ, có owner và ngày follow-up. Link record này từ Scenario Execution Summary của Section 08 và Release Record của Section 10.
+
+### 2.9 Record dùng theo điều kiện
 
 #### Debug Session Record
 

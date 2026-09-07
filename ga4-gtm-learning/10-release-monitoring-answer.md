@@ -73,6 +73,7 @@ Every material release should link:
 - Release Record with owner, scope, environment, change type, and affected journey;
 - approved Measurement Plan/schema decision and implementation references;
 - Section 08 QA result and evidence;
+- Section 08 **[RUNTIME VERIFICATION] Runtime Verification Record** when an actual runtime run was performed;
 - Section 09 report/configuration impact when reporting is affected;
 - named GTM version, publisher, target environment, and rollback/mitigation path;
 - Monitoring Record, smoke-test result, and final outcome or incident.
@@ -98,6 +99,7 @@ Expected events and request count:
 Consent/privacy and destination impact:
 Production smoke-test method and approval:
 Section 08 QA evidence:
+Section 08 [RUNTIME VERIFICATION] record (when runtime was performed):
 Section 09 report/configuration IDs:
 Monitoring ID:
 Version, approvers, publisher and release window:
@@ -143,7 +145,7 @@ Measurement Plan/schema decision
 |---|---|
 | Gate 0 — Requirement readiness | Approved Measurement Plan/schema decision, business outcome, affected reports, consent/privacy/destination decisions, and rollback or mitigation approach. |
 | Gate 1 — Implementation readiness | Focused workspace, safe environment routing, naming standards, expected count, overlap check, affected consumers, and template review when applicable. |
-| Gate 2 — QA readiness | Section 08 positive/negative/duplicate/consent/privacy/routing results, first-failing-layer status, evidence links, and processed-data follow-up when needed. |
+| Gate 2 — QA readiness | Section 08 positive/negative/duplicate/consent/privacy/routing results, first-failing-layer status, evidence links, **[RUNTIME VERIFICATION] record when runtime was performed**, and processed-data follow-up when needed. |
 | Gate 3 — Publish readiness | Current workspace, intended environment, named version, approvals, release/observation window, rollback path, and linked records. |
 | Gate 4 — Post-publish readiness | Smoke test, version/destination check, immediate signals, scheduled processed-data validation, and Monitoring Record outcome or incident. |
 

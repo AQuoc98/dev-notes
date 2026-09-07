@@ -1,24 +1,28 @@
 # GTM Management and GA4 Validation — Learning and Standardization
 
-This folder separates short task briefs from detailed implementation guides. Each numbered item has a base `.md` file for a project task or checklist and a matching `-answer.md` file that contains definitions, examples, templates, execution steps, and completion criteria.
+This folder keeps the reviewed answer documents and the project-specific FD journey records. The short requirement/task brief files were intentionally removed to keep one maintained documentation source.
 
 This curriculum is written for frontend developers who manage GTM across team projects. It focuses on stable, maintainable web practices: clean Data Layer contracts, governed Variables/Triggers/Tags, consent, templates, QA, release, and monitoring. GA4 is the downstream validation layer when a GTM change affects collection, custom definitions, key events, DebugView, reports, or Explorations. Google Ads is mentioned only when it is a downstream consumer or affects consent and measurement integrity; media buying, campaign optimization, and Ads operations are outside scope. App/Firebase, server-side GTM, and offline/Measurement Protocol implementation are also outside the core scope unless a project explicitly adds them.
 
+The current FD `calculation_action` journey is documentation-only: all identifiers, payloads, QA results, release records, and monitoring examples are simulated happy-path values. No live Application, GTM, GA4, browser, publish, or production monitoring action is implied.
+
+For this research package, every setup, QA, reporting, release, and monitoring step is a documentation prompt with simulated values. It must not be interpreted as an instruction to access or change a live Application, GTM container, GA4 property, browser session, or production environment. Negative cases are recorded as contract guardrails only; the current walkthrough covers the approved happy path.
+
 ## Document Structure
 
-| Prefix | Jira description | Answer / instructions |
-| ------ | ---------------- | --------------------- |
-| `00` | `00-main-task.md` | `00-main-task-answer.md` |
-| `01` | `01-data-layer-design.md` | `01-data-layer-design-answer.md` |
-| `02` | `02-variable-management.md` | `02-variable-management-answer.md` |
-| `03` | `03-trigger-management.md` | `03-trigger-management-answer.md` |
-| `04` | `04-tag-management.md` | `04-tag-management-answer.md` |
-| `05` | `05-consent.md` | `05-consent-answer.md` |
-| `06` | `06-template-governance.md` | `06-template-governance-answer.md` |
-| `07` | `07-measurement-plan.md` | `07-measurement-plan-answer.md` |
-| `08` | `08-debug-qa.md` | `08-debug-qa-answer.md` |
-| `09` | `09-reports-charts.md` | `09-reports-charts-answer.md` |
-| `10` | `10-release-monitoring.md` | `10-release-monitoring-answer.md` |
+| Prefix | English answer | Vietnamese answer |
+| ------ | -------------- | ---------------- |
+| `00` | `00-main-task-answer.md` | — |
+| `01` | `01-data-layer-design-answer.md` | `01-data-layer-design-answer-vn.md` |
+| `02` | `02-variable-management-answer.md` | `02-variable-management-answer-vn.md` |
+| `03` | `03-trigger-management-answer.md` | `03-trigger-management-answer-vn.md` |
+| `04` | `04-tag-management-answer.md` | `04-tag-management-answer-vn.md` |
+| `05` | `05-consent-answer.md` | `05-consent-answer-vn.md` |
+| `06` | `06-template-governance-answer.md` | `06-template-governance-answer-vn.md` |
+| `07` | `07-measurement-plan-answer.md` | `07-measurement-plan-answer-vn.md` |
+| `08` | `08-debug-qa-answer.md` | `08-debug-qa-answer-vn.md` |
+| `09` | `09-reports-charts-answer.md` | `09-reports-charts-answer-vn.md` |
+| `10` | `10-release-monitoring-answer.md` | `10-release-monitoring-answer-vn.md` |
 
 Vietnamese counterparts are available for Sections `01`–`10` using the `-answer-vn.md` suffix. Section `00` currently has an English answer only.
 
@@ -66,10 +70,12 @@ Use the following as the default team process until the project defines a strict
 | Consent or privacy change | `05` Consent record, `08` QA, `10` Release + Monitoring | `04` Tag impact, `07` decision, `09` data-quality impact |
 | Custom template | `06` Template + Deployment records, `08` QA, `10` Release + Monitoring | `01`–`05` according to consumers |
 | Report or Exploration only | `09` Report Requirement, Field Readiness, Asset Configuration, Interpretation/Decision | `10` Release Record when the change is material |
+| Actual runtime verification | `08` Runtime Verification Record tagged `[RUNTIME VERIFICATION]`, linked to `08` evidence and `10` Release Record | `09` processed-data check when required |
 
 ## Team operating rules
 
 - One source of truth per decision: `07` owns event meaning, `08` owns runtime evidence, `09` owns report configuration, and `10` owns release/monitoring outcome.
+- When runtime is explicitly authorized, tag the end-to-end summary `[RUNTIME VERIFICATION]` and link it from `08` and `10`; do not apply that tag to simulated examples.
 - Keep development/QA destinations separate from production; an unknown hostname must fail safely.
 - Keep workspaces small and independently testable; do not mix unrelated cleanup or hotfixes.
 - Assign `Low`, `Medium`, or `High` risk before choosing approval depth and monitoring scope.
@@ -92,9 +98,8 @@ Use one status vocabulary across project records:
 
 ## How to Use These Files
 
-- Copy the base file for each prefix into the corresponding project task or issue tracker (Jira is optional).
-- Use its matching `-answer.md` file while completing the work.
-- Start with `00`, then use the detailed source answer for the GTM or GA4 area being implemented.
+- Start with `00`, then use the reviewed answer document for the GTM or GA4 area being implemented.
+- Use the Vietnamese `-answer-vn.md` counterpart when the team needs Vietnamese explanations.
 - Replace bracketed placeholders and complete each answer checklist with links to sanitized evidence.
 - Re-check linked official Google documentation during implementation because platform limits and interfaces can change.
 

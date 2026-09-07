@@ -73,6 +73,7 @@ QA is a package of records. Do not create a new template for every scenario.
 | P0 | Required Test Matrix | Every behavior or configuration change | Scenarios, actions, and expected outcomes. |
 | P0 | Scenario Execution Summary | Every executed scenario in a material run | One concise result, evidence links, and follow-up status. |
 | P1 | Evidence Template | Material events or changed boundaries | Layer-by-layer proof tied to a scenario ID. |
+| P1 | **[RUNTIME VERIFICATION] Runtime Verification Record** | An actual Application → Data Layer → GTM → Network → GA4 run is performed, especially before a material release | One end-to-end runtime decision, reconciled counts, artifact index, and reviewer sign-off. |
 | P2 | Debug Session Record | First failing layer is unclear or behavior is intermittent | Preserved state, investigation path, and conclusion. |
 | P2 | Defect and Retest Record | A failure, production risk, or retest must be tracked | Reproduction, containment, fix, retest, and residual impact. |
 
@@ -86,6 +87,7 @@ Test Run Setup
 → Required Test Matrix
 → Scenario Execution Summary
 → Evidence rows for material boundaries
+→ **[RUNTIME VERIFICATION] Runtime Verification Record** when the run is real
 → Debug Session or Defect/Retest only when needed
 ~~~
 
@@ -173,7 +175,47 @@ Use one row per relevant layer for a selected scenario:
 
 Evidence should include run ID, date, environment, version, property/stream, browser, tester, result, and known limitations. Redact identifiers and sensitive values.
 
-### 2.8 Conditional records
+### 2.8 [RUNTIME VERIFICATION] Runtime Verification Record
+
+Create this record only after a real runtime run has been performed. It is the end-to-end control record that links the detailed Evidence Template rows; it is not a replacement for those artifacts and it must not contain simulated values presented as actual results.
+
+`[RUNTIME VERIFICATION]` is a document-governance label, not a GTM Tag name.
+
+~~~text
+Runtime verification ID: [RV-...]
+Linked test run/scenario: [run ID] / [test ID]
+Event contract/schema: [Section 07 ID/version]
+Environment/hostname/URL: [QA or production]
+Application/build: [commit/build/deploy ID]
+GTM container/workspace/version: [values]
+GA4 property/stream/Measurement ID: [values]
+Browser/device/date/time: [values]
+Consent state: [state by category]
+Tester/reviewer: [names]
+
+Application proof: [artifact ID/link]
+Data Layer proof: [artifact ID/link]
+GTM Preview/Tag Assistant proof: [artifact ID/link]
+Consent proof: [artifact ID/link]
+Network proof: [artifact ID/link]
+DebugView/Realtime proof: [artifact ID/link]
+Processed-data proof or Pending follow-up: [artifact ID/link, owner/date]
+
+Expected count by layer: [values]
+Actual count by layer: [values]
+Destination/Measurement ID reconciliation: [result]
+Duplicate-source check: [result]
+First failing layer: [layer or N/A]
+Final result: Pass / Fail / Pending / Blocked
+Defect/retest reference: [ID or —]
+Section 10 release reference: [ID or —]
+Artifact access/retention: [location, owner, period]
+Approver/date: [values]
+~~~
+
+Runtime Verification is **Pass** only when business state, count, payload, destination, consent, and all required downstream checks have matching runtime evidence. Use **Pending** only for a documented GA4 processing window with an owner and follow-up date. Link the record from the Section 08 Scenario Execution Summary and the Section 10 Release Record.
+
+### 2.9 Conditional records
 
 #### Debug Session Record
 

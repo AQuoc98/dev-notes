@@ -73,6 +73,7 @@ Mỗi material release cần liên kết:
 - Release Record có owner, scope, environment, change type và journey bị ảnh hưởng;
 - Measurement Plan/schema decision đã approve và các implementation references;
 - kết quả/evidence của Section 08;
+- record **[RUNTIME VERIFICATION] Runtime Verification** của Section 08 khi đã thực sự chạy runtime;
 - report/configuration impact của Section 09 nếu reporting bị ảnh hưởng;
 - GTM version, publisher, target environment và rollback/mitigation path;
 - Monitoring Record, smoke-test result và final outcome hoặc incident.
@@ -98,6 +99,7 @@ Event dự kiến và request count:
 Consent/privacy và destination impact:
 Production smoke-test method và approval:
 Section 08 QA evidence:
+Section 08 [RUNTIME VERIFICATION] record (khi đã chạy runtime):
 Section 09 report/configuration IDs:
 Monitoring ID:
 Version, approvers, publisher và release window:
@@ -143,7 +145,7 @@ Measurement Plan/schema decision
 |---|---|
 | Gate 0 — Requirement readiness | Measurement Plan/schema decision đã approve, business outcome, report bị ảnh hưởng, consent/privacy/destination decision và rollback/mitigation approach. |
 | Gate 1 — Implementation readiness | Workspace có phạm vi rõ, routing an toàn, naming standards, expected count, overlap check, affected consumers và template review khi cần. |
-| Gate 2 — QA readiness | Kết quả positive/negative/duplicate/consent/privacy/routing ở Section 08, first-failing-layer status, evidence links và processed-data follow-up khi cần. |
+| Gate 2 — QA readiness | Kết quả positive/negative/duplicate/consent/privacy/routing ở Section 08, first-failing-layer status, evidence links, record **[RUNTIME VERIFICATION] khi đã chạy runtime**, và processed-data follow-up khi cần. |
 | Gate 3 — Publish readiness | Workspace hiện tại, đúng environment, named version, approval, release/observation window, rollback path và linked records. |
 | Gate 4 — Post-publish readiness | Smoke test, version/destination check, immediate signals, processed-data check theo lịch và Monitoring Record outcome hoặc incident. |
 
