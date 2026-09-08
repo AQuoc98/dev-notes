@@ -28,7 +28,6 @@
 | Dependencies | `FD-REC-00` Phase 0 baseline; `FD-CR-001` outcome rename; `FD-CR-002` runtime-readiness hardening |
 | Open items / risks | Live setup, runtime evidence and production approval remain outside scope; `FD-OPEN-001` through `FD-OPEN-004` in the master journey block runtime readiness |
 | Next action | Resolve `FD-OPEN-001`–`004`, then use `FD-REC-01` through `FD-REC-11` as the schema `3.0` runtime packet |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-04` / `2026-09-07` |
 
 ### Version history
@@ -39,17 +38,6 @@
 | `2.0-simulated` | Historical simulation baseline | `FD-CR-001` | `Yes`, `No_solution` | Outcome rename; full analytics snapshot and no cross-layer event identifier |
 | `3.0-simulated` | Current simulation state | `FD-CR-002` | `Yes`, `No_solution` | Retains the combined outcome; minimizes the analytics payload, adds `event_id` and strict completeness gates |
 
-
-## 0.1 Source of the record format
-
-This is the project-specific implementation of the standard Section 07 record structure. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Measurement Plan, record priority and event contract | [Section 07 — Measurement Plan](../07-measurement-plan-answer.md) |
-| Data Layer envelope and snapshot boundary | [Section 01 — Data Layer Design](../01-data-layer-design-answer.md), [`FD-REC-01`](FD-REC-01-application-data-layer-specification.md) |
-| GTM consumers and mapping boundary | Sections 02–06, [`FD-REC-02`](FD-REC-02-gtm-variable-inventory.md), [`FD-REC-04`](FD-REC-04-gtm-tag-inventory.md) |
-| Simulated business values | FD calculation flow supplied for this journey |
 
 ## 0.2 Handoff summary
 
@@ -267,7 +255,7 @@ Changing `solution_found`, valid occurrence, required fields or allowed values r
 | Open decisions | `FD-OPEN-001` outcome separation, `FD-OPEN-002` key-event status, `FD-OPEN-003` consent implementation and `FD-OPEN-004` vocabulary/`event_id` privacy block runtime readiness |
 | Approval date | `2026-09-07` for `FD-CR-002` simulation design; runtime approval pending; baseline approval was `2026-09-04` |
 
-## 11. Acceptance checklist / template criteria
+## 11. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not replace business approval or runtime evidence.
 

@@ -20,19 +20,7 @@
 | Owner / reviewer | FD GTM owner / Analytics owner — simulated aliases |
 | Open items | `FD-OPEN-001`–`004`, Preview, Network, duplicate audits, actual-baseline verification and the selected schema `3.0` rollout remain unresolved at runtime |
 | Next action | Resolve the runtime blockers, then use this inventory in the coordinated compatibility release from `FD-REC-10` |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Last updated | `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 03 Trigger Inventory structure. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Trigger naming, authoritative-event rule and timing | [Section 03 — Trigger Management](../03-trigger-management-answer.md) |
-| Variable dependencies and filters | [`FD-REC-02`](FD-REC-02-gtm-variable-inventory.md) |
-| Business moment, occurrence and event contract | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md), [`FD-REC-01`](FD-REC-01-application-data-layer-specification.md) |
-| Consent and permission boundary | [Section 05 — Consent Management](../05-consent-answer.md), [`FD-REC-05`](FD-REC-05-consent-decision.md) |
 
 ## 1. Approved Trigger inventory
 
@@ -75,7 +63,7 @@ AND FD - LUT - Hostname to Measurement ID is not blank
 → one GA4 Event tag becomes eligible
 ```
 
-## 5. Acceptance checklist / template criteria
+## 5. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove live Trigger evaluation.
 

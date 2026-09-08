@@ -24,19 +24,7 @@
 | Dependencies | QA/staging and production hostnames supplied by the requester |
 | Open items / risks | `FD-OPEN-001`–`004`, real accounts/access, consent implementation, duplicate audit, active-runtime baseline and schema `3.0` rollout path remain unresolved |
 | Next action | Resolve Phase 0 runtime facts and blockers before authorizing the schema `3.0` release packet |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-06` / `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This is a project record based on the Phase 0 system-inventory structure in the FD journey. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Environment, GA4/GTM foundation and access fields | [FD calculation journey — Phase 0](../11-fd-calculation-journey.md), [FD Change Request Governance](../00-change-request-governance.md) |
-| Consent baseline | [Section 05 — Consent Management](../05-consent-answer.md), [`FD-REC-05`](FD-REC-05-consent-decision.md) |
-| QA URL, synthetic data and browser matrix | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
-| Simulated values in this record | Hostnames supplied by the requester and the approved FD simulation assumptions |
 
 ## 1. Environment and hostname baseline
 

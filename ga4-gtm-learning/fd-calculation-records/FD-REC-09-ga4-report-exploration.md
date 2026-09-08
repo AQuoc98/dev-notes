@@ -23,19 +23,7 @@
 | Reviewers | Business owner, Application owner, GTM owner, Privacy reviewer — simulated aliases |
 | Open items | `FD-OPEN-001`/`004`, custom-definition creation, field availability, baseline and processed-data validation remain unresolved |
 | Next action | Resolve the blockers, register the approved dimensions, then build the schema `3.0` assets and validate processed data |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-07` / `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 09 records: Report Requirement, Field Readiness, Asset Configuration and Interpretation/Decision. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Population, grain, scope, surface and rate discipline | [Section 09 — Reports, Explorations, Charts and Interpretation](../09-reports-charts-answer.md) |
-| Event meaning, parameter allowlist and consent boundary | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md) |
-| Collection and QA evidence boundary | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
-| Release and monitoring handoff | [Section 10 — Release Monitoring](../10-release-monitoring-answer.md) |
 
 ## 1. Report Requirement Record
 
@@ -179,7 +167,7 @@ If an exact ratio cannot be reproduced from the selected GA4 surface, export the
 | Owner / review trigger | FD Analytics owner / contract, field, consent, release or reporting-surface change |
 | Status | Simulated interpretation note; no decision based on live data |
 
-## 6. Acceptance checklist / template criteria
+## 6. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove live GA4 assets or processed data.
 

@@ -31,19 +31,7 @@
 | Consent state | `[state by consent category]` |
 | Tester / reviewer | `[name]` / `[name]` |
 | Started / completed | `[timestamp]` / `[timestamp]` |
-| Template use | Copy this record for an authorized runtime project; replace all placeholders and keep checklist items unchecked until evidence is attached |
 | Value/evidence boundary | Real runtime artifacts only; simulated values must be labelled `SIMULATED` and kept out of this record |
-
-## 0.1 Source of the record format
-
-This is a future-project record that combines the runtime evidence and release-gate requirements from Sections 08 and 10. It is not a Google-provided form and it is not applicable to the current simulation-only journey.
-
-| Record component | Reference |
-|---|---|
-| Test setup, data-safety and evidence layers | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
-| Runtime verification and scenario-result structure | [Section 08 — Runtime Verification](../08-debug-qa-answer.md#28-runtime-verification-runtime-verification-record) |
-| Release gate, smoke check, monitoring and rollback handoff | [Section 10 — Release Monitoring](../10-release-monitoring-answer.md) |
-| Current FD scope and simulated status | [`11-fd-calculation-journey.md`](../11-fd-calculation-journey.md) |
 
 ## 1. Entry criteria
 
@@ -129,7 +117,7 @@ Do not store raw PII, credentials, secrets, unrestricted form input or unapprove
 
 Link this record from the Section 08 Scenario Execution Summary and the Section 10 Release Record. The current FD journey must keep this record at `Not applicable — simulation-only` until a separate runtime project is explicitly authorized.
 
-## 7. Acceptance checklist / template criteria
+## 7. Acceptance criteria
 
 > This record is a reusable runtime template. Do not mark an item complete from a simulation. Each checked item must reference a retained runtime artifact or an approved decision.
 

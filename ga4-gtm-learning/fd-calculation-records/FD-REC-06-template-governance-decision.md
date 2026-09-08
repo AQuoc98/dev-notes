@@ -20,19 +20,7 @@
 | Owner / reviewer | GTM owner / Security-Privacy reviewer — simulated aliases |
 | Open items | Re-open only when a future requirement is outside native Tag capability |
 | Next action | Keep the GA4 path on native Tags; create a separate template record only for a real future requirement |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Last updated | `2026-09-07` |
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 06 Template Governance structure. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Template contract, review and implementation workflow | [Section 06 — Template Governance](../06-template-governance-answer.md) |
-| Native Tag capability and Tag contract | [Section 04 — Tag Management](../04-tag-management-answer.md) |
-| Consent and change-control dependency | [Section 05 — Consent Management](../05-consent-answer.md) |
-| Current FD requirement and Tag inventory | [`FD-REC-04`](FD-REC-04-gtm-tag-inventory.md), [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md) |
 
 ## 1. Requirement and capability check
 
@@ -71,7 +59,7 @@ Re-open this decision only when all of the following are documented:
 
 If a future destination is a separate internal endpoint, create a new template deployment record under Section 06. Do not change the meaning or delivery path of the GA4 Event tag.
 
-## 4. Acceptance checklist / template criteria
+## 4. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove a custom template was reviewed or deployed.
 

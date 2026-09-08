@@ -21,7 +21,6 @@
 | Owner / reviewer        | FD GTM owner / Analytics owner — simulated aliases                                                                                |
 | Open items              | Live container verification, controlled vocabulary approval, actual-baseline verification and the selected schema `3.0` rollout are outside the current scope |
 | Next action             | Use this schema `3.0` inventory after `FD-OPEN-001`–`004` are resolved; retain schemas `1.0`/`2.0` as history                    |
-| Template use            | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use                 |
 | Last updated            | `2026-09-07` — [`FD-CR-002`](FD-CR-002-runtime-readiness-hardening.md)                                                           |
 
 
@@ -56,17 +55,6 @@ The following is an example only; it is not an active change in this simulation.
 |---|---|---|---|---|---|---|
 | `3.1` | Add | `FD - DLV - solution_reason` | Not present | Optional string from `solution_reason` | Backward-compatible only if omitted schema `3.0` payloads remain valid; update contract, Tag mapping, QA and reporting as applicable | `[future CR — required]` |
 
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 02 Variable Inventory structure. It is not a Google-provided form.
-
-| Record component                                  | Reference                                                                                                                             |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Variable contract, naming and review fields       | [Section 02 — Variable Management](../02-variable-management-answer.md)                                                               |
-| Nested Data Layer paths and missing-data behavior | [Section 01 — Data Layer Design](../01-data-layer-design-answer.md), [`FD-REC-01`](FD-REC-01-application-data-layer-specification.md) |
-| Approved parameter names and types                | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md)                                                                           |
-| Simulated values in this record                   | FD calculation flow and schema `3.0` after `FD-CR-002`; schemas `1.0`/`2.0` remain historical baselines                                 |
 
 ## 1. Approved Variable inventory
 
@@ -115,7 +103,7 @@ Application pushes one complete calculation_action message
   → GA4 Event tag maps the same Variables once
 ```
 
-## 4. Acceptance checklist / template criteria
+## 4. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove live GTM configuration.
 

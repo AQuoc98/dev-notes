@@ -28,7 +28,6 @@
 | Dependencies | `FD-REC-00` Phase 0 baseline; `FD-REC-07` schema `3.0-simulated`; `FD-CR-001`; `FD-CR-002` |
 | Open items / risks | `FD-OPEN-001`–`004`, Application implementation, GTM/GA4 configuration, QA and release evidence remain unresolved at runtime |
 | Next action | Resolve the blockers, then implement this handoff and verify it through `FD-REC-08`/`FD-REC-11` |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-04` / `2026-09-07` |
 
 ### Version history
@@ -39,17 +38,6 @@
 | `0.6` | `2.0` | Historical simulation baseline | `FD-CR-001` | Rename the combined `No` outcome to `No_solution`; runtime not executed |
 | `0.7` | `3.0` | Current simulation state | `FD-CR-002` | Minimize Data Layer, add opaque `event_id`, remove `fx`/`fy` from analytics and enforce required fields; runtime blocked |
 
-
-### 0.1 Source of the record format
-
-This record converts the approved Section 01 Data Layer structure into a project-specific FD handoff. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Data Layer envelope, snapshot and event lifecycle | [Section 01 — Data Layer Design](../01-data-layer-design-answer.md) |
-| Approved event meaning and parameter dictionary | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md) |
-| Simulated application flow and current payload boundary | FD calculation flow supplied for this journey |
-| Expected QA scenarios | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
 
 ## 1. Contract record
 
@@ -304,7 +292,7 @@ The matrix retains `TC-FD-01`–`TC-FD-06` from Phase 0 and adds negative/edge c
 
 Payloads, response/error examples and the expected QA matrix are simulated/documented values. There is no Application log, runtime DevTools evidence, live GTM/GA4 configuration or production evidence. Code, runtime artifacts, test results and implementation state are outside this record.
 
-## 9. Acceptance checklist / template criteria
+## 9. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove Application implementation or runtime collection.
 

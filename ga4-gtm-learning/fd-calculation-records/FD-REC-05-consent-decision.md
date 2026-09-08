@@ -20,19 +20,7 @@
 | Owner / reviewer | Privacy owner / Analytics owner — simulated aliases |
 | Open items | `FD-OPEN-003`: real region, CMP callback/update path, persistence key/expiry, revocation/storage cleanup, policy version and evidence owner require privacy approval before runtime |
 | Next action | Use this decision as the consent input for a future runtime project |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Last updated | `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 05 Consent Decision structure. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Consent contract and state decisions | [Section 05 — Consent Management](../05-consent-answer.md) |
-| GTM implementation, Consent Initialization and Tag behavior | [Section 05 — GTM implementation](../05-consent-answer.md) |
-| Project baseline and environment | [`FD-REC-00`](FD-REC-00-phase-0-system-inventory.md) |
-| Event/data classification and GA4 boundary | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md) |
 
 ## 1. Consent contract
 
@@ -79,7 +67,7 @@ Consent is permission context, not a business event. Do not push a fake `consent
 7. Review GTM Consent Overview and record the intentional built-in/additional-consent setting for every affected Tag.
 8. Block runtime approval until region, update callback, persistence, revocation/cleanup, policy version and evidence ownership have non-placeholder values.
 
-## 4. Acceptance checklist / template criteria
+## 4. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove real CMP or browser consent behavior.
 

@@ -23,20 +23,7 @@
 | Reviewers | Application, GTM, Analytics and Privacy owners — simulated aliases |
 | Open items | `FD-OPEN-001`–`004`, runtime-baseline verification, execution, evidence retention and defect/retest records remain unresolved |
 | Next action | Resolve the blockers, then execute this schema `3.0` QA package and retain schemas `1.0`/`2.0` only as separate historical populations |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-07` / `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This record combines the mandatory P0 QA records and conditional P1/P2 records defined in Section 08. It is not a Google-provided form and does not create a new template family.
-
-| Record component | Reference |
-|---|---|
-| Objective, validation path and material-event pass rule | [Section 08 — Debug and QA](../08-debug-qa-answer.md) |
-| Test Run Setup, Data Safety Check and Required Test Matrix | [Section 08 — QA record priority](../08-debug-qa-answer.md#21-record-priority) |
-| Scenario Execution Summary and Evidence Template | [Section 08 — Scenario and evidence records](../08-debug-qa-answer.md#26-scenario-execution-summary) |
-| Runtime Verification boundary | [`FD-REC-11`](FD-REC-11-runtime-verification.md) |
-| Event expectations and negative cases | [`FD-REC-01`](FD-REC-01-application-data-layer-specification.md), [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md) |
 
 ## 1. QA scope and pass rule
 
@@ -176,7 +163,7 @@ Repeat the row set for the negative and routing scenarios when the relevant laye
 | Defect and Retest Record | Not required; no failure was executed or reproduced |
 | Processed-data follow-up | Required only in a future run if a Report/Exploration result is part of the acceptance decision |
 
-## 8. Acceptance checklist / template criteria
+## 8. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove that a runtime test was executed.
 

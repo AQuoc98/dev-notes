@@ -25,21 +25,7 @@
 | Reviewers | Application, GTM, Analytics, QA and Privacy owners — simulated aliases |
 | Open items | `FD-OPEN-001`–`004`, actual deployed-baseline verification, real approval, publication, observation and threshold calibration remain unresolved |
 | Next action | Resolve the blockers, then execute `REL-FD-CALC-003` through the documented compatibility sequence |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Created / last updated | `2026-09-07` / `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This record combines the Section 10 Release Record and Monitoring Record structures. It is not a Google-provided form and does not replace the Section 08 QA records.
-
-| Record component | Reference |
-|---|---|
-| Change classification, release lifecycle and release packet | [Section 10 — Release Monitoring](../10-release-monitoring-answer.md) |
-| Release gates, versioning, approval and smoke test | [Section 10 — Release implementation](../10-release-monitoring-answer.md) |
-| Monitoring signals, baselines and thresholds | [Section 10 — Monitoring implementation](../10-release-monitoring-answer.md) |
-| Incident, containment and rollback | [Section 10 — Incident and recovery](../10-release-monitoring-answer.md) |
-| Approved requirement and report impact | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md), [`FD-REC-09`](FD-REC-09-ga4-report-exploration.md) |
-| QA readiness and evidence boundary | [`FD-REC-08`](FD-REC-08-debug-qa.md) |
 
 ## 1. Release Record
 
@@ -247,7 +233,7 @@ Complete this record when a release is held, reverted or found to have a materia
 
 Closure requires the observation window, processed-data follow-up, affected-period boundary, historical reporting treatment and corrective owner to be complete.
 
-## 7. Acceptance checklist / template criteria
+## 7. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove a live release, smoke test or monitoring run.
 

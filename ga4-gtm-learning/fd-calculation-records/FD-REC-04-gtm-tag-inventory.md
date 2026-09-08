@@ -21,19 +21,7 @@
 | Owner / reviewer | FD GTM owner / Analytics owner — simulated aliases |
 | Open items | `FD-OPEN-001`–`004`, actual-baseline verification, live GTM configuration, Network, DebugView and the selected schema `3.0` rollout remain unresolved at runtime |
 | Next action | Resolve the runtime blockers, then configure and verify the schema `3.0` Tag through `FD-REC-08`/`FD-REC-11` |
-| Template use | Copy this record for a project; reset simulated values, statuses, dates, approvals and checklist marks before use |
 | Last updated | `2026-09-07` — `FD-CR-002` |
-
-## 0.1 Source of the record format
-
-This is a project record using the standard Section 04 Tag Inventory structure. It is not a Google-provided form.
-
-| Record component | Reference |
-|---|---|
-| Tag name, type, Trigger, destination and count | [Section 04 — Tag Management](../04-tag-management-answer.md) |
-| Parameter source, type and missing behavior | [Section 04 — Tag parameter allowlist](../04-tag-management-answer.md), [`FD-REC-02`](FD-REC-02-gtm-variable-inventory.md) |
-| Approved event parameters and Data Layer paths | [`FD-REC-07`](FD-REC-07-measurement-plan-event-contract.md), [`FD-REC-01`](FD-REC-01-application-data-layer-specification.md) |
-| Consent and destination decisions | [`FD-REC-05`](FD-REC-05-consent-decision.md), [`FD-REC-00`](FD-REC-00-phase-0-system-inventory.md) |
 
 ## 1. Approved Tag inventory
 
@@ -77,7 +65,7 @@ The nested `inputs` object, complete API snapshot, API response and internal req
 | Owner/status | FD GTM owner / simulated, runtime blocked | FD GTM owner / simulated, runtime blocked |
 | Review/retirement | Review on destination, consent or consumer change; retain a recoverable version before retirement | Deprecate only after reports/tests/consumers migrate and the replacement is monitored |
 
-## 4. Acceptance checklist / template criteria
+## 4. Acceptance criteria
 
 > When this record is copied to a project, start with all boxes unchecked. The checked items below describe this simulation baseline only; they do not prove live Tag firing or Network delivery.
 
