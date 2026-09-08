@@ -13,6 +13,7 @@ Các tool/product người dùng thường dùng hoặc dự định dùng. Đâ
 | Grok | [grok.com](https://grok.com/) | `following` | Alternative model surface và current/social discovery | `models`, `social`, `ai-news` |
 | Z.ai | [chat.z.ai](https://chat.z.ai/) | `following` | Alternative model/provider exploration | `models`, `coding-agents`, `cost` |
 | skills.sh | [skills.sh](https://www.skills.sh/) | `following` | Discover/share Agent Skills và reusable workflows | `skills`, `SKILL.md`, `plugins` |
+| Codex Astra–Luna Orchestrator | [GitHub repo](https://github.com/donvito/codex-astra-luna-orchestrator) · [hướng dẫn nội bộ](codex-astra-luna-orchestrator.md) | `following` | Codex adapter cho orchestration với Astra/Luna, subagents và independent review | `agents`, `orchestration`, `skills`, `subagents`, `models`, `cost` |
 
 `following` bao gồm cả tool đang dùng và tool đã chọn để theo dõi/dùng trong tương lai; khi có quyết định cụ thể, ghi thêm `adoption: current | planned` trong research note.
 
