@@ -1,0 +1,7 @@
+interface:
+  display_name: "Tech Interview Q&A"
+  short_description: "Review and update interview Q&A"
+  default_prompt: "Use $tech-interview-qa to review this URL or question list against the target Markdown file, then propose updates for my approval."
+
+policy:
+  allow_implicit_invocation: true

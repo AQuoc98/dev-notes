@@ -22,6 +22,7 @@ Mỗi lớp giải quyết một vấn đề khác nhau. Không bắt đầu b�
 - [03 — Second brain and memory](03-second-brain-and-memory.md): kiến trúc Raw → Wiki → Schema theo hướng LLM Wiki.
 - [04 — Experiment backlog](04-experiment-backlog.md): các thử nghiệm nhỏ, tiêu chí pass/fail và thứ tự ưu tiên.
 - [05 — Review checklist](05-review-checklist.md): checklist để cùng review và chốt hướng.
+- [06 — Tech Interview Q&A skill guide](06-tech-interview-qa-skill.md): hướng dẫn dùng skill `$tech-interview-qa` để xử lý URL hoặc câu hỏi sưu tầm và cập nhật tài liệu đích sau approval.
 - [Evals](evals/README.md): task cases, graders và outcome verification.
 
 ### Research notes
